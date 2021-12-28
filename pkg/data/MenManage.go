@@ -148,7 +148,7 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 				return nil, fmt.Errorf("can't load null data")
 			}
 
-			t.dutyMen = men
+			t.dutyMen = &men
 			return &men, nil
 		}
 	}
@@ -157,10 +157,10 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 
 // AddManOnDuty Add new man to duty list
 func (t *CalData) AddManOnDuty(name string, tgID string) {
-	ln := len(t.dutyMen)
+	ln := len(*t.dutyMen)
 	ln++
 	m := &DutyMan{Name: name, Index: ln, TgID: tgID}
-	t.dutyMen = append(t.dutyMen, *m)
+	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
 // Return new slice with removed element with provided index
@@ -171,9 +171,9 @@ func removeMan(sl []DutyMan, s int) []DutyMan {
 // DeleteManOnDuty Remove man from duty list
 func (t *CalData) DeleteManOnDuty(tgID string) error {
 	var isDeleted bool
-	for index, man := range t.dutyMen {
+	for index, man := range *t.dutyMen {
 		if tgID == man.TgID {
-			t.dutyMen = removeMan(t.dutyMen, index)
+			*t.dutyMen = removeMan(*t.dutyMen, index)
 			isDeleted = true
 		}
 	}
@@ -188,16 +188,16 @@ func (t *CalData) DeleteManOnDuty(tgID string) error {
 // Recreate indexes for on-duty men to persist duty order
 func (t *CalData) reIndexManOnDutyList() {
 	var reMap []DutyMan
-	for index, man := range t.dutyMen {
+	for index, man := range *t.dutyMen {
 		man.Index = index + 1
 		reMap = append(reMap, man)
 	}
-	t.dutyMen = reMap
+	t.dutyMen = &reMap
 }
 
 // ShowMenOnDutyList Show current men on duty list
 func (t *CalData) ShowMenOnDutyList() []string {
-	return genListMenOnDuty(t.dutyMen)
+	return genListMenOnDuty(*t.dutyMen)
 }
 
 // Return correct index for duty flow

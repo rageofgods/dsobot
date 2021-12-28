@@ -18,7 +18,7 @@ type CalData struct {
 	cal     *calendar.Service
 	bToken  *[]byte
 	httpC   *http.Client
-	dutyMen []DutyMan
+	dutyMen *[]DutyMan
 }
 
 // NewCalData CalData constructor

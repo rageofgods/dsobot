@@ -8,7 +8,7 @@ import (
 
 // UpdateOnDutyEvents Recreate on-duty events
 func (t *CalData) UpdateOnDutyEvents(months int, contDays int, dutyTag CalTag) error {
-	if len(t.dutyMen) == 0 {
+	if len(*t.dutyMen) == 0 {
 		return fmt.Errorf("men of duty list is nil")
 	}
 	err := t.DeleteDutyEvents(months, dutyTag)
@@ -45,7 +45,7 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 	}
 
 	// Creating slice with sorted men on-duty
-	menOnDuty := genListMenOnDuty(t.dutyMen)
+	menOnDuty := genListMenOnDuty(*t.dutyMen)
 
 	// Generate slice with valid menOnDuty count iteration (following length of duty days)
 	tempMen := genContListMenOnDuty(menOnDuty, contDays)
