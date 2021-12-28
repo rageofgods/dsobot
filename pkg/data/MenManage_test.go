@@ -29,59 +29,27 @@ func Test_checkOffDutyManInList(t *testing.T) {
 	}
 }
 
-func Test_sortMenOnDuty(t *testing.T) {
-	testMap := map[int]map[string]string{
-		1: {"One": "1"},
-		2: {"Two": "2"},
-		3: {"Three": "3"},
-	}
-	wantInt := []int{1, 2, 3}
-
-	type args struct {
-		m map[int]map[string]string
-	}
-	tests := []struct {
-		name string
-		args args
-		want []int
-	}{
-		// Do three iteration for correct order check
-		{name: "Check correct order iter one", args: args{m: testMap}, want: wantInt},
-		{name: "Check correct order iter two", args: args{m: testMap}, want: wantInt},
-		{name: "Check correct order iter three", args: args{m: testMap}, want: wantInt},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := sortMenOnDuty(tt.args.m); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("sortMenOnDuty() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_genListMenOnDuty(t *testing.T) {
-	testInt := []int{1, 2, 3}
-	testMap := map[int]map[string]string{
-		1: {"One": "1"},
-		2: {"Two": "2"},
-		3: {"Three": "3"},
+	testMap := &[]DutyMan{
+		{Index: 10, Name: "One", TgID: "TG_ONE"},
+		{Index: 20, Name: "Two", TgID: "TG_TWO"},
+		{Index: 30, Name: "Three", TgID: "TG_THREE"},
 	}
 	wantString := []string{"One", "Two", "Three"}
 
 	type args struct {
-		keys []int
-		m    map[int]map[string]string
+		m []DutyMan
 	}
 	tests := []struct {
 		name string
 		args args
 		want []string
 	}{
-		{name: "Check returned strings", args: args{keys: testInt, m: testMap}, want: wantString},
+		{name: "Check returned strings", args: args{m: *testMap}, want: wantString},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := genListMenOnDuty(tt.args.keys, tt.args.m); !reflect.DeepEqual(got, tt.want) {
+			if got := genListMenOnDuty(tt.args.m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("genListMenOnDuty() = %v, want %v", got, tt.want)
 			}
 		})
@@ -129,6 +97,8 @@ func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 	man2 := "One"
 	wantInt3 := 0
 	man3 := "Three"
+	wantInt4 := 0
+	man4 := "Zero"
 
 	type args struct {
 		countDays        int
@@ -148,6 +118,8 @@ func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 			args: args{countDays: 2, men: menString, man: man2, manPrevDutyCount: 2}, want: wantInt2, wantErr: false},
 		{name: "Get index of current duty with Three",
 			args: args{countDays: 2, men: menString, man: man3, manPrevDutyCount: 2}, want: wantInt3, wantErr: false},
+		{name: "Get index of current duty with Zero man",
+			args: args{countDays: 2, men: menString, man: man4, manPrevDutyCount: 2}, want: wantInt4, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -158,6 +130,49 @@ func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("indexOfCurrentOnDutyMan() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_removeMan(t *testing.T) {
+	sDutyMan1 := []DutyMan{
+		{Index: 1, Name: "Test1", TgID: "test_one"},
+		{Index: 2, Name: "Test2", TgID: "test_two"},
+		{Index: 3, Name: "Test3", TgID: "test_three"},
+	}
+	sInt1 := 1 // Deleting slice with index "2"
+	w1 := []DutyMan{
+		{Index: 1, Name: "Test1", TgID: "test_one"},
+		{Index: 3, Name: "Test3", TgID: "test_three"},
+	}
+	sDutyMan2 := []DutyMan{
+		{Index: 1, Name: "Test1", TgID: "test_one"},
+		{Index: 2, Name: "Test2", TgID: "test_two"},
+		{Index: 3, Name: "Test3", TgID: "test_three"},
+	}
+	sInt2 := 2 // Deleting slice with index "3"
+	w2 := []DutyMan{
+		{Index: 1, Name: "Test1", TgID: "test_one"},
+		{Index: 2, Name: "Test2", TgID: "test_two"},
+	}
+
+	type args struct {
+		sl []DutyMan
+		s  int
+	}
+	tests := []struct {
+		name string
+		args args
+		want []DutyMan
+	}{
+		{name: "Remove slice element two", args: args{sl: sDutyMan1, s: sInt1}, want: w1},
+		{name: "Remove slice element three", args: args{sl: sDutyMan2, s: sInt2}, want: w2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeMan(tt.args.sl, tt.args.s); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("removeMan() = %v, want %v", got, tt.want)
 			}
 		})
 	}

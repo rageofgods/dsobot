@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sort"
 	"time"
 )
 
@@ -75,10 +74,10 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 
 // SaveMenList Create events via API call
 func (t *CalData) SaveMenList() (*string, error) {
-	if t.menOnDuty == nil {
+	if t.dutyMen == nil {
 		return nil, fmt.Errorf("no data for saving")
 	}
-	jsonStr, err := json.Marshal(t.menOnDuty)
+	jsonStr, err := json.Marshal(t.dutyMen)
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +119,8 @@ func (t *CalData) SaveMenList() (*string, error) {
 }
 
 // LoadMenList load duty order data
-func (t *CalData) LoadMenList() (*map[int]map[string]string, error) {
-	men := map[int]map[string]string{}
+func (t *CalData) LoadMenList() (*[]DutyMan, error) {
+	var men []DutyMan
 	tn, err := time.Parse(DateShort, SaveListDate)
 	if err != nil {
 		return nil, err
@@ -149,7 +148,7 @@ func (t *CalData) LoadMenList() (*map[int]map[string]string, error) {
 				return nil, fmt.Errorf("can't load null data")
 			}
 
-			t.menOnDuty = men
+			t.dutyMen = men
 			return &men, nil
 		}
 	}
@@ -158,27 +157,24 @@ func (t *CalData) LoadMenList() (*map[int]map[string]string, error) {
 
 // AddManOnDuty Add new man to duty list
 func (t *CalData) AddManOnDuty(name string, tgID string) {
-	l := len(t.menOnDuty)
-	l++ // Go to next available index
-	t.menOnDuty[l] = map[string]string{name: tgID}
-
-	///////////
-	ll := len(t.dutyMen)
-	ll++
-	m := &DutyMan{Name: name, Index: ll, TgID: tgID}
+	ln := len(t.dutyMen)
+	ln++
+	m := &DutyMan{Name: name, Index: ln, TgID: tgID}
 	t.dutyMen = append(t.dutyMen, *m)
-	//////////
+}
+
+// Return new slice with removed element with provided index
+func removeMan(sl []DutyMan, s int) []DutyMan {
+	return append(sl[:s], sl[s+1:]...)
 }
 
 // DeleteManOnDuty Remove man from duty list
 func (t *CalData) DeleteManOnDuty(tgID string) error {
 	var isDeleted bool
-	for index, man := range t.menOnDuty {
-		for _, v := range man {
-			if v == tgID {
-				delete(t.menOnDuty, index)
-				isDeleted = true
-			}
+	for index, man := range t.dutyMen {
+		if tgID == man.TgID {
+			t.dutyMen = removeMan(t.dutyMen, index)
+			isDeleted = true
 		}
 	}
 	// Reindex only if something was changed
@@ -191,21 +187,17 @@ func (t *CalData) DeleteManOnDuty(tgID string) error {
 
 // Recreate indexes for on-duty men to persist duty order
 func (t *CalData) reIndexManOnDutyList() {
-	reMap := map[int]map[string]string{}
-	keys := sortMenOnDuty(t.menOnDuty) // Sort by index
-	i := 1                             // Index starts from one
-	for _, k := range keys {           // Use sorted slice for persist men order through reindex
-		for key, value := range t.menOnDuty[k] {
-			reMap[i] = map[string]string{key: value}
-		}
-		i++
+	var reMap []DutyMan
+	for index, man := range t.dutyMen {
+		man.Index = index + 1
+		reMap = append(reMap, man)
 	}
-	t.menOnDuty = reMap // Rewrite original map
+	t.dutyMen = reMap
 }
 
 // ShowMenOnDutyList Show current men on duty list
 func (t *CalData) ShowMenOnDutyList() []string {
-	return genListMenOnDuty(sortMenOnDuty(t.menOnDuty), t.menOnDuty)
+	return genListMenOnDuty(t.dutyMen)
 }
 
 // Return correct index for duty flow
@@ -232,26 +224,13 @@ func checkOffDutyManInList(man string, offDutyList *[]string) bool {
 	return false
 }
 
-// Sorting men on-duty in the right order (following map index)
-func sortMenOnDuty(m map[int]map[string]string) []int {
-	keys := make([]int, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-
-	return keys
-}
-
 // Creating slice with sorted men on-duty
-func genListMenOnDuty(keys []int, m map[int]map[string]string) []string {
-	var menOnDuty []string
-	for _, k := range keys {
-		for man := range m[k] { // Get on-duty Names
-			menOnDuty = append(menOnDuty, man)
-		}
+func genListMenOnDuty(m []DutyMan) []string {
+	var retStr []string
+	for _, man := range m {
+		retStr = append(retStr, man.Name)
 	}
-	return menOnDuty
+	return retStr
 }
 
 // Generate slice with valid menOnDuty count iteration (following length of duty days)
@@ -271,10 +250,17 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 	if len(men) == 0 {
 		return 0, fmt.Errorf("men list is empty")
 	}
+	var isManFound bool
 	for i, name := range men {
 		if name == man {
 			manIndex = i
+			isManFound = true
 		}
+	}
+
+	// If previous duty man is out of current menOnDuty list we return zero index
+	if !isManFound {
+		return 0, nil
 	}
 
 	debtDutyDays := contDays - manPrevDutyCount

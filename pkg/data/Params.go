@@ -20,10 +20,10 @@ type DutyMan struct {
 	Index   int
 	Name    string
 	TgID    string
-	OffDuty *OffDutyData
+	OffDuty *[]OffDutyData
 }
 
-// OffDutyData holds off-duty data
+// OffDutyData holds off-duty data save
 type OffDutyData struct {
 	OffDutyStart string
 	OffDutyEnd   string
