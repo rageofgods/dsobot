@@ -25,10 +25,13 @@ type CalData struct {
 func NewCalData(token string, calID string) *CalData {
 	c := context.Background() // Init background context
 	return &CalData{
-		ctx:    &c,
-		token:  token,
-		calID:  calID,
-		bToken: new([]byte),
+		ctx:     &c,
+		token:   token,
+		calID:   calID,
+		cal:     new(calendar.Service),
+		bToken:  new([]byte),
+		httpC:   new(http.Client),
+		dutyMen: new([]DutyMan),
 	}
 }
 

@@ -147,12 +147,18 @@ func StartBot(dc *data.CalData, botToken string) {
 
 		case "list":
 			var list string
-			for _, i := range dc.ShowMenOnDutyList() {
+			menList, err := dc.ShowMenOnDutyList()
+			if err != nil {
+				msg.Text = fmt.Sprintf("Возникла ошибка при загрузке: %s", err)
+				break
+			}
+
+			for _, i := range menList {
 				list += fmt.Sprintf("%s\n", i)
 			}
 			msg.Text = "*TEST* bold"
 			msg.ParseMode = "markdown"
-			_, err := bot.Send(msg)
+			_, err = bot.Send(msg)
 			if err != nil {
 				msg.Text = fmt.Sprintf("Не могу отправить сообщение: %s", err)
 			}

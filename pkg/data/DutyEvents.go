@@ -45,7 +45,10 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 	}
 
 	// Creating slice with sorted men on-duty
-	menOnDuty := genListMenOnDuty(*t.dutyMen)
+	menOnDuty, err := genListMenOnDuty(*t.dutyMen)
+	if err != nil {
+		return err
+	}
 
 	// Generate slice with valid menOnDuty count iteration (following length of duty days)
 	tempMen := genContListMenOnDuty(menOnDuty, contDays)

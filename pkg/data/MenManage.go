@@ -196,7 +196,7 @@ func (t *CalData) reIndexManOnDutyList() {
 }
 
 // ShowMenOnDutyList Show current men on duty list
-func (t *CalData) ShowMenOnDutyList() []string {
+func (t *CalData) ShowMenOnDutyList() ([]string, error) {
 	return genListMenOnDuty(*t.dutyMen)
 }
 
@@ -225,12 +225,16 @@ func checkOffDutyManInList(man string, offDutyList *[]string) bool {
 }
 
 // Creating slice with sorted men on-duty
-func genListMenOnDuty(m []DutyMan) []string {
+func genListMenOnDuty(m []DutyMan) ([]string, error) {
 	var retStr []string
+
+	if m == nil || len(m) == 0 {
+		return nil, fmt.Errorf("unable to load men list, please load it first")
+	}
 	for _, man := range m {
 		retStr = append(retStr, man.Name)
 	}
-	return retStr
+	return retStr, nil
 }
 
 // Generate slice with valid menOnDuty count iteration (following length of duty days)
