@@ -118,7 +118,7 @@ func (t *CalData) SaveMenList() (*string, error) {
 	return &event.HtmlLink, nil
 }
 
-// LoadMenList load duty order data
+// LoadMenList is loading previously saved (at Google Calendar) men duty data into DutyMan struct
 func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 	var men []DutyMan
 	tn, err := time.Parse(DateShort, SaveListDate)
@@ -282,4 +282,14 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 		manIndex = 0
 	}
 	return manIndex, nil
+}
+
+// IsInDutyList returns true if provided Telegram ID is in duty list
+func (t *CalData) IsInDutyList(tgID string) bool {
+	for _, man := range *t.dutyMen {
+		if man.TgID == tgID {
+			return true
+		}
+	}
+	return false
 }
