@@ -29,33 +29,6 @@ func Test_checkOffDutyManInList(t *testing.T) {
 	}
 }
 
-func Test_genListMenOnDuty(t *testing.T) {
-	testMap := &[]DutyMan{
-		{Index: 10, Name: "One", TgID: "TG_ONE"},
-		{Index: 20, Name: "Two", TgID: "TG_TWO"},
-		{Index: 30, Name: "Three", TgID: "TG_THREE"},
-	}
-	wantString := []string{"One", "Two", "Three"}
-
-	type args struct {
-		m []DutyMan
-	}
-	tests := []struct {
-		name string
-		args args
-		want []string
-	}{
-		{name: "Check returned strings", args: args{m: *testMap}, want: wantString},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := genListMenOnDuty(tt.args.m); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("genListMenOnDuty() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_genContListMenOnDuty(t *testing.T) {
 	testString := []string{"Vasia", "Petia", "Slava"}
 	testInt := 3
@@ -173,6 +146,38 @@ func Test_removeMan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeMan(tt.args.sl, tt.args.s); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("removeMan() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_genListMenOnDuty(t *testing.T) {
+	testMap := &[]DutyMan{
+		{Index: 10, Name: "One", TgID: "TG_ONE"},
+		{Index: 20, Name: "Two", TgID: "TG_TWO"},
+		{Index: 30, Name: "Three", TgID: "TG_THREE"},
+	}
+	wantString := []string{"One", "Two", "Three"}
+	type args struct {
+		m []DutyMan
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{name: "Check returned strings", args: args{m: *testMap}, want: wantString, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := genListMenOnDuty(tt.args.m)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("genListMenOnDuty() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("genListMenOnDuty() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
