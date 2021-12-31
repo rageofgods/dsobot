@@ -31,6 +31,12 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
 		_, err := t.dc.SaveMenList()
 		if err != nil {
 			log.Printf("can't save men list: %v", err)
+		} else {
+			// Send message to admins
+			err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь @%s успешно добавлен", uTgID))
+			if err != nil {
+				log.Printf("unable to send message admins group: %v", err)
+			}
 		}
 	} else {
 		msg = tgbotapi.NewMessage(chatId, "Доступ не согласован.")
@@ -72,6 +78,12 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64) {
 			_, err := t.dc.SaveMenList()
 			if err != nil {
 				log.Printf("can't save men list: %v", err)
+			} else {
+				// Send message to admins
+				err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь @%s произвел выход", uTgID))
+				if err != nil {
+					log.Printf("unable to send message admins group: %v", err)
+				}
 			}
 		}
 	} else {
