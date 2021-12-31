@@ -7,25 +7,20 @@ import (
 
 // handle '/start' command
 func (t *TgBot) handleStart() {
-	// Generate commands list with descriptions
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.Chat.UserName) {
+		return
+	}
+
+	// Create welcome message
 	var cmdList string
 	for i, cmd := range t.BotCommands().commands {
 		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command, cmd.description)
 	}
 
 	// Check if user is registered
-	if !t.dc.IsInDutyList(t.update.Message.Chat.UserName) {
-		t.msg.Text = "Вы не зарегестрированы.\n" +
-			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
-			"После согласования, вам будут доступны следующие команды:\n" +
-			cmdList
-		return
-	}
-
-	// Create welcome message
-	t.msg.Text = "Привет, это Telegram бот команды DSO.\n" +
-		"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
-		"После согласования, вам будут доступны следующие команды:\n" +
+	t.msg.Text = "Вы уже зарегестрированы.\n\n" +
+		"Вам доступны следующие команды:\n" +
 		cmdList
 }
 
@@ -81,6 +76,11 @@ func (t *TgBot) handleRegister() {
 }
 
 func (t *TgBot) handleUnregister() {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.Chat.UserName) {
+		return
+	}
+
 	// Create returned data with Yes/No button
 	callbackDataYes := &callbackMessage{
 		UserId:     t.update.Message.From.ID,

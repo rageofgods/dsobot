@@ -72,3 +72,21 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 	}
 	return nil
 }
+
+func (t *TgBot) checkIsUserRegistered(tgID string) bool {
+	// Generate commands list with descriptions
+	var cmdList string
+	for i, cmd := range t.BotCommands().commands {
+		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command, cmd.description)
+	}
+
+	// Check if user is registered
+	if !t.dc.IsInDutyList(tgID) {
+		t.msg.Text = "Вы не зарегестрированы.\n" +
+			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
+			"После согласования, вам будут доступны следующие команды:\n" +
+			cmdList
+		return false
+	}
+	return true
+}
