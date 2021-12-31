@@ -15,22 +15,23 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
 		log.Printf("unable to get user info: %v", err)
 	}
 
+	// Create human-readable variables
 	uTgID := u.User.UserName
 	uFirstName := u.User.FirstName
 	uLastName := u.User.LastName
 
-	var uFullName string
-	if uLastName == "" {
-		log.Println("callbackRegister: user has no last name")
-		uFullName = uFirstName
-	} else {
-		uFullName = uFirstName + " " + uLastName
-	}
+	// Generate correct username
+	uFullName := genUserFullName(uFirstName, uLastName)
 
+	// Generate answer to user who was requested access
 	var msg tgbotapi.MessageConfig
 	if answer == inlineKeyboardYes {
 		msg = tgbotapi.NewMessage(chatId, "Запрошенный доступ был согласован.")
-		t.dc.AddManOnDuty(uFullName, uTgID)
+		t.dc.AddManOnDuty(uFullName, uTgID) // Add user to duty list
+		_, err := t.dc.SaveMenList()        // Save new data
+		if err != nil {
+			log.Printf("cant' save men list: %v", err)
+		}
 	} else {
 		msg = tgbotapi.NewMessage(chatId, "Доступ не согласован.")
 	}

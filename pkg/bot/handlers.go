@@ -9,15 +9,21 @@ import (
 
 // handle '/start' command
 func (t *TgBot) handleStart() {
-	if !t.dc.IsInDutyList(t.update.Message.Chat.UserName) {
-		t.msg.Text = "Вы не зарегены"
-		return
-	}
 	// Generate commands list with descriptions
 	var cmdList string
 	for i, cmd := range t.BotCommands().commands {
 		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command, cmd.description)
 	}
+
+	// Check if user is registered
+	if !t.dc.IsInDutyList(t.update.Message.Chat.UserName) {
+		t.msg.Text = "Вы не зарегестрированы.\n" +
+			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
+			"После согласования, вам будут доступны следующие команды:\n" +
+			cmdList
+		return
+	}
+
 	// Create welcome message
 	t.msg.Text = "Привет, это Telegram бот команды DSO.\n" +
 		"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
@@ -27,6 +33,13 @@ func (t *TgBot) handleStart() {
 
 // Register new user as DSO team member
 func (t *TgBot) handleRegister() {
+	// Check if user is already registered
+	if t.dc.IsInDutyList(t.update.Message.Chat.UserName) {
+		t.msg.Text = "Вы уже зарегестрированы.\n" +
+			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
+		return
+	}
+
 	// Send info to user
 	t.msg.Text = "Запрос на добавление отправлен администраторам.\n" +
 		"По факту согласования вам придет уведомление.\n"
@@ -75,11 +88,18 @@ func (t *TgBot) handleRegister() {
 		),
 	)
 
+	// Create human-readable variables
+	uTgID := t.update.Message.Chat.UserName
+	uFirstName := t.update.Message.Chat.FirstName
+	uLastName := t.update.Message.Chat.LastName
+
+	// Generate correct username
+	uFullName := genUserFullName(uFirstName, uLastName)
+
 	t.msg.ReplyMarkup = numericKeyboard
-	t.msg.Text = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n *@%s* (%s %s).\n\n Добавить?",
-		t.update.Message.Chat.UserName,
-		t.update.Message.Chat.LastName,
-		t.update.Message.Chat.FirstName)
+	t.msg.Text = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n *@%s* (%s).\n\n Добавить?",
+		uTgID,
+		uFullName)
 	t.msg.ChatID = t.adminGroupId
 }
 
