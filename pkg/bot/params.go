@@ -17,6 +17,7 @@ func (t *TgBot) BotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: "start", description: "Show welcome message", handleFunc: t.handleStart},
 		{command: "register", description: "Register an user as DSO member team", handleFunc: t.handleRegister},
+		{command: "unregister", description: "Unregister user", handleFunc: t.handleUnregister},
 	}}
 }
 
@@ -25,7 +26,8 @@ const (
 	inlineKeyboardYes = "1"
 	inlineKeyboardNo  = "0"
 
-	callbackHandleRegister = "fhr"
+	callbackHandleRegister   = "fhr"
+	callbackHandleUnregister = "fhu"
 )
 
 // Structure for saving callback data (json is shortened to be able to accommodate to 64b Telegram data limit)

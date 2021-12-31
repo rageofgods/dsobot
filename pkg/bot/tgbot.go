@@ -108,6 +108,8 @@ func (t *TgBot) StartBot() {
 			switch message.FromHandle {
 			case callbackHandleRegister:
 				t.callbackRegister(message.Answer, message.ChatId, message.UserId)
+			case callbackHandleUnregister:
+				t.callbackUnregister(message.Answer, message.ChatId, message.UserId)
 			}
 		}
 	}

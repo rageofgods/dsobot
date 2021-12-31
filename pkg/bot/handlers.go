@@ -1,9 +1,7 @@
 package bot
 
 import (
-	"encoding/json"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
@@ -62,31 +60,10 @@ func (t *TgBot) handleRegister() {
 		FromHandle: callbackHandleRegister,
 	}
 
-	// Generate jsons for data
-	jsonYes, err := json.Marshal(callbackDataYes)
+	numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
 	if err != nil {
-		log.Println(err)
+		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
-	jsonNo, err := json.Marshal(callbackDataNo)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-	if len(jsonNo) > 64 {
-		log.Printf("handleRegister jsonNo size is greater then 64b: %v", len(jsonNo))
-		return
-	} else if len(jsonYes) > 64 {
-		log.Printf("handleRegister jsonNo size is greater then 64b: %v", len(jsonNo))
-		return
-	}
-
-	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Yes", string(jsonYes)),
-			tgbotapi.NewInlineKeyboardButtonData("No", string(jsonNo)),
-		),
-	)
 
 	// Create human-readable variables
 	uTgID := t.update.Message.Chat.UserName
@@ -101,6 +78,30 @@ func (t *TgBot) handleRegister() {
 		uTgID,
 		uFullName)
 	t.msg.ChatID = t.adminGroupId
+}
+
+func (t *TgBot) handleUnregister() {
+	// Create returned data with Yes/No button
+	callbackDataYes := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		Answer:     inlineKeyboardYes,
+		FromHandle: callbackHandleUnregister,
+	}
+	callbackDataNo := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		Answer:     inlineKeyboardNo,
+		FromHandle: callbackHandleUnregister,
+	}
+
+	numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	t.msg.ReplyMarkup = numericKeyboard
+	t.msg.Text = fmt.Sprintf("Вы уверены, что хотите выйти?")
 }
 
 // handle unknown command

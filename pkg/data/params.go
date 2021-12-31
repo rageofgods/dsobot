@@ -17,16 +17,16 @@ type CalTag string
 
 // DutyMan struct for data save
 type DutyMan struct {
-	Index   int
-	Name    string
-	TgID    string
-	OffDuty *[]OffDutyData
+	Index   int            `json:"index"`
+	Name    string         `json:"name"`
+	TgID    string         `json:"tg-id"`
+	OffDuty *[]OffDutyData `json:"off-d,omitempty"`
 }
 
 // OffDutyData holds off-duty data save
 type OffDutyData struct {
-	OffDutyStart string
-	OffDutyEnd   string
+	OffDutyStart string `json:"off-d-s"`
+	OffDutyEnd   string `json:"off-d-e"`
 }
 
 const (
