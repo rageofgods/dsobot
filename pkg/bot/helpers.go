@@ -74,20 +74,49 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 }
 
 func (t *TgBot) checkIsUserRegistered(tgID string) bool {
-	// Generate commands list with descriptions
-	var cmdList string
-	for i, cmd := range t.BotCommands().commands {
-		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command, cmd.description)
-	}
+	// Create help message
+	cmdList := t.genHelpCmdText()
 
 	// Check if user is registered
 	if !t.dc.IsInDutyList(tgID) {
-		t.msg.Text = "Вы не зарегестрированы.\n" +
+		t.msg.Text = "Привет.\n" +
+			"Это бот команды DSO.\n\n" +
+			"*Вы не зарегестрированы.*\n\n" +
 			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
-			"После согласования, вам будут доступны следующие команды:\n" +
+			"*После согласования*, вам будут доступны следующие команды:\n" +
 			cmdList
 		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return false
 	}
 	return true
+}
+
+func (t *TgBot) genHelpCmdText() string {
+	var cmdList string
+	for i, cmd := range t.BotCommands().commands {
+		var argList string
+		if cmd.command.args != nil {
+			argList = fmt.Sprintf("Возможные значения аргументов:\n")
+			for index, arg := range *cmd.command.args {
+				argList += fmt.Sprintf("%d: *%s* %q\n",
+					index+1,
+					arg.name,
+					arg.description,
+				)
+			}
+		}
+		// Append <argument> suffix to command help is any arguments was found
+		var argType string
+		if argList != "" {
+			argType = " <аргумент>"
+		}
+		// Generate lit of commands
+		cmdList += fmt.Sprintf("%d: */%s*%s - %s\n%s",
+			i+1,
+			cmd.command.name,
+			argType,
+			cmd.description,
+			argList)
+	}
+	return cmdList
 }

@@ -14,15 +14,27 @@ func (t *TgBot) handleStart(cmdArgs string) {
 		return
 	}
 
-	// Create welcome message
-	var cmdList string
-	for i, cmd := range t.BotCommands().commands {
-		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command.name, cmd.description)
-	}
+	cmdList := t.genHelpCmdText()
 
 	// Check if user is registered
-	t.msg.Text = "Вы уже зарегестрированы.\n\n" +
+	t.msg.Text = "*Вы уже зарегестрированы.*\n\n" +
 		"Вам доступны следующие команды:\n" +
+		cmdList
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// handle '/help' command
+func (t *TgBot) handleHelp(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+
+	cmdList := t.genHelpCmdText()
+
+	// Check if user is registered
+	t.msg.Text = "Вам доступны следующие команды управления:\n" +
 		cmdList
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
@@ -116,6 +128,34 @@ func (t *TgBot) handleUnregister(cmdArgs string) {
 	t.msg.ReplyMarkup = numericKeyboard
 	t.msg.Text = fmt.Sprintf("Вы уверены, что хотите выйти?")
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// Parent function for handling args commands
+func (t *TgBot) handleWhoIsOn(cmdArgs string) {
+	bc := t.BotCommands()
+	var isArgValid bool
+	for _, cmd := range bc.commands {
+		if cmd.command.args != nil {
+			for _, arg := range *cmd.command.args {
+				// Check if user command arg is supported
+				if cmdArgs == string(arg.name) {
+					// Run dedicated child argument function
+					arg.handleFunc()
+					isArgValid = true
+				}
+			}
+		}
+	}
+	// If provided argument is missing or invalid show error to user
+	if !isArgValid {
+		if cmdArgs != "" {
+			t.msg.Text = fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
+			t.msg.ReplyToMessageID = t.update.Message.MessageID
+		} else {
+			t.msg.Text = fmt.Sprintf("Необходимо указать аргумент")
+			t.msg.ReplyToMessageID = t.update.Message.MessageID
+		}
+	}
 }
 
 // handle unknown command

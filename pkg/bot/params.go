@@ -34,10 +34,18 @@ func (t *TgBot) BotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: &cmd{name: botCmdStart, args: nil},
 			description: "Show welcome message", handleFunc: t.handleStart},
+		{command: &cmd{name: botCmdHelp, args: nil},
+			description: "Show help message", handleFunc: t.handleHelp},
 		{command: &cmd{name: botCmdRegister, args: nil},
 			description: "Register an user as DSO member team", handleFunc: t.handleRegister},
 		{command: &cmd{name: botCmdUnregister, args: nil},
 			description: "Unregister user", handleFunc: t.handleUnregister},
+		{command: &cmd{name: botCmdWhoIsOnDuty, args: &[]arg{
+			{name: botCmdArgDuty, handleFunc: t.handleWhoIsOnDuty, description: "Дежурство"},
+			{name: botCmdArgValidation, handleFunc: t.handleWhoIsOnValidation, description: "Валидация задач"},
+		}},
+			description: "Shows who is on duty of specified type",
+			handleFunc:  t.handleWhoIsOn},
 	}}
 }
 
@@ -45,7 +53,7 @@ func (t *TgBot) BotCommands() *botCommands {
 func (t *TgBot) AdminBotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: &cmd{name: botCmdHelp, args: nil},
-			description: "Show command list", handleFunc: t.adminHandleHelp},
+			description: "Show command help", handleFunc: t.adminHandleHelp},
 		{command: &cmd{name: botCmdList, args: nil},
 			description: "Show members list", handleFunc: t.adminHandleList},
 		{command: &cmd{name: botCmdRollout, args: &[]arg{
@@ -69,12 +77,13 @@ const (
 
 // Bot available commands
 const (
-	botCmdStart      tCmd = "start"
-	botCmdRegister   tCmd = "register"
-	botCmdUnregister tCmd = "unregister"
-	botCmdHelp       tCmd = "help"
-	botCmdList       tCmd = "list"
-	botCmdRollout    tCmd = "rollout"
+	botCmdStart       tCmd = "start"
+	botCmdRegister    tCmd = "register"
+	botCmdUnregister  tCmd = "unregister"
+	botCmdWhoIsOnDuty tCmd = "whoison"
+	botCmdHelp        tCmd = "help"
+	botCmdList        tCmd = "list"
+	botCmdRollout     tCmd = "rollout"
 )
 
 const (

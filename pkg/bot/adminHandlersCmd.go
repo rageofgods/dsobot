@@ -9,33 +9,7 @@ import (
 func (t *TgBot) adminHandleHelp(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Create help message
-	var cmdList string
-	for i, cmd := range t.AdminBotCommands().commands {
-		var argList string
-		if cmd.command.args != nil {
-			argList = fmt.Sprintf("Возможные значения аргументов:\n")
-			for index, arg := range *cmd.command.args {
-				argList += fmt.Sprintf("%d: *%s* %q\n",
-					index+1,
-					arg.name,
-					arg.description)
-			}
-		}
-		// Append <argument> suffix to command help is any arguments was found
-		var argType string
-		if argList != "" {
-			argType = " <аргумент>"
-		}
-		// Generate lit of commands
-		cmdList += fmt.Sprintf("%d: */%s*%s - %s\n%s",
-			i+1,
-			cmd.command.name,
-			argType,
-			cmd.description,
-			argList)
-	}
-
-	// Check if user is registered
+	cmdList := t.genHelpCmdText()
 	t.msg.Text = "Доступны следующие команды администрирования:\n\n" +
 		cmdList
 }
@@ -87,19 +61,4 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		}
 	}
-}
-
-// Handle 'duty' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutDuty() {
-	t.msg.Text = "DUTY"
-}
-
-// Handle 'validation' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutValidation() {
-	t.msg.Text = "Validation"
-}
-
-// Handle 'nwd' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutNonWorkingDay() {
-	t.msg.Text = "NWD"
 }
