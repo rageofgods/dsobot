@@ -66,17 +66,36 @@ func (t *TgBot) StartBot() {
 
 			// Go through struct of allowed commands
 			bc := t.BotCommands()
-			var isCmdFound bool
-			for _, cmd := range bc.commands {
-				if str.ToLower(update.Message.Command()) == cmd.command {
-					cmd.handleFunc()
-					isCmdFound = true
-					break
+			abc := t.AdminBotCommands()
+
+			// Handle admin commands
+			if update.Message.Chat.ID == t.adminGroupId {
+				var isCmdFound bool
+				for _, cmd := range abc.commands {
+					if str.ToLower(update.Message.Command()) == cmd.command {
+						cmd.handleFunc()
+						isCmdFound = true
+						break
+					}
 				}
-			}
-			// Show not found message
-			if !isCmdFound {
-				t.handleDefault()
+				// Show not found message
+				if !isCmdFound {
+					t.handleNotFound()
+				}
+				// Handle ordinary user commands
+			} else {
+				var isCmdFound bool
+				for _, cmd := range bc.commands {
+					if str.ToLower(update.Message.Command()) == cmd.command {
+						cmd.handleFunc()
+						isCmdFound = true
+						break
+					}
+				}
+				// Show not found message
+				if !isCmdFound {
+					t.handleNotFound()
+				}
 			}
 
 			// Okay, we're sending our message off! We don't care about the message

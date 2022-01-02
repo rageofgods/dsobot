@@ -5,13 +5,14 @@ import (
 )
 
 // Return first and last date for provided months period.
-// startMonth is optional. Starts from current Now() month if not provided.
+// startYearMonth is optional. Starts from current Now() month if not provided.
 func firstLastMonthDay(monthsCount int, startYearMonth ...int) (firstDay *time.Time, lastDay *time.Time, err error) {
 	tn := time.Now()
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
 		return nil, nil, err
 	}
+	// If startYearMonth not provided let init it from time.Now()
 	if len(startYearMonth) == 0 {
 		startYearMonth = append(startYearMonth, tn.Year(), int(tn.Month()))
 	}

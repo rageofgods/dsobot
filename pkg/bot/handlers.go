@@ -105,6 +105,6 @@ func (t *TgBot) handleUnregister() {
 }
 
 // handle unknown command
-func (t *TgBot) handleDefault() {
+func (t *TgBot) handleNotFound() {
 	t.msg.Text = "Команда не найдена"
 }

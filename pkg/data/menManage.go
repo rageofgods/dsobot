@@ -32,6 +32,7 @@ func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 }
 
 // WhoWasOnDuty Returns man name who was the last on duty in the previous month with the number of days done.
+// TODO add ability to check last duty-man from specific day (if someone is leaves team in the middle of the month)
 func (t *CalData) WhoWasOnDuty(lastYear int,
 	lastMonth time.Month, dutyTag CalTag) (name string, daysDone int, err error) {
 	// Get first and last date of provided month

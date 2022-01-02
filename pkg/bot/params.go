@@ -12,12 +12,20 @@ type botCommands struct {
 	commands []botCommand
 }
 
-// BotCommands returns slice of botCommand struct
+// BotCommands returns slice of ordinary user botCommand struct
 func (t *TgBot) BotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: "start", description: "Show welcome message", handleFunc: t.handleStart},
 		{command: "register", description: "Register an user as DSO member team", handleFunc: t.handleRegister},
 		{command: "unregister", description: "Unregister user", handleFunc: t.handleUnregister},
+	}}
+}
+
+// AdminBotCommands returns slice of admin botCommand struct
+func (t *TgBot) AdminBotCommands() *botCommands {
+	return &botCommands{commands: []botCommand{
+		{command: "help", description: "Show command list", handleFunc: t.adminHandleHelp},
+		{command: "list", description: "Show members list", handleFunc: t.adminHandleList},
 	}}
 }
 
