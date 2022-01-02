@@ -2,13 +2,14 @@ package bot
 
 import (
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
 // handle '/start' command
 func (t *TgBot) handleStart() {
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.Chat.UserName) {
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
 		return
 	}
 
@@ -22,20 +23,23 @@ func (t *TgBot) handleStart() {
 	t.msg.Text = "Вы уже зарегестрированы.\n\n" +
 		"Вам доступны следующие команды:\n" +
 		cmdList
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
 // Register new user as DSO team member
 func (t *TgBot) handleRegister() {
 	// Check if user is already registered
-	if t.dc.IsInDutyList(t.update.Message.Chat.UserName) {
+	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
 		t.msg.Text = "Вы уже зарегестрированы.\n" +
 			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return
 	}
 
 	// Send info to user
 	t.msg.Text = "Запрос на добавление отправлен администраторам.\n" +
 		"По факту согласования вам придет уведомление.\n"
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 	_, err := t.bot.Send(t.msg)
 	if err != nil {
 		log.Println(err)
@@ -45,12 +49,14 @@ func (t *TgBot) handleRegister() {
 	callbackDataYes := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
 		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
 		Answer:     inlineKeyboardYes,
 		FromHandle: callbackHandleRegister,
 	}
 	callbackDataNo := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
 		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
 		Answer:     inlineKeyboardNo,
 		FromHandle: callbackHandleRegister,
 	}
@@ -61,23 +67,25 @@ func (t *TgBot) handleRegister() {
 	}
 
 	// Create human-readable variables
-	uTgID := t.update.Message.Chat.UserName
-	uFirstName := t.update.Message.Chat.FirstName
-	uLastName := t.update.Message.Chat.LastName
+	uTgID := t.update.Message.From.UserName
+	uFirstName := t.update.Message.From.FirstName
+	uLastName := t.update.Message.From.LastName
 
 	// Generate correct username
 	uFullName := genUserFullName(uFirstName, uLastName)
 
+	// Send message to admins with inlineKeyboard question
+	*t.msg = tgbotapi.NewMessage(t.adminGroupId,
+		fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n *@%s* (%s).\n\n Добавить?",
+			uTgID,
+			uFullName))
 	t.msg.ReplyMarkup = numericKeyboard
-	t.msg.Text = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n *@%s* (%s).\n\n Добавить?",
-		uTgID,
-		uFullName)
-	t.msg.ChatID = t.adminGroupId
+	t.msg.ParseMode = "markdown"
 }
 
 func (t *TgBot) handleUnregister() {
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.Chat.UserName) {
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
 		return
 	}
 
@@ -85,12 +93,14 @@ func (t *TgBot) handleUnregister() {
 	callbackDataYes := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
 		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
 		Answer:     inlineKeyboardYes,
 		FromHandle: callbackHandleUnregister,
 	}
 	callbackDataNo := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
 		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
 		Answer:     inlineKeyboardNo,
 		FromHandle: callbackHandleUnregister,
 	}
@@ -102,9 +112,11 @@ func (t *TgBot) handleUnregister() {
 
 	t.msg.ReplyMarkup = numericKeyboard
 	t.msg.Text = fmt.Sprintf("Вы уверены, что хотите выйти?")
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
 // handle unknown command
 func (t *TgBot) handleNotFound() {
 	t.msg.Text = "Команда не найдена"
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }

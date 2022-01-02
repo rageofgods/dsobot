@@ -86,6 +86,7 @@ func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
 			"После согласования, вам будут доступны следующие команды:\n" +
 			cmdList
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return false
 	}
 	return true

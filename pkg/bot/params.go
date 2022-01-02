@@ -42,6 +42,7 @@ const (
 type callbackMessage struct {
 	Answer     string `json:"a"`
 	ChatId     int64  `json:"c"`
+	MessageId  int    `json:"m"`
 	UserId     int64  `json:"u"`
 	FromHandle string `json:"f"`
 }

@@ -82,8 +82,7 @@ func (t *TgBot) StartBot() {
 				if !isCmdFound {
 					t.handleNotFound()
 				}
-				// Handle ordinary user commands
-			} else {
+			} else { // Handle ordinary user commands
 				var isCmdFound bool
 				for _, cmd := range bc.commands {
 					if str.ToLower(update.Message.Command()) == cmd.command {
@@ -126,9 +125,9 @@ func (t *TgBot) StartBot() {
 			// Checking where callback come from and run specific function
 			switch message.FromHandle {
 			case callbackHandleRegister:
-				t.callbackRegister(message.Answer, message.ChatId, message.UserId)
+				t.callbackRegister(message.Answer, message.ChatId, message.UserId, message.MessageId)
 			case callbackHandleUnregister:
-				t.callbackUnregister(message.Answer, message.ChatId, message.UserId)
+				t.callbackUnregister(message.Answer, message.ChatId, message.UserId, message.MessageId)
 			}
 		}
 	}

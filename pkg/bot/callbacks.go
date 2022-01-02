@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
+func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, messageId int) {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -25,6 +25,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
 	var msg tgbotapi.MessageConfig
 	if answer == inlineKeyboardYes {
 		msg = tgbotapi.NewMessage(chatId, "Запрошенный доступ был согласован.")
+		msg.ReplyToMessageID = messageId
 		// Add user to duty list
 		t.dc.AddManOnDuty(uFullName, uTgID)
 		// Save new data
@@ -40,6 +41,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
 		}
 	} else {
 		msg = tgbotapi.NewMessage(chatId, "Доступ не согласован.")
+		msg.ReplyToMessageID = messageId
 	}
 
 	// Send a message to user who was request access.
@@ -55,7 +57,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64) {
 	}
 }
 
-func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64) {
+func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, messageId int) {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -72,8 +74,10 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64) {
 		if err != nil {
 			msg = tgbotapi.NewMessage(chatId,
 				fmt.Sprintf("Возникла ошибка при попытке произвести выход: %s", err))
+			msg.ReplyToMessageID = messageId
 		} else {
 			msg = tgbotapi.NewMessage(chatId, "Выход произведен успешно")
+			msg.ReplyToMessageID = messageId
 			// Save new data
 			_, err := t.dc.SaveMenList()
 			if err != nil {
@@ -88,6 +92,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64) {
 		}
 	} else {
 		msg = tgbotapi.NewMessage(chatId, "Вы отменили выход")
+		msg.ReplyToMessageID = messageId
 	}
 
 	// Send a message to user who was request access.
