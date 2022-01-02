@@ -72,8 +72,8 @@ func (t *TgBot) StartBot() {
 			if update.Message.Chat.ID == t.adminGroupId {
 				var isCmdFound bool
 				for _, cmd := range abc.commands {
-					if str.ToLower(update.Message.Command()) == cmd.command {
-						cmd.handleFunc()
+					if str.ToLower(update.Message.Command()) == string(cmd.command.name) {
+						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()))
 						isCmdFound = true
 						break
 					}
@@ -85,8 +85,8 @@ func (t *TgBot) StartBot() {
 			} else { // Handle ordinary user commands
 				var isCmdFound bool
 				for _, cmd := range bc.commands {
-					if str.ToLower(update.Message.Command()) == cmd.command {
-						cmd.handleFunc()
+					if str.ToLower(update.Message.Command()) == string(cmd.command.name) {
+						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()))
 						isCmdFound = true
 						break
 					}

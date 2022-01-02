@@ -7,7 +7,8 @@ import (
 )
 
 // handle '/start' command
-func (t *TgBot) handleStart() {
+func (t *TgBot) handleStart(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
 		return
@@ -16,7 +17,7 @@ func (t *TgBot) handleStart() {
 	// Create welcome message
 	var cmdList string
 	for i, cmd := range t.BotCommands().commands {
-		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command, cmd.description)
+		cmdList += fmt.Sprintf("%d: */%s* - %s\n", i+1, cmd.command.name, cmd.description)
 	}
 
 	// Check if user is registered
@@ -27,7 +28,8 @@ func (t *TgBot) handleStart() {
 }
 
 // Register new user as DSO team member
-func (t *TgBot) handleRegister() {
+func (t *TgBot) handleRegister(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already registered
 	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
 		t.msg.Text = "Вы уже зарегестрированы.\n" +
@@ -83,7 +85,8 @@ func (t *TgBot) handleRegister() {
 	t.msg.ParseMode = "markdown"
 }
 
-func (t *TgBot) handleUnregister() {
+func (t *TgBot) handleUnregister(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
 		return
