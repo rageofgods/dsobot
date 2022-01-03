@@ -45,7 +45,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
 					// Run dedicated child argument function
-					arg.handleFunc()
+					arg.handleFunc(cmdArgs)
 					isArgValid = true
 				}
 			}

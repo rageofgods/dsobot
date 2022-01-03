@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strings"
 )
 
 // handle '/start' command
@@ -137,11 +138,27 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 	for _, cmd := range bc.commands {
 		if cmd.command.args != nil {
 			for _, arg := range *cmd.command.args {
-				// Check if user command arg is supported
-				if cmdArgs == string(arg.name) {
-					// Run dedicated child argument function
-					arg.handleFunc()
-					isArgValid = true
+				s := strings.Split(cmdArgs, " ")
+				// Check if we have two arguments (type first, date second)
+				if len(s) == 2 {
+					if s[0] == string(arg.name) {
+						// Check args for correct date format
+						_, err := checkArgHasDate(cmdArgs)
+						if err != nil {
+							t.msg.Text = fmt.Sprintf("%v", err)
+							t.msg.ReplyToMessageID = t.update.Message.MessageID
+							return
+						}
+						// Run dedicated child argument function
+						arg.handleFunc(cmdArgs)
+						isArgValid = true
+					}
+				} else if len(s) == 1 {
+					if s[0] == string(arg.name) {
+						// Run dedicated child argument function
+						arg.handleFunc(cmdArgs)
+						isArgValid = true
+					}
 				}
 			}
 		}

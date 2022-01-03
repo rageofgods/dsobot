@@ -5,6 +5,8 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strings"
+	"time"
 )
 
 // Checks if user has First/Last name and return correct full name
@@ -119,4 +121,28 @@ func (t *TgBot) genHelpCmdText() string {
 			argList)
 	}
 	return cmdList
+}
+
+// Check if we have date in the command argument
+func checkArgHasDate(arg string) (time.Time, error) {
+	tn := time.Time{}
+	s := strings.Split(arg, " ")
+	if len(s) == 2 {
+		var err error
+		tn, err = time.Parse(botDataShort1, s[1])
+		if err != nil {
+			tn, err = time.Parse(botDataShort2, s[1])
+			if err != nil {
+				tn, err = time.Parse(botDataShort3, s[1])
+				if err != nil {
+					return tn, fmt.Errorf("Не удалось произвести парсинг даты: %v\n\n"+
+						"Доступны следующие форматы:\n"+
+						"*%q*\n"+
+						"*%q*\n"+
+						"*%q*\n", err, botDataShort1, botDataShort2, botDataShort3)
+				}
+			}
+		}
+	}
+	return tn, nil
 }

@@ -10,7 +10,7 @@ type cmd struct {
 type arg struct {
 	name        tArg
 	description string
-	handleFunc  func()
+	handleFunc  func(arg string)
 }
 
 // Custom types for commands and arguments
@@ -86,11 +86,17 @@ const (
 	botCmdRollout     tCmd = "rollout"
 )
 
+// Bot available args
 const (
 	botCmdArgDuty          tArg = "duty"
 	botCmdArgValidation    tArg = "validation"
 	botCmdArgNonWorkingDay tArg = "nwd"
 )
+
+// User provided data format for bot commands
+const botDataShort1 = "02012006"
+const botDataShort2 = "02.01.2006"
+const botDataShort3 = "02/02/2006"
 
 // Structure for saving callback data (json is shortened to be able to accommodate to 64b Telegram data limit)
 type callbackMessage struct {

@@ -7,7 +7,8 @@ import (
 )
 
 // Handle 'duty' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutDuty() {
+func (t *TgBot) adminHandleRolloutDuty(arg string) {
+	arg = "" // Ignore cmdArgs
 	t.msg.Text = "Создаю записи, ждите..."
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 	if _, err := t.bot.Send(t.msg); err != nil {
@@ -26,7 +27,8 @@ func (t *TgBot) adminHandleRolloutDuty() {
 }
 
 // Handle 'validation' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutValidation() {
+func (t *TgBot) adminHandleRolloutValidation(arg string) {
+	arg = "" // Ignore cmdArgs
 	t.msg.Text = "Создаю записи, ждите..."
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 	if _, err := t.bot.Send(t.msg); err != nil {
@@ -45,7 +47,8 @@ func (t *TgBot) adminHandleRolloutValidation() {
 }
 
 // Handle 'nwd' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutNonWorkingDay() {
+func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string) {
+	arg = "" // Ignore cmdArgs
 	t.msg.Text = "Создаю записи, ждите..."
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 	if _, err := t.bot.Send(t.msg); err != nil {

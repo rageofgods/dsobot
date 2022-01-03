@@ -61,7 +61,7 @@ func (t *TgBot) StartBot() {
 
 			// Init empty message to fill up it later
 			*t.msg = tgbotapi.NewMessage(update.Message.Chat.ID, "")
-			// Set default text mode to markdown
+			// Set default name mode to markdown
 			t.msg.ParseMode = "markdown"
 
 			// Go through struct of allowed commands
