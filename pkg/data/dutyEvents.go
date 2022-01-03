@@ -31,14 +31,6 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 		return err
 	}
 
-	var clrID string
-	switch dutyTag {
-	case OnValidationTag:
-		clrID = CalPurple
-	case OnDutyTag:
-		clrID = CalBlue
-	}
-
 	// Check if men on-duty is initialized
 	if t.dutyMen == nil {
 		return fmt.Errorf("you need to load on-duty men list first")
@@ -76,15 +68,30 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 		if err != nil {
 			return err
 		}
+
+		// Check if all on-duty men is out off duty
+		var m int
+		for _, offDutyMan := range offDutyMen {
+			for _, man := range menOnDuty {
+				if man == offDutyMan {
+					m++
+				}
+			}
+		}
+		// If all men is busy then go try next day
+		if m == len(menOnDuty) {
+			continue
+		}
+
 		if isOffDuty { // Check if current day have off-duty events
 			for i := 0; i < len(tempMen); i++ { // Run until next free duty man is found
 				if checkOffDutyManInList(tempMen[menCount], &offDutyMen) {
 					menCount++ // Proceed to next man if current man found in off-duty for today
 					if menCount == len(tempMen) {
-						break // If we reach end of men list (oll men is busy) let's go to the next day
+						menCount = 0 // Go to the first man if we reach end of out men list
 					}
 				} else {
-					break // Current man is able to do its duty
+					break // Current man is able to do his duty
 				}
 			}
 			if menCount == len(tempMen) {
@@ -92,8 +99,19 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 			}
 		}
 
+		// Set calendar event color based on duty type
+		var clrID string
+		switch dutyTag {
+		case OnValidationTag:
+			clrID = CalPurple
+		case OnDutyTag:
+			clrID = CalBlue
+		}
+
+		// Create calendar event
 		event := genEvent(tempMen[menCount], string(dutyTag), clrID, d.Format(DateShort), d.Format(DateShort))
 
+		// Add calendar event
 		_, err = t.addEvent(event)
 		if err != nil {
 			return err
