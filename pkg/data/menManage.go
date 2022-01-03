@@ -294,3 +294,20 @@ func (t *CalData) IsInDutyList(tgID string) bool {
 	}
 	return false
 }
+
+// Compare two slices and return true if they are equal (don't care about order)
+func equalLists(searchList []string, searchInList []string) bool {
+	var m int
+	for _, offDutyMan := range searchList {
+		for _, man := range searchInList {
+			if man == offDutyMan {
+				m++
+			}
+		}
+	}
+	// If count is equal len
+	if m == len(searchInList) {
+		return true
+	}
+	return false
+}

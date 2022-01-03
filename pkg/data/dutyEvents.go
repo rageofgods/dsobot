@@ -69,17 +69,9 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 			return err
 		}
 
-		// Check if all on-duty men is out off duty
-		var m int
-		for _, offDutyMan := range offDutyMen {
-			for _, man := range menOnDuty {
-				if man == offDutyMan {
-					m++
-				}
-			}
-		}
+		// Check if all on-duty men is out off they duty
 		// If all men is busy then go try next day
-		if m == len(menOnDuty) {
+		if equalLists(offDutyMen, menOnDuty) {
 			continue
 		}
 
