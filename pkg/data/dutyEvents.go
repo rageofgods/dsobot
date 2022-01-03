@@ -64,20 +64,20 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 			continue
 		}
 
-		isOffDuty, offDutyMen, err := t.checkDayTag(&d, OffDutyTag) // Check if current day is off-duty for current man
+		isOffDuty, menOffDuty, err := t.checkDayTag(&d, OffDutyTag) // Check if current day is off-duty for current man
 		if err != nil {
 			return err
 		}
 
 		// Check if all on-duty men is out off they duty
 		// If all men is busy then go try next day
-		if equalLists(offDutyMen, menOnDuty) {
+		if equalLists(menOffDuty, menOnDuty) {
 			continue
 		}
 
 		if isOffDuty { // Check if current day have off-duty events
 			for i := 0; i < len(tempMen); i++ { // Run until next free duty man is found
-				if checkOffDutyManInList(tempMen[menCount], &offDutyMen) {
+				if checkOffDutyManInList(tempMen[menCount], &menOffDuty) {
 					menCount++ // Proceed to next man if current man found in off-duty for today
 					if menCount == len(tempMen) {
 						menCount = 0 // Go to the first man if we reach end of out men list

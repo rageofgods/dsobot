@@ -164,6 +164,18 @@ func (t *CalData) AddManOnDuty(name string, tgID string) {
 	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
+// AddOffDutyToMan Add off-duty event data to man
+func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time.Time) {
+	stime := startDate.Format(DateShort)
+	etime := endDate.Format(DateShort)
+	for i, man := range *t.dutyMen {
+		if man.TgID == tgID {
+			m := &OffDutyData{OffDutyStart: stime, OffDutyEnd: etime}
+			(*t.dutyMen)[i].OffDuty = append((*t.dutyMen)[i].OffDuty, *m)
+		}
+	}
+}
+
 // Return new slice with removed element with provided index
 func removeMan(sl []DutyMan, s int) []DutyMan {
 	return append(sl[:s], sl[s+1:]...)

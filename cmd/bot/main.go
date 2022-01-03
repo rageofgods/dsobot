@@ -21,8 +21,8 @@ func main() {
 	calToken := os.Getenv("CAL_TOKEN")
 	calURL := os.Getenv("CAL_URL")
 	botToken := os.Getenv("BOT_TOKEN")
-	botAdminGroupId := os.Getenv("BOT_ADMIN_GROUP_ID")
-	id, err := strconv.ParseInt(botAdminGroupId, 10, 64) // Converting string to int64
+	botAdminGroupID := os.Getenv("BOT_ADMIN_GROUP_ID")
+	id, err := strconv.ParseInt(botAdminGroupID, 10, 64) // Converting string to int64
 	if err != nil {
 		panic(fmt.Sprintf("Can't convert admin groupId to int64: %v", err))
 	}

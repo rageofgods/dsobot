@@ -192,6 +192,13 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 		t.msg.Text = fmt.Sprintf("Не удалось добавить событие: %v", err)
 		return
 	}
+	// Save off-duty data
+	t.dc.AddOffDutyToMan(t.update.Message.From.UserName, timeRange[0], timeRange[1])
+	_, err = t.dc.SaveMenList()
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("Не удалось сохранить событие: %v", err)
+		return
+	}
 	t.msg.Text = "Событие добавлено успешно"
 }
 
