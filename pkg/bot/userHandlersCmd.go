@@ -15,7 +15,8 @@ func (t *TgBot) handleStart(cmdArgs string) {
 		return
 	}
 
-	cmdList := t.genHelpCmdText()
+	commands := t.BotCommands().commands
+	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
 	t.msg.Text = "*Вы уже зарегестрированы.*\n\n" +
@@ -32,7 +33,8 @@ func (t *TgBot) handleHelp(cmdArgs string) {
 		return
 	}
 
-	cmdList := t.genHelpCmdText()
+	commands := t.BotCommands().commands
+	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
 	t.msg.Text = "Вам доступны следующие команды управления:\n" +
@@ -173,6 +175,24 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		}
 	}
+}
+
+func (t *TgBot) handleAddOffDuty(cmdArgs string) {
+	timeRange, err := checkArgIsOffDutyRange(cmdArgs)
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("%v", err)
+		return
+	}
+	firstName := t.update.Message.From.FirstName
+	lastName := t.update.Message.From.LastName
+	fullName := genUserFullName(firstName, lastName)
+
+	err = t.dc.CreateOffDutyEvents(fullName, timeRange[0], timeRange[1])
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("Не удалось добавить событие: %v", err)
+		return
+	}
+	t.msg.Text = "Событие добавлено успешно"
 }
 
 // handle unknown command

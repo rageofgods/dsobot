@@ -77,7 +77,8 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 
 func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 	// Create help message
-	cmdList := t.genHelpCmdText()
+	commands := t.BotCommands().commands
+	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
 	if !t.dc.IsInDutyList(tgID) {
@@ -93,12 +94,12 @@ func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 	return true
 }
 
-func (t *TgBot) genHelpCmdText() string {
+func genHelpCmdText(commands []botCommand) string {
 	var cmdList string
-	for i, cmd := range t.BotCommands().commands {
+	for i, cmd := range commands {
 		var argList string
 		if cmd.command.args != nil {
-			argList = fmt.Sprintf("Возможные значения аргументов:\n")
+			argList = fmt.Sprintf("*Возможные значения аргумента:*\n")
 			for index, arg := range *cmd.command.args {
 				argList += fmt.Sprintf("%d: *%s* %q\n",
 					index+1,
@@ -107,13 +108,13 @@ func (t *TgBot) genHelpCmdText() string {
 				)
 			}
 		}
-		// Append <argument> suffix to command help is any arguments was found
+		// Append <argument> suffix to command help if any arguments was found
 		var argType string
 		if argList != "" {
-			argType = " <аргумент>"
+			argType = " *<аргумент>*"
 		}
 		// Generate lit of commands
-		cmdList += fmt.Sprintf("%d: */%s*%s - %s\n%s",
+		cmdList += fmt.Sprintf("*%d*: */%s*%s - %s\n%s",
 			i+1,
 			cmd.command.name,
 			argType,
@@ -145,4 +146,36 @@ func checkArgHasDate(arg string) (time.Time, error) {
 		}
 	}
 	return tn, nil
+}
+
+// Check if we have two dates in the command argument
+func checkArgIsOffDutyRange(arg string) ([]time.Time, error) {
+	var timeRange []time.Time
+	dates := strings.Split(arg, "-")
+	if len(dates) == 2 {
+		for _, date := range dates {
+			//var err error
+			parsedTime, err := time.Parse(botDataShort1, date)
+			if err != nil {
+				parsedTime, err = time.Parse(botDataShort2, date)
+				if err != nil {
+					parsedTime, err = time.Parse(botDataShort3, date)
+					if err != nil {
+						return timeRange, fmt.Errorf("Не удалось произвести парсинг даты: %v\n\n"+
+							"Доступны следующие форматы:\n"+
+							"*%q*\n"+
+							"*%q*\n"+
+							"*%q*\n", err, botDataShort1, botDataShort2, botDataShort3)
+					}
+					timeRange = append(timeRange, parsedTime)
+				}
+				timeRange = append(timeRange, parsedTime)
+			}
+			timeRange = append(timeRange, parsedTime)
+		}
+		// If valid - return true
+		return timeRange, nil
+	}
+	return timeRange, fmt.Errorf("формат аргумента должен быть: " +
+		"*DDMMYYYY-DDMMYYYY* (период _'от-до'_ через дефис)")
 }

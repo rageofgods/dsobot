@@ -9,7 +9,8 @@ import (
 func (t *TgBot) adminHandleHelp(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Create help message
-	cmdList := t.genHelpCmdText()
+	commands := t.AdminBotCommands().commands
+	cmdList := genHelpCmdText(commands)
 	t.msg.Text = "Доступны следующие команды администрирования:\n\n" +
 		cmdList
 }
