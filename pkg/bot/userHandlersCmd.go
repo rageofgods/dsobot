@@ -177,10 +177,12 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 	}
 }
 
+// handle '/addoffduty' command
 func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 	timeRange, err := checkArgIsOffDutyRange(cmdArgs)
 	if err != nil {
 		t.msg.Text = fmt.Sprintf("%v", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return
 	}
 	firstName := t.update.Message.From.FirstName
@@ -190,6 +192,7 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 	err = t.dc.CreateOffDutyEvents(fullName, timeRange[0], timeRange[1])
 	if err != nil {
 		t.msg.Text = fmt.Sprintf("Не удалось добавить событие: %v", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return
 	}
 	// Save off-duty data
@@ -197,9 +200,35 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 	_, err = t.dc.SaveMenList()
 	if err != nil {
 		t.msg.Text = fmt.Sprintf("Не удалось сохранить событие: %v", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return
 	}
 	t.msg.Text = "Событие добавлено успешно"
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// handle '/showofduty' command
+func (t *TgBot) handleShowOffDuty(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
+	offduty, err := t.dc.ShowOffDutyForMan(t.update.Message.From.UserName)
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("%v", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+
+	if len(*offduty) == 0 {
+		t.msg.Text = "У вас нет нерабочих периодов"
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+
+	msgText := "Список нерабочих периодов:\n"
+	for i, od := range *offduty {
+		msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
+	}
+	t.msg.Text = msgText
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
 // handle unknown command

@@ -13,6 +13,7 @@ func (t *TgBot) adminHandleHelp(cmdArgs string) {
 	cmdList := genHelpCmdText(commands)
 	t.msg.Text = "Доступны следующие команды администрирования:\n\n" +
 		cmdList
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
 // handle '/list' command
@@ -34,6 +35,7 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 		list += fmt.Sprintf("%s\n", i)
 	}
 	t.msg.Text = fmt.Sprintf("Список дежурных: \n%s", list)
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
 // Parent function for handling args commands

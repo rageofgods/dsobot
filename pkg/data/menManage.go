@@ -31,6 +31,16 @@ func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 	return "", fmt.Errorf("duty not found for %s", day.Format(DateShort))
 }
 
+// ShowOffDutyForMan returns slice of OffDutyData with start/end off-duty dates
+func (t *CalData) ShowOffDutyForMan(tgID string) (*[]OffDutyData, error) {
+	for _, man := range *t.dutyMen {
+		if man.TgID == tgID {
+			return &man.OffDuty, nil
+		}
+	}
+	return nil, fmt.Errorf("can't find user with tgID: @%s in saved data", tgID)
+}
+
 // WhoWasOnDuty Returns man name who was the last on duty in the previous month with the number of days done.
 // TODO add ability to check last duty-man from specific day (if someone is leaves team in the middle of the month)
 func (t *CalData) WhoWasOnDuty(lastYear int,
@@ -166,8 +176,8 @@ func (t *CalData) AddManOnDuty(name string, tgID string) {
 
 // AddOffDutyToMan Add off-duty event data to man
 func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time.Time) {
-	stime := startDate.Format(DateShort)
-	etime := endDate.Format(DateShort)
+	stime := startDate.Format(DateShortSaveData)
+	etime := endDate.Format(DateShortSaveData)
 	for i, man := range *t.dutyMen {
 		if man.TgID == tgID {
 			m := &OffDutyData{OffDutyStart: stime, OffDutyEnd: etime}

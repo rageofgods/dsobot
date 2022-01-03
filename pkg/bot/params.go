@@ -52,17 +52,18 @@ func (t *TgBot) BotCommands() *botCommands {
 			{name: botCmdArgValidation,
 				handleFunc: t.handleWhoIsOnValidation,
 				description: "Показать валидирующего на сегодня. _Возможно указание конкретной даты " +
-					"через пробел после аргумента_"},
-		}},
+					"через пробел после аргумента_"}}},
 			description: "Показать дежурного для определенного типа дежурств",
 			handleFunc:  t.handleWhoIsOn},
 		{command: &cmd{name: botCmdAddOffDuty, args: &[]arg{
 			{name: botCmdArgOffDuty,
 				handleFunc:  nil,
-				description: "Период _От-До_ (через дефис)"},
-		}},
-			description: "Добавить нерабочий период (Отпуск/Болезнь/etc).",
+				description: "Период _От-До_ (через дефис)"}}},
+			description: "Добавить нерабочий период (отпуск/болезнь/etc)",
 			handleFunc:  t.handleAddOffDuty},
+		{command: &cmd{name: botCmdShowOffDuty, args: nil},
+			description: "Показать список нерабочих периодов (отпуск/болезнь/etc)",
+			handleFunc:  t.handleShowOffDuty},
 	}}
 }
 
@@ -70,23 +71,22 @@ func (t *TgBot) BotCommands() *botCommands {
 func (t *TgBot) AdminBotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: &cmd{name: botCmdHelp, args: nil},
-			description: "Show command help",
+			description: "Показать помощь по командам",
 			handleFunc:  t.adminHandleHelp},
 		{command: &cmd{name: botCmdList, args: nil},
-			description: "Show members list",
+			description: "Вывести список участников",
 			handleFunc:  t.adminHandleList},
 		{command: &cmd{name: botCmdRollout, args: &[]arg{
 			{name: botCmdArgDuty,
 				handleFunc:  t.adminHandleRolloutDuty,
-				description: "Дежурство"},
+				description: "Дежурства"},
 			{name: botCmdArgValidation,
 				handleFunc:  t.adminHandleRolloutValidation,
 				description: "Валидация задач"},
 			{name: botCmdArgNonWorkingDay,
 				handleFunc:  t.adminHandleRolloutNonWorkingDay,
-				description: "Нерабочий день"},
-		}},
-			description: "Recreate current month calendar for provided event type.",
+				description: "Нерабочие дни (выходные/праздники)"}}},
+			description: "Пересоздать события определенного типа для текущего месяца",
 			handleFunc:  t.adminHandleRollout},
 	}}
 }
@@ -106,7 +106,8 @@ const (
 	botCmdRegister    tCmd = "register"
 	botCmdUnregister  tCmd = "unregister"
 	botCmdWhoIsOnDuty tCmd = "whoison"
-	botCmdAddOffDuty  tCmd = "addvocation"
+	botCmdAddOffDuty  tCmd = "addoffduty"
+	botCmdShowOffDuty tCmd = "showoffduty"
 	botCmdHelp        tCmd = "help"
 	botCmdList        tCmd = "list"
 	botCmdRollout     tCmd = "rollout"
