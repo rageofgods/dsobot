@@ -9,7 +9,13 @@ import (
 
 // WhoIsOnDuty Returns duty engineer name
 func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
-	events, err := t.dayEvents(day)
+	loc, err := time.LoadLocation(TimeZone)
+	if err != nil {
+		return "", fmt.Errorf("unable to load timezone %s", err)
+	}
+	d := day.In(loc)
+
+	events, err := t.dayEvents(&d)
 	if err != nil {
 		return "", err
 	}
