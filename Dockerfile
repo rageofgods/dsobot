@@ -14,6 +14,7 @@ RUN go build -v -o botapp cmd/bot/main.go
 
 FROM debian:buster-slim
 
+ENV TZ="Europe/Moscow"
 ARG cal_token
 ARG cal_url
 ARG bot_token
