@@ -186,8 +186,19 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 	}
 }
 
+// DeleteOffDutyFromMan Removes off-duty period from specified man
+func (t *CalData) DeleteOffDutyFromMan(tgID string, offDutyDataIndex int) {
+	for i, man := range *t.dutyMen {
+		if man.TgID == tgID {
+			tmp := (*t.dutyMen)[i].OffDuty
+			tmp = append(tmp[:offDutyDataIndex], tmp[offDutyDataIndex+1:]...)
+			(*t.dutyMen)[i].OffDuty = tmp
+		}
+	}
+}
+
 // Return new slice with removed element with provided index
-func removeMan(sl []DutyMan, s int) []DutyMan {
+func deleteMan(sl []DutyMan, s int) []DutyMan {
 	return append(sl[:s], sl[s+1:]...)
 }
 
@@ -196,7 +207,7 @@ func (t *CalData) DeleteManOnDuty(tgID string) error {
 	var isDeleted bool
 	for index, man := range *t.dutyMen {
 		if tgID == man.TgID {
-			*t.dutyMen = removeMan(*t.dutyMen, index)
+			*t.dutyMen = deleteMan(*t.dutyMen, index)
 			isDeleted = true
 		}
 	}

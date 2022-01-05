@@ -5,6 +5,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -35,12 +36,8 @@ func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (
 	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
 	if len(jsonNo) > 64 {
 		return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonNo))
-		//log.Printf("handleRegister jsonNo size is greater then 64b: %v", len(jsonNo))
-		//return
 	} else if len(jsonYes) > 64 {
 		return nil, fmt.Errorf("jsonYes size is greater then 64b: %v", len(jsonNo))
-		//log.Printf("jsonYes size is greater then 64b: %v", len(jsonNo))
-		//return
 	}
 
 	// Create numeric inline keyboard
@@ -50,6 +47,28 @@ func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (
 			tgbotapi.NewInlineKeyboardButtonData("No", string(jsonNo)),
 		),
 	)
+	return &numericKeyboard, nil
+}
+
+func genInlineOffDutyKeyboardWithData(offDutyList []string, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i, v := range offDutyList {
+		cm.Answer = strconv.Itoa(i) // Save current index to data
+		jsonData, err := json.Marshal(cm)
+		if err != nil {
+			log.Println(err)
+			return nil, fmt.Errorf("unable to marshall json to persist data")
+		}
+		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
+		if len(jsonData) > 64 {
+			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
+		}
+		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(v, string(jsonData)))
+		rows = append(rows, row)
+	}
+
+	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
 	return &numericKeyboard, nil
 }
 

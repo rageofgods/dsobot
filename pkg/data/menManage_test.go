@@ -144,8 +144,8 @@ func Test_removeMan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := removeMan(tt.args.sl, tt.args.s); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("removeMan() = %v, want %v", got, tt.want)
+			if got := deleteMan(tt.args.sl, tt.args.s); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deleteMan() = %v, want %v", got, tt.want)
 			}
 		})
 	}

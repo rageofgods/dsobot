@@ -162,3 +162,35 @@ func (t *CalData) CreateOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 
 	return nil
 }
+
+// DeleteOffDutyEvents Create off-duty (Holiday/illness events)
+func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toDate time.Time) error {
+	loc, err := time.LoadLocation(TimeZone)
+	if err != nil {
+		return err
+	}
+	stime := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, loc)
+	etime := time.Date(toDate.Year(), toDate.Month(), toDate.Day(), 23, 59, 59, 0, loc)
+
+	events, err := t.cal.Events.List(t.calID).ShowDeleted(false).
+		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
+		TimeMax(etime.Format(time.RFC3339)).MaxResults(SearchMaxResults).Do()
+	if err != nil {
+		return err
+	}
+
+	if len(events.Items) != 0 {
+		for _, item := range events.Items {
+			if item.Description == string(OffDutyTag) && item.Summary == manOffDuty {
+				err := t.cal.Events.Delete(t.calID, item.Id).Do()
+				if err != nil {
+					return err
+				}
+				log.Printf("Deleted event id: %v\n", item.Id)
+			}
+		}
+	} else {
+		return fmt.Errorf("no items found for delete")
+	}
+	return nil
+}

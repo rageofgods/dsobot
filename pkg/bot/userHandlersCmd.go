@@ -135,6 +135,11 @@ func (t *TgBot) handleUnregister(cmdArgs string) {
 
 // Parent function for handling args commands
 func (t *TgBot) handleWhoIsOn(cmdArgs string) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+
 	bc := t.BotCommands()
 	var isArgValid bool
 	for _, cmd := range bc.commands {
@@ -179,6 +184,11 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 
 // handle '/addoffduty' command
 func (t *TgBot) handleAddOffDuty(cmdArgs string) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+
 	timeRange, err := checkArgIsOffDutyRange(cmdArgs)
 	if err != nil {
 		t.msg.Text = fmt.Sprintf("%v", err)
@@ -210,6 +220,11 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 // handle '/showofduty' command
 func (t *TgBot) handleShowOffDuty(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+
 	offduty, err := t.dc.ShowOffDutyForMan(t.update.Message.From.UserName)
 	if err != nil {
 		t.msg.Text = fmt.Sprintf("%v", err)
@@ -228,6 +243,53 @@ func (t *TgBot) handleShowOffDuty(cmdArgs string) {
 		msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
 	}
 	t.msg.Text = msgText
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// handle '/deleteoffduty' command
+func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
+	cmdArgs = "" // Ignore cmdArgs
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+
+	offduty, err := t.dc.ShowOffDutyForMan(t.update.Message.From.UserName)
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("%v", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+
+	if len(*offduty) == 0 {
+		t.msg.Text = "У вас нет нерабочих периодов"
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+
+	// Generate slice with off-duty periods
+	var msgText []string
+	for _, od := range *offduty {
+		msgText = append(msgText, fmt.Sprintf("Начало: %q - Конец: %q",
+			od.OffDutyStart,
+			od.OffDutyEnd))
+	}
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		FromHandle: callbackHandleDeleteOffDuty,
+	}
+
+	numericKeyboard, err := genInlineOffDutyKeyboardWithData(msgText, *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	t.msg.ReplyMarkup = numericKeyboard
+	t.msg.Text = fmt.Sprintf("Выберите нерабочий период для удаления:")
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 

@@ -3,6 +3,7 @@ package bot
 import (
 	"dso_bot/pkg/data"
 	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	str "strings"
@@ -107,6 +108,8 @@ func (t *TgBot) StartBot() {
 			}
 			// Process callback messages
 		} else if update.CallbackQuery != nil {
+			// Create null message
+			var msg tgbotapi.MessageConfig
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.
 			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
@@ -128,6 +131,17 @@ func (t *TgBot) StartBot() {
 				t.callbackRegister(message.Answer, message.ChatId, message.UserId, message.MessageId)
 			case callbackHandleUnregister:
 				t.callbackUnregister(message.Answer, message.ChatId, message.UserId, message.MessageId)
+			case callbackHandleDeleteOffDuty:
+				err := t.callbackDeleteOffDuty(message.Answer, message.ChatId, message.UserId, message.MessageId)
+				if err != nil {
+					msg.Text = fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+					msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
+					msg.ChatID = update.CallbackQuery.Message.Chat.ID
+					// Send a message to user who was request access.
+					if _, err := t.bot.Send(msg); err != nil {
+						log.Printf("unable to send message to user: %v", err)
+					}
+				}
 			}
 		}
 	}

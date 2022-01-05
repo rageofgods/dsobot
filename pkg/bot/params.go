@@ -64,6 +64,9 @@ func (t *TgBot) BotCommands() *botCommands {
 		{command: &cmd{name: botCmdShowOffDuty, args: nil},
 			description: "Показать список нерабочих периодов (отпуск/болезнь/etc)",
 			handleFunc:  t.handleShowOffDuty},
+		{command: &cmd{name: botCmdDeleteOffDuty, args: nil},
+			description: "Удалить нерабочий период",
+			handleFunc:  t.handleDeleteOffDuty},
 	}}
 }
 
@@ -99,21 +102,23 @@ const (
 	inlineKeyboardYes = "1"
 	inlineKeyboardNo  = "0"
 
-	callbackHandleRegister   = "fhr"
-	callbackHandleUnregister = "fhu"
+	callbackHandleRegister      = "fhr"
+	callbackHandleUnregister    = "fhu"
+	callbackHandleDeleteOffDuty = "fhdod"
 )
 
 // Bot available commands
 const (
-	botCmdStart       tCmd = "start"
-	botCmdRegister    tCmd = "register"
-	botCmdUnregister  tCmd = "unregister"
-	botCmdWhoIsOnDuty tCmd = "whoison"
-	botCmdAddOffDuty  tCmd = "addoffduty"
-	botCmdShowOffDuty tCmd = "showoffduty"
-	botCmdHelp        tCmd = "help"
-	botCmdList        tCmd = "list"
-	botCmdRollout     tCmd = "rollout"
+	botCmdStart         tCmd = "start"
+	botCmdRegister      tCmd = "register"
+	botCmdUnregister    tCmd = "unregister"
+	botCmdWhoIsOnDuty   tCmd = "whoison"
+	botCmdAddOffDuty    tCmd = "addoffduty"
+	botCmdShowOffDuty   tCmd = "showoffduty"
+	botCmdDeleteOffDuty tCmd = "deleteoffduty"
+	botCmdHelp          tCmd = "help"
+	botCmdList          tCmd = "list"
+	botCmdRollout       tCmd = "rollout"
 )
 
 // Bot available args
