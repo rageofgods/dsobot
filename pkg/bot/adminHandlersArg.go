@@ -65,3 +65,31 @@ func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string) {
 		t.msg.ReplyToMessageID = t.update.Message.MessageID
 	}
 }
+
+func (t *TgBot) adminHandleShowOffDuty(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	menTgIDs := t.dc.ListMenTgID()
+	var msgText string
+	for _, manTgID := range menTgIDs {
+		offduty, err := t.dc.ShowOffDutyForMan(manTgID)
+		if err != nil {
+			t.msg.Text = fmt.Sprintf("%v", err)
+			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			return
+		}
+
+		if len(*offduty) == 0 {
+			continue
+		}
+
+		msgText += fmt.Sprintf("Список нерабочих периодов для *@%s*:\n", manTgID)
+		for i, od := range *offduty {
+			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
+		}
+		msgText += "\n"
+	}
+
+	t.msg.Text = msgText
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}

@@ -44,7 +44,7 @@ const (
 	// DateShort Calendar event date format
 	DateShort = "2006-01-02"
 	// DateShortSaveData Date format for save into json data
-	DateShortSaveData = "02/02/2006"
+	DateShortSaveData = "02/01/2006"
 	// DateShortIsDayOff isDayOff date format
 	DateShortIsDayOff = "20060102"
 	// TimeZone local timezone

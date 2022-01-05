@@ -333,3 +333,12 @@ func equalLists(searchList []string, searchInList []string) bool {
 	}
 	return false
 }
+
+// ListMenTgID returns slice of Telegram IDs of all registered men
+func (t *CalData) ListMenTgID() []string {
+	var menIDs []string
+	for _, man := range *t.dutyMen {
+		menIDs = append(menIDs, man.TgID)
+	}
+	return menIDs
+}

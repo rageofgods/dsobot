@@ -88,6 +88,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 				description: "Нерабочие дни (выходные/праздники)"}}},
 			description: "Пересоздать события определенного типа для текущего месяца",
 			handleFunc:  t.adminHandleRollout},
+		{command: &cmd{name: botCmdShowOffDuty, args: nil},
+			description: "Показать список нерабочих периодов (отпуск/болезнь/etc) для всех участников",
+			handleFunc:  t.adminHandleShowOffDuty},
 	}}
 }
 
