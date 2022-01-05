@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
@@ -60,7 +61,11 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 			t.msg.Text = fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		} else {
-			t.msg.Text = fmt.Sprintf("Необходимо указать аргумент")
+			// Show keyboard with available args
+			rows := genArgsKeyboard(abc, botCmdRollout)
+			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			t.msg.Text = "Необходимо указать аргумент"
+			t.msg.ReplyMarkup = numericKeyboard
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		}
 	}

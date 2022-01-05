@@ -66,7 +66,7 @@ func (t *TgBot) StartBot() {
 			t.msg.ParseMode = "markdown"
 
 			// Go through struct of allowed commands
-			bc := t.BotCommands()
+			bc := t.UserBotCommands()
 			abc := t.AdminBotCommands()
 
 			// Handle admin commands

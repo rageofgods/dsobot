@@ -96,7 +96,7 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 
 func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 	// Create help message
-	commands := t.BotCommands().commands
+	commands := t.UserBotCommands().commands
 	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
@@ -197,4 +197,19 @@ func checkArgIsOffDutyRange(arg string) ([]time.Time, error) {
 	}
 	return timeRange, fmt.Errorf("формат аргумента должен быть: " +
 		"*DDMMYYYY-DDMMYYYY* (период _'от-до'_ через дефис)")
+}
+
+// Generate keyboard with available args
+func genArgsKeyboard(bc *botCommands, command tCmd) [][]tgbotapi.KeyboardButton {
+	var rows [][]tgbotapi.KeyboardButton
+	for _, cmd := range bc.commands {
+		if cmd.command.name == command {
+			for _, arg := range *cmd.command.args {
+				row := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(fmt.Sprintf("/%s %s",
+					cmd.command.name, arg.name)))
+				rows = append(rows, row)
+			}
+		}
+	}
+	return rows
 }

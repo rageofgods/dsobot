@@ -29,8 +29,8 @@ type botCommands struct {
 	commands []botCommand
 }
 
-// BotCommands returns slice of ordinary user botCommand struct
-func (t *TgBot) BotCommands() *botCommands {
+// UserBotCommands returns slice of ordinary user botCommand struct
+func (t *TgBot) UserBotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
 		{command: &cmd{name: botCmdStart, args: nil},
 			description: "Показать welcome сообщение",
@@ -44,7 +44,7 @@ func (t *TgBot) BotCommands() *botCommands {
 		{command: &cmd{name: botCmdUnregister, args: nil},
 			description: "Выйти из системы",
 			handleFunc:  t.handleUnregister},
-		{command: &cmd{name: botCmdWhoIsOnDuty, args: &[]arg{
+		{command: &cmd{name: botCmdWhoIsOn, args: &[]arg{
 			{name: botCmdArgDuty,
 				handleFunc: t.handleWhoIsOnDuty,
 				description: "Показать дежурного на сегодня. _Возможно указание конкретной даты " +
@@ -112,7 +112,7 @@ const (
 	botCmdStart         tCmd = "start"
 	botCmdRegister      tCmd = "register"
 	botCmdUnregister    tCmd = "unregister"
-	botCmdWhoIsOnDuty   tCmd = "whoison"
+	botCmdWhoIsOn       tCmd = "whoison"
 	botCmdAddOffDuty    tCmd = "addoffduty"
 	botCmdShowOffDuty   tCmd = "showoffduty"
 	botCmdDeleteOffDuty tCmd = "deleteoffduty"

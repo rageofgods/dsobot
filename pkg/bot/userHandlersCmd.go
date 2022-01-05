@@ -15,7 +15,7 @@ func (t *TgBot) handleStart(cmdArgs string) {
 		return
 	}
 
-	commands := t.BotCommands().commands
+	commands := t.UserBotCommands().commands
 	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
@@ -33,7 +33,7 @@ func (t *TgBot) handleHelp(cmdArgs string) {
 		return
 	}
 
-	commands := t.BotCommands().commands
+	commands := t.UserBotCommands().commands
 	cmdList := genHelpCmdText(commands)
 
 	// Check if user is registered
@@ -140,7 +140,7 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 		return
 	}
 
-	bc := t.BotCommands()
+	bc := t.UserBotCommands()
 	var isArgValid bool
 	for _, cmd := range bc.commands {
 		if cmd.command.args != nil {
@@ -176,7 +176,11 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 			t.msg.Text = fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		} else {
-			t.msg.Text = fmt.Sprintf("Необходимо указать аргумент")
+			// Show keyboard with available args
+			rows := genArgsKeyboard(bc, botCmdWhoIsOn)
+			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			t.msg.Text = "Необходимо указать аргумент"
+			t.msg.ReplyMarkup = numericKeyboard
 			t.msg.ReplyToMessageID = t.update.Message.MessageID
 		}
 	}
