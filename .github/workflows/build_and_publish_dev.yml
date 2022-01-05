@@ -41,7 +41,3 @@ jobs:
             "bot_token=${{ secrets.BOT_TOKEN_DEV }}"
             "bot_admin_group_id=${{ secrets.BOT_ADMIN_GROUP_ID_DEV }}"
           push: true
-
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
-  
