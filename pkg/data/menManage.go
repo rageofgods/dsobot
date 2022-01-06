@@ -235,9 +235,9 @@ func (t *CalData) reIndexManOnDutyList() {
 	t.dutyMen = &reMap
 }
 
-// ShowMenOnDutyList Show current men on duty list
-func (t *CalData) ShowMenOnDutyList() ([]string, error) {
-	return genListMenOnDuty(*t.dutyMen)
+// DutyMenData Show current men on duty list
+func (t *CalData) DutyMenData() *[]DutyMan {
+	return t.dutyMen
 }
 
 // Return correct index for duty flow

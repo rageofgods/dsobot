@@ -3,7 +3,6 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 )
 
 // handle '/help' command
@@ -22,20 +21,13 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
 	var list string
 	// Get menOnDuty list
-	menList, err := t.dc.ShowMenOnDutyList()
-	if err != nil {
-		log.Printf("Возникла ошибка при загрузке: %v", err)
-		err := t.sendMessageToAdmins(fmt.Sprintf("Возникла ошибка при загрузке: %v", err))
-		if err != nil {
-			log.Printf("unable to send message to admins: %v", err)
-		}
-		return
-	}
+	menData := t.dc.DutyMenData()
+
 	// Generate returned string
-	for _, i := range menList {
-		list += fmt.Sprintf("%s\n", i)
+	for i, v := range *menData {
+		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
 	}
-	t.msg.Text = fmt.Sprintf("Список дежурных: \n%s", list)
+	t.msg.Text = fmt.Sprintf("*Список дежурных:*\n%s", list)
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
