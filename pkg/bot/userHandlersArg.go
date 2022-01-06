@@ -25,6 +25,15 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 
 	// Get on-duty data
 	man, err := t.dc.WhoIsOnDuty(&tn, data.OnDutyTag)
+	// Get data for all men
+	dutyMen := t.dc.DutyMenData()
+	// Generate returned string
+	for _, v := range *dutyMen {
+		if v.TgID == man {
+			man = fmt.Sprintf("%s (*@%s*)", v.Name, v.TgID)
+		}
+	}
+
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %v", err)
@@ -52,6 +61,15 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 
 	// Get on-duty data
 	man, err := t.dc.WhoIsOnDuty(&tn, data.OnValidationTag)
+	// Get data for all men
+	dutyMen := t.dc.DutyMenData()
+	// Generate returned string
+	for _, v := range *dutyMen {
+		if v.TgID == man {
+			man = fmt.Sprintf("%s (*@%s*)", v.Name, v.TgID)
+		}
+	}
+
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %v", err)

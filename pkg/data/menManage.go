@@ -272,7 +272,7 @@ func genListMenOnDuty(m []DutyMan) ([]string, error) {
 		return nil, fmt.Errorf("unable to load men list, please load it first")
 	}
 	for _, man := range m {
-		retStr = append(retStr, man.Name)
+		retStr = append(retStr, man.TgID)
 	}
 	return retStr, nil
 }
@@ -299,6 +299,7 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 		if name == man {
 			manIndex = i
 			isManFound = true
+			break
 		}
 	}
 
@@ -309,12 +310,14 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 
 	debtDutyDays := contDays - manPrevDutyCount
 	if debtDutyDays == 0 { // Checking man is done with his duty
-		manIndex++ // Go to next man
+		manIndex += contDays // Go to next man
 	} else { // Checking man still awaits his duty
 		if debtDutyDays > 0 { // We only wanted positive digits here
-			manIndex -= debtDutyDays // Subtract debt from latest index value
-		} else { // If we got below zero value, when something goes wrong (Previous month contDays was bigger than current)
-			manIndex++ // Go to next man
+			manIndex += manPrevDutyCount // Append previously duty days to current index
+		} else {
+			// If we got below zero value, when something goes wrong
+			// (Previous month contDays was bigger than current)
+			manIndex += contDays // Go to next man
 		}
 	}
 

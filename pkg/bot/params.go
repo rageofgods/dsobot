@@ -130,9 +130,17 @@ const (
 )
 
 // User provided data format for bot commands
-const botDataShort1 = "02012006"
-const botDataShort2 = "02.01.2006"
-const botDataShort3 = "02/02/2006"
+const (
+	botDataShort1 = "02012006"
+	botDataShort2 = "02.01.2006"
+	botDataShort3 = "02/02/2006"
+)
+
+// Continuous days for duty periods
+const (
+	onDutyContDays       = 2
+	onValidationContDays = 1
+)
 
 // Structure for saving callback data (json is shortened to be able to accommodate to 64b Telegram data limit)
 type callbackMessage struct {

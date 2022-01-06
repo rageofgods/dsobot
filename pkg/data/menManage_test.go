@@ -64,14 +64,6 @@ func Test_genContListMenOnDuty(t *testing.T) {
 
 func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 	menString := []string{"One", "One", "Two", "Two", "Three", "Three"}
-	wantInt1 := 2
-	man1 := "Two"
-	wantInt2 := 2
-	man2 := "One"
-	wantInt3 := 0
-	man3 := "Three"
-	wantInt4 := 0
-	man4 := "Zero"
 
 	type args struct {
 		countDays        int
@@ -86,13 +78,15 @@ func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "Get index of current duty with Two",
-			args: args{countDays: 2, men: menString, man: man1, manPrevDutyCount: 1}, want: wantInt1, wantErr: false},
+			args: args{countDays: 2, men: menString, man: "Two", manPrevDutyCount: 1}, want: 3, wantErr: false},
 		{name: "Get index of current duty with One",
-			args: args{countDays: 2, men: menString, man: man2, manPrevDutyCount: 2}, want: wantInt2, wantErr: false},
+			args: args{countDays: 2, men: menString, man: "One", manPrevDutyCount: 2}, want: 2, wantErr: false},
 		{name: "Get index of current duty with Three",
-			args: args{countDays: 2, men: menString, man: man3, manPrevDutyCount: 2}, want: wantInt3, wantErr: false},
+			args: args{countDays: 2, men: menString, man: "Three", manPrevDutyCount: 2}, want: 0, wantErr: false},
 		{name: "Get index of current duty with Zero man",
-			args: args{countDays: 2, men: menString, man: man4, manPrevDutyCount: 2}, want: wantInt4, wantErr: false},
+			args: args{countDays: 2, men: menString, man: "Zero", manPrevDutyCount: 2}, want: 0, wantErr: false},
+		{name: "Get index of current duty with One man",
+			args: args{countDays: 2, men: menString, man: "One", manPrevDutyCount: 1}, want: 1, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,7 +151,7 @@ func Test_genListMenOnDuty(t *testing.T) {
 		{Index: 20, Name: "Two", TgID: "TG_TWO"},
 		{Index: 30, Name: "Three", TgID: "TG_THREE"},
 	}
-	wantString := []string{"One", "Two", "Three"}
+	wantString := []string{"TG_ONE", "TG_TWO", "TG_THREE"}
 	type args struct {
 		m []DutyMan
 	}

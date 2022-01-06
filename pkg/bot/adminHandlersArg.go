@@ -15,7 +15,7 @@ func (t *TgBot) adminHandleRolloutDuty(arg string) {
 		log.Printf("unable to send message to admins: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(1, 2, data.OnDutyTag)
+	err := t.dc.UpdateOnDutyEvents(1, onDutyContDays, data.OnDutyTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
@@ -35,7 +35,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string) {
 		log.Printf("unable to send message to admins: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(1, 1, data.OnValidationTag)
+	err := t.dc.UpdateOnDutyEvents(1, onValidationContDays, data.OnValidationTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
