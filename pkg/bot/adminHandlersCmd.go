@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"log"
 )
 
 // handle '/help' command
@@ -63,6 +64,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 	}
 }
 
+// handle '/showoffduty' command
 func (t *TgBot) adminHandleShowOffDuty(arg string) {
 	arg = "" // Ignore cmdArgs
 
@@ -88,5 +90,28 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 	}
 
 	t.msg.Text = msgText
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// handle '/reindex' command
+func (t *TgBot) adminHandleReindex(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		FromHandle: callbackHandleReindex,
+	}
+
+	men := t.dc.DutyMenData()
+	numericKeyboard, err := genIndexKeyboard(men, *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	t.msg.ReplyMarkup = numericKeyboard
+	t.msg.Text = stringAdminHandleReindex
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }

@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"dso_bot/pkg/data"
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -58,7 +59,7 @@ func genInlineOffDutyKeyboardWithData(offDutyList []string, cm callbackMessage) 
 		jsonData, err := json.Marshal(cm)
 		if err != nil {
 			log.Println(err)
-			return nil, fmt.Errorf("unable to marshall json to persist data")
+			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 		}
 		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
 		if len(jsonData) > 64 {
@@ -212,4 +213,46 @@ func genArgsKeyboard(bc *botCommands, command tCmd) [][]tgbotapi.KeyboardButton 
 		}
 	}
 	return rows
+}
+
+// Generate keyboard with men on-duty indexes
+func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i, v := range *dm {
+		cm.Answer = strconv.Itoa(i) // Save current index to data
+		jsonData, err := json.Marshal(cm)
+		if err != nil {
+			log.Println(err)
+			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+		}
+		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
+		if len(jsonData) > 64 {
+			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
+		}
+		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (%s)",
+			i+1, v.Name, v.TgID), string(jsonData)))
+		rows = append(rows, row)
+	}
+
+	// Add row with ok/cancel buttons
+	cmYes, cmNo := cm, cm
+	cmYes.Answer = inlineKeyboardYes
+	cmNo.Answer = inlineKeyboardNo
+	jsonDataYes, err := json.Marshal(cmYes)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	jsonDataNo, err := json.Marshal(cmNo)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
+	rows = append(rows, row)
+
+	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	return &numericKeyboard, nil
 }

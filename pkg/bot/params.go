@@ -94,17 +94,21 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdShowOffDuty, args: nil},
 			description: "Показать список нерабочих периодов (отпуск/болезнь/etc) для всех участников",
 			handleFunc:  t.adminHandleShowOffDuty},
+		{command: &cmd{name: botCmdReindex, args: nil},
+			description: "Изменить порядок дежурных (повлияет на очередность дежурств)",
+			handleFunc:  t.adminHandleReindex},
 	}}
 }
 
 // Some const's for working with callbacks (use short names to workaround Telegram 64b callback data limit)
 const (
-	inlineKeyboardYes = "1"
-	inlineKeyboardNo  = "0"
+	inlineKeyboardYes = "99"
+	inlineKeyboardNo  = "98"
 
 	callbackHandleRegister      = "fhr"
 	callbackHandleUnregister    = "fhu"
 	callbackHandleDeleteOffDuty = "fhdod"
+	callbackHandleReindex       = "fhre"
 )
 
 // Bot available commands
@@ -119,6 +123,7 @@ const (
 	botCmdHelp          tCmd = "help"
 	botCmdList          tCmd = "list"
 	botCmdRollout       tCmd = "rollout"
+	botCmdReindex       tCmd = "reindex"
 )
 
 // Bot available args
@@ -150,3 +155,8 @@ type callbackMessage struct {
 	UserId     int64  `json:"u"`
 	FromHandle string `json:"f"`
 }
+
+const (
+	stringAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
+		"в нужной последовательности):"
+)

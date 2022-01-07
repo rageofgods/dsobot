@@ -17,6 +17,7 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	update       *tgbotapi.Update
+	tmpData      *[]data.DutyMan
 }
 
 func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
@@ -27,6 +28,7 @@ func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *T
 		adminGroupId: adminGroupId,
 		debug:        debug,
 		update:       new(tgbotapi.Update),
+		tmpData:      new([]data.DutyMan),
 	}
 }
 
@@ -142,6 +144,18 @@ func (t *TgBot) StartBot() {
 						log.Printf("unable to send message to user: %v", err)
 					}
 				}
+			case callbackHandleReindex:
+				err := t.callbackReindex(message.Answer, message.ChatId, message.UserId, message.MessageId)
+				if err != nil {
+					msg.Text = fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+					msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
+					msg.ChatID = update.CallbackQuery.Message.Chat.ID
+					// Send a message to user who was request access.
+					if _, err := t.bot.Send(msg); err != nil {
+						log.Printf("unable to send message to user: %v", err)
+					}
+				}
+
 			}
 		}
 	}

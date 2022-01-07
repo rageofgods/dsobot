@@ -90,7 +90,13 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 }
 
 // SaveMenList Create events via API call
-func (t *CalData) SaveMenList() (*string, error) {
+func (t *CalData) SaveMenList(d ...*[]DutyMan) (*string, error) {
+	if len(d) != 0 {
+		if d[0] == nil {
+			return nil, fmt.Errorf("no data for saving")
+		}
+		t.dutyMen = d[0]
+	}
 	if t.dutyMen == nil {
 		return nil, fmt.Errorf("no data for saving")
 	}

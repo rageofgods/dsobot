@@ -10,7 +10,16 @@ import (
 	"strconv"
 )
 
+// App version
+var (
+	Version string
+	Build   string
+)
+
 func main() {
+	// Show version info
+	log.Printf("Version: %s, Build: %s", Version, Build)
+
 	// Load env
 	err := godotenv.Load(".env")
 	if err != nil {

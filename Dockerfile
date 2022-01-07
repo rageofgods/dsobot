@@ -10,7 +10,7 @@ COPY . ./
 RUN chmod +x ./tests.sh
 RUN ./tests.sh
 
-RUN go build -v -o botapp cmd/bot/main.go
+RUN make docker_build
 
 FROM debian:buster-slim
 
