@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Build and Publish Dev
 
 # Controls when the workflow will run
 on:
