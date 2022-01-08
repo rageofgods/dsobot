@@ -166,7 +166,8 @@ type callbackMessage struct {
 	FromHandle string `json:"f"`
 }
 
+// Text strings for messages
 const (
-	stringAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
+	msgTextAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
 		"в нужной последовательности):"
 )

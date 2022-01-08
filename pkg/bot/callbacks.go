@@ -195,7 +195,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 	switch answer {
 	case inlineKeyboardYes:
 		// If we're still editing duty index
-		if strings.Contains(t.update.CallbackQuery.Message.Text, stringAdminHandleReindex) {
+		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleReindex) {
 			// If all buttons with men was pressed
 			if len(*dutyMen) == len(*t.tmpData) {
 				// Generate returned string
@@ -324,7 +324,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		}
 		// Generate returned string
 		var list string
-		list = stringAdminHandleReindex
+		list = msgTextAdminHandleReindex
 		list += "\n\n"
 		for i, v := range *t.tmpData {
 			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)

@@ -112,6 +112,6 @@ func (t *TgBot) adminHandleReindex(arg string) {
 	}
 
 	t.msg.ReplyMarkup = numericKeyboard
-	t.msg.Text = stringAdminHandleReindex
+	t.msg.Text = msgTextAdminHandleReindex
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
