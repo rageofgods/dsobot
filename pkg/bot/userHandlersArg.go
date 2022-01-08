@@ -97,7 +97,10 @@ func (t *TgBot) handleShowMyDuty(arg string) {
 	}
 	list := fmt.Sprintf("*Список дней дежурств в текущем месяце (%d):*\n", len(*dates))
 	for index, date := range *dates {
-		list += fmt.Sprintf("*%d.* - %s\n", index+1, date.Format(botDataShort3))
+		list += fmt.Sprintf("*%d.* - %s (%s)\n",
+			index+1,
+			date.Format(botDataShort3),
+			locWeekday(date.Weekday()))
 	}
 	t.msg.Text = list
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
@@ -120,7 +123,10 @@ func (t *TgBot) handleShowMyValidation(arg string) {
 	}
 	list := fmt.Sprintf("*Список дней валидаций в текущем месяце (%d):*\n", len(*dates))
 	for index, date := range *dates {
-		list += fmt.Sprintf("*%d.* - %s\n", index+1, date.Format(botDataShort3))
+		list += fmt.Sprintf("*%d.* - %s (%s)\n",
+			index+1,
+			date.Format(botDataShort3),
+			locWeekday(date.Weekday()))
 	}
 	t.msg.Text = list
 	t.msg.ReplyToMessageID = t.update.Message.MessageID

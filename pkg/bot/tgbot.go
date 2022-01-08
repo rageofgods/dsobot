@@ -55,7 +55,7 @@ func (t *TgBot) StartBot(version string, build string) {
 	// Start polling Telegram for updates.
 	updates := t.bot.GetUpdatesChan(updateConfig)
 
-	//
+	// Send message to admin group about current running bot build version
 	err = t.sendMessageToAdmins(fmt.Sprintf("*%s (@%s)* был запущен.\n_версия_: %q\n_билд_: %q",
 		t.bot.Self.FirstName,
 		t.bot.Self.UserName,

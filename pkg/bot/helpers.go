@@ -257,3 +257,25 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
 	return &numericKeyboard, nil
 }
+
+// Covert weekday to localized weekday
+func locWeekday(weekday time.Weekday) string {
+	var locWeekday string
+	switch weekday {
+	case time.Sunday:
+		locWeekday = "Воскресенье"
+	case time.Monday:
+		locWeekday = "Понедельник"
+	case time.Tuesday:
+		locWeekday = "Вторник"
+	case time.Wednesday:
+		locWeekday = "Среда"
+	case time.Thursday:
+		locWeekday = "Четверг"
+	case time.Friday:
+		locWeekday = "Пятница"
+	case time.Saturday:
+		locWeekday = "Суббота"
+	}
+	return locWeekday
+}
