@@ -29,8 +29,13 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	// Generate answer to user who was requested access
 	var msg tgbotapi.MessageConfig
 	if answer == inlineKeyboardYes {
-		msg = tgbotapi.NewMessage(chatId, "Запрошенный доступ был согласован.")
+		commands := t.UserBotCommands().commands
+		cmdList := genHelpCmdText(commands)
+		msgText := "*Запрошенный доступ был согласован.*\n\n" +
+			"Вам доступны следующие команды управления:\n" + cmdList
+		msg = tgbotapi.NewMessage(chatId, msgText)
 		msg.ReplyToMessageID = messageId
+		msg.ParseMode = "markdown"
 		// Add user to duty list
 		t.dc.AddManOnDuty(uFullName, uTgID)
 		// Save new data
@@ -81,15 +86,18 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 				fmt.Sprintf("Возникла ошибка при попытке произвести выход: %s", err))
 			msg.ReplyToMessageID = messageId
 		} else {
-			msg = tgbotapi.NewMessage(chatId, "Выход произведен успешно")
-			msg.ReplyToMessageID = messageId
 			// Save new data
 			_, err := t.dc.SaveMenList()
 			if err != nil {
+				msg = tgbotapi.NewMessage(chatId, fmt.Sprintf("Не удалось сохранить данные: %v", err))
+				msg.ReplyToMessageID = messageId
 				log.Printf("can't save men list: %v", err)
 			} else {
+				// Generate user message
+				msg = tgbotapi.NewMessage(chatId, "Выход произведен успешно")
+				msg.ReplyToMessageID = messageId
 				// Send message to admins
-				err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь @%s произвел выход", uTgID))
+				err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь *@%s* произвел выход", uTgID))
 				if err != nil {
 					log.Printf("unable to send message admins group: %v", err)
 				}

@@ -97,18 +97,12 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 }
 
 func (t *TgBot) checkIsUserRegistered(tgID string) bool {
-	// Create help message
-	commands := t.UserBotCommands().commands
-	cmdList := genHelpCmdText(commands)
-
 	// Check if user is registered
 	if !t.dc.IsInDutyList(tgID) {
 		t.msg.Text = "Привет.\n" +
 			"Это бот команды DSO.\n\n" +
 			"*Вы не зарегестрированы.*\n\n" +
-			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n" +
-			"*После согласования*, вам будут доступны следующие команды:\n" +
-			cmdList
+			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n"
 		t.msg.ReplyToMessageID = t.update.Message.MessageID
 		return false
 	}
