@@ -297,6 +297,43 @@ func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
 	t.msg.ReplyToMessageID = t.update.Message.MessageID
 }
 
+// handle '/showmyduties' command
+func (t *TgBot) handleShowMy(cmdArgs string) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+		return
+	}
+	// Check args for valid values
+	bc := t.UserBotCommands()
+	var isArgValid bool
+	for _, cmd := range bc.commands {
+		if cmd.command.args != nil {
+			for _, arg := range *cmd.command.args {
+				// Check if user command arg is supported
+				if cmdArgs == string(arg.name) {
+					// Run dedicated child argument function
+					arg.handleFunc(cmdArgs)
+					isArgValid = true
+				}
+			}
+		}
+	}
+	// If provided argument is missing or invalid show error to user
+	if !isArgValid {
+		if cmdArgs != "" {
+			t.msg.Text = fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
+			t.msg.ReplyToMessageID = t.update.Message.MessageID
+		} else {
+			// Show keyboard with available args
+			rows := genArgsKeyboard(bc, botCmdShowMy)
+			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			t.msg.Text = "Необходимо указать аргумент"
+			t.msg.ReplyMarkup = numericKeyboard
+			t.msg.ReplyToMessageID = t.update.Message.MessageID
+		}
+	}
+}
+
 // handle unknown command
 func (t *TgBot) handleNotFound() {
 	t.msg.Text = "Команда не найдена"

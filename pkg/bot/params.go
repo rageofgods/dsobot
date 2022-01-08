@@ -55,6 +55,15 @@ func (t *TgBot) UserBotCommands() *botCommands {
 					"через пробел после аргумента_"}}},
 			description: "Показать дежурного для определенного типа дежурств",
 			handleFunc:  t.handleWhoIsOn},
+		{command: &cmd{name: botCmdShowMy, args: &[]arg{
+			{name: botCmdArgDuty,
+				handleFunc:  t.handleShowMyDuty,
+				description: "Показать дежурства в этом месяце"},
+			{name: botCmdArgValidation,
+				handleFunc:  t.handleShowMyValidation,
+				description: "Показать валидации в этом месяце"}}},
+			description: "Показать список дежурств в текущем месяце для определенного типа дежурств",
+			handleFunc:  t.handleShowMy},
 		{command: &cmd{name: botCmdAddOffDuty, args: &[]arg{
 			{name: botCmdArgOffDuty,
 				handleFunc:  nil,
@@ -117,6 +126,7 @@ const (
 	botCmdRegister      tCmd = "register"
 	botCmdUnregister    tCmd = "unregister"
 	botCmdWhoIsOn       tCmd = "whoison"
+	botCmdShowMy        tCmd = "showmy"
 	botCmdAddOffDuty    tCmd = "addoffduty"
 	botCmdShowOffDuty   tCmd = "showoffduty"
 	botCmdDeleteOffDuty tCmd = "deleteoffduty"
@@ -138,7 +148,7 @@ const (
 const (
 	botDataShort1 = "02012006"
 	botDataShort2 = "02.01.2006"
-	botDataShort3 = "02/02/2006"
+	botDataShort3 = "02/01/2006"
 )
 
 // Continuous days for duty periods

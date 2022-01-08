@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// WhoIsOnDuty Returns duty engineer name
+// WhoIsOnDuty Returns duty engineer tgId
 func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
@@ -34,7 +34,7 @@ func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 		}
 
 	}
-	return "", fmt.Errorf("duty not found for %s", day.Format(DateShort))
+	return "", fmt.Errorf("дежурств не найдено для %s", day.Format(DateShort))
 }
 
 // ShowOffDutyForMan returns slice of OffDutyData with start/end off-duty dates
@@ -45,6 +45,37 @@ func (t *CalData) ShowOffDutyForMan(tgID string) (*[]OffDutyData, error) {
 		}
 	}
 	return nil, fmt.Errorf("can't find user with tgID: @%s in saved data", tgID)
+}
+
+// ManDutiesList returns slice of dates with requested duty type for specified man tgId
+func (t *CalData) ManDutiesList(tgId string, dutyTag CalTag) (*[]time.Time, error) {
+	// Define returned slice of dates
+	var dutyDates []time.Time
+
+	// Get events for current month
+	events, err := t.monthEventsFor(tgId, dutyTag)
+	if err != nil {
+		return nil, err
+	}
+	if len(events.Items) == 0 {
+		return nil, fmt.Errorf("no upcoming events found for current month")
+	}
+	// Fill up dutyDates slice
+	for _, event := range events.Items {
+		sdate, err := time.Parse(DateShort, event.Start.Date)
+		if err != nil {
+			return nil, err
+		}
+		edate, err := time.Parse(DateShort, event.End.Date)
+		if err != nil {
+			return nil, err
+		}
+		// Duty events must be presented as single day events.
+		if sdate == edate {
+			dutyDates = append(dutyDates, sdate)
+		}
+	}
+	return &dutyDates, nil
 }
 
 // WhoWasOnDuty Returns man name who was the last on duty in the previous month with the number of days done.

@@ -33,7 +33,23 @@ func (t *CalData) dayEvents(day *time.Time) (*calendar.Events, error) {
 	if err != nil {
 		return nil, err
 	}
+	return e, nil
+}
 
+// monthEventsFor Get specified events for current month
+func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events, error) {
+	firstMonthDay, lastMonthDay, err := firstLastMonthDay(1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get events with tgId && dutyTag
+	e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
+		SingleEvents(true).TimeMin(firstMonthDay.Format(time.RFC3339)).
+		TimeMax(lastMonthDay.Format(time.RFC3339)).MaxResults(100).Q(string(dutyTag) + " " + tgId).Do()
+	if err != nil {
+		return nil, err
+	}
 	return e, nil
 }
 

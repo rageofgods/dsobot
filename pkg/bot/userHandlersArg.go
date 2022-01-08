@@ -79,3 +79,49 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 		t.msg.ReplyToMessageID = t.update.Message.MessageID
 	}
 }
+
+// Handle 'duty' user arg for 'showmy' command
+func (t *TgBot) handleShowMyDuty(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnDutyTag)
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+	if len(*dates) == 0 {
+		t.msg.Text = "Дежурства в текущем месяце не найдены"
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+	list := fmt.Sprintf("*Список дней дежурств в текущем месяце (%d):*\n", len(*dates))
+	for index, date := range *dates {
+		list += fmt.Sprintf("*%d.* - %s\n", index+1, date.Format(botDataShort3))
+	}
+	t.msg.Text = list
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
+
+// Handle 'duty' user arg for 'showmy' command
+func (t *TgBot) handleShowMyValidation(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnValidationTag)
+	if err != nil {
+		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+	if len(*dates) == 0 {
+		t.msg.Text = "Валидации в текущем месяце не найдены"
+		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		return
+	}
+	list := fmt.Sprintf("*Список дней валидаций в текущем месяце (%d):*\n", len(*dates))
+	for index, date := range *dates {
+		list += fmt.Sprintf("*%d.* - %s\n", index+1, date.Format(botDataShort3))
+	}
+	t.msg.Text = list
+	t.msg.ReplyToMessageID = t.update.Message.MessageID
+}
