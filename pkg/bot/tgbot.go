@@ -32,7 +32,7 @@ func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *T
 	}
 }
 
-func (t *TgBot) StartBot() {
+func (t *TgBot) StartBot(version string, build string) {
 	var err error
 	t.bot, err = tgbotapi.NewBotAPI(t.token)
 	if err != nil {
@@ -54,6 +54,16 @@ func (t *TgBot) StartBot() {
 
 	// Start polling Telegram for updates.
 	updates := t.bot.GetUpdatesChan(updateConfig)
+
+	//
+	err = t.sendMessageToAdmins(fmt.Sprintf("*%s (@%s)* был запущен.\n_версия_: %q\n_билд_: %q",
+		t.bot.Self.FirstName,
+		t.bot.Self.UserName,
+		version,
+		build))
+	if err != nil {
+		log.Printf("unable to send message to admin: %v", err)
+	}
 
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {

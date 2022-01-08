@@ -51,5 +51,5 @@ func main() {
 
 	// Start tgBot
 	tgBot := bot.NewTgBot(dc, botToken, id, true)
-	tgBot.StartBot()
+	tgBot.StartBot(Version, Build)
 }

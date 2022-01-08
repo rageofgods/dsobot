@@ -88,6 +88,7 @@ func (t *TgBot) getChatMember(userId int64, chatId int64) (*tgbotapi.ChatMember,
 // Send provided message to admins Telegram group
 func (t *TgBot) sendMessageToAdmins(message string) error {
 	msg := tgbotapi.NewMessage(t.adminGroupId, message)
+	msg.ParseMode = "markdown"
 	// Send a message to user who was request access.
 	if _, err := t.bot.Send(msg); err != nil {
 		return err
