@@ -37,7 +37,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 	abc := t.AdminBotCommands()
 	var isArgValid bool
 	for _, cmd := range abc.commands {
-		if cmd.command.args != nil {
+		if cmd.command.args != nil && cmd.command.name == botCmdRollout {
 			for _, arg := range *cmd.command.args {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {

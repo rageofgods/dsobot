@@ -143,7 +143,7 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 	bc := t.UserBotCommands()
 	var isArgValid bool
 	for _, cmd := range bc.commands {
-		if cmd.command.args != nil {
+		if cmd.command.args != nil && cmd.command.name == botCmdWhoIsOn {
 			for _, arg := range *cmd.command.args {
 				s := strings.Split(cmdArgs, " ")
 				// Check if we have two arguments (type first, date second)
@@ -307,7 +307,7 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 	bc := t.UserBotCommands()
 	var isArgValid bool
 	for _, cmd := range bc.commands {
-		if cmd.command.args != nil {
+		if cmd.command.args != nil && cmd.command.name == botCmdShowMy {
 			for _, arg := range *cmd.command.args {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
