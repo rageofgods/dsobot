@@ -44,7 +44,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 			log.Printf("can't save men list: %v", err)
 		} else {
 			// Send message to admins
-			err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь @%s успешно добавлен", uTgID))
+			err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь *@%s* успешно добавлен", uTgID))
 			if err != nil {
 				log.Printf("unable to send message admins group: %v", err)
 			}
