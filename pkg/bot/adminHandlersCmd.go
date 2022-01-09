@@ -42,6 +42,8 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
 					// Run dedicated child argument function
+					// TODO add concurrency for this function call i.e. "go arg.handleFunc(cmdArgs)"
+					// TODO to make bot app more responsive
 					arg.handleFunc(cmdArgs)
 					isArgValid = true
 				}
