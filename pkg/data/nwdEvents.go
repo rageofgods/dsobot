@@ -14,7 +14,7 @@ func (t *CalData) CreateNwdEvents(months int) error {
 
 	stime, etime, err := firstLastMonthDay(months)
 	if err != nil {
-		return err
+		return CtxError("data.CreateNwdEvents()", err)
 	}
 	dayOffStartDay := stime.Format(DateShortIsDayOff)
 	dayOffEndDay := etime.Format(DateShortIsDayOff)
@@ -29,11 +29,11 @@ func (t *CalData) CreateNwdEvents(months int) error {
 		},
 	})
 	if err != nil {
-		return err
+		return CtxError("data.CreateNwdEvents()", err)
 	}
 
 	if len(day) == 0 {
-		return fmt.Errorf("zero days is returned. check your range")
+		return CtxError("data.CreateNwdEvents()", fmt.Errorf("zero days is returned. check your range"))
 	}
 
 	i := 0
@@ -47,9 +47,8 @@ func (t *CalData) CreateNwdEvents(months int) error {
 		event := genEvent(NonWorkingDaySum, string(NonWorkingDay), CalGray,
 			d.Format(DateShort), d.Format(DateShort))
 
-		_, err := t.addEvent(event)
-		if err != nil {
-			return err
+		if _, err := t.addEvent(event); err != nil {
+			return CtxError("data.CreateNwdEvents()", err)
 		}
 		i++
 	}
@@ -59,14 +58,12 @@ func (t *CalData) CreateNwdEvents(months int) error {
 
 // UpdateNwdEvents Recreate nwd events
 func (t *CalData) UpdateNwdEvents(months int) error {
-	err := t.DeleteDutyEvents(months, NonWorkingDay)
-	if err != nil {
-		return err
+	if err := t.DeleteDutyEvents(months, NonWorkingDay); err != nil {
+		return CtxError("data.UpdateNwdEvents()", err)
 	}
 
-	err = t.CreateNwdEvents(months)
-	if err != nil {
-		return err
+	if err := t.CreateNwdEvents(months); err != nil {
+		return CtxError("data.UpdateNwdEvents()", err)
 	}
 
 	return nil

@@ -58,7 +58,7 @@ func main() {
 func readEnv(envName string) string {
 	env := os.Getenv(envName)
 	if env == "" {
-		panic(fmt.Sprintf("%s is empty", env))
+		panic(fmt.Sprintf("%s is empty", envName))
 	}
 	return env
 }

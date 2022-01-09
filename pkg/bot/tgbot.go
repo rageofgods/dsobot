@@ -113,14 +113,11 @@ func (t *TgBot) StartBot(version string, build string) {
 			// Okay, we're sending our message off! We don't care about the message
 			// we just sent, so we'll discard it.
 			if _, err := t.bot.Send(t.msg); err != nil {
-				// Note that panics are a bad way to handle errors. Telegram can
-				// have service outages or network errors, you should retry sending
-				// messages or more gracefully handle failures.
-				panic(err)
+				log.Printf("unable to send message: %v", err)
 			}
 			// Process callback messages
 		} else if update.CallbackQuery != nil {
-			// Create null message
+			// Create empty message
 			var msg tgbotapi.MessageConfig
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.

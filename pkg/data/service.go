@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -39,7 +38,7 @@ func NewCalData(token string, calID string) *CalData {
 func (t *CalData) readToken() error {
 	data, err := base64.StdEncoding.DecodeString(t.token)
 	if err != nil {
-		return err
+		return CtxError("data.readToken()", err)
 	}
 	t.bToken = &data
 	return nil
@@ -49,7 +48,7 @@ func (t *CalData) readToken() error {
 func (t *CalData) httpClient() error {
 	config, err := google.JWTConfigFromJSON(*t.bToken, calendar.CalendarScope)
 	if err != nil {
-		return err
+		return CtxError("data.httpClient()", err)
 	}
 	t.httpC = config.Client(*t.ctx)
 	return nil
@@ -59,7 +58,7 @@ func (t *CalData) httpClient() error {
 func (t *CalData) service() error {
 	srv, err := calendar.NewService(*t.ctx, option.WithHTTPClient(t.httpC))
 	if err != nil {
-		return err
+		return CtxError("data.service()", err)
 	}
 	t.cal = srv
 	return nil
@@ -67,17 +66,14 @@ func (t *CalData) service() error {
 
 // InitService Init service
 func (t *CalData) InitService() error {
-	err := t.readToken()
-	if err != nil {
-		return fmt.Errorf("unable to read client secret file: %v", err)
+	if err := t.readToken(); err != nil {
+		return CtxError("data.InitService()", err)
 	}
-	err = t.httpClient()
-	if err != nil {
-		return fmt.Errorf("unable to parse client secret file to config: %v", err)
+	if err := t.httpClient(); err != nil {
+		return CtxError("data.InitService()", err)
 	}
-	err = t.service()
-	if err != nil {
-		return fmt.Errorf("unable to retrieve Calendar client: %v", err)
+	if err := t.service(); err != nil {
+		return CtxError("data.InitService()", err)
 	}
 	return nil
 }

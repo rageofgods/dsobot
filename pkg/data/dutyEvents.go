@@ -9,16 +9,15 @@ import (
 // UpdateOnDutyEvents Recreate on-duty events
 func (t *CalData) UpdateOnDutyEvents(months int, contDays int, dutyTag CalTag) error {
 	if len(*t.dutyMen) == 0 {
-		return fmt.Errorf("men of duty list is nil")
+		return CtxError("data.UpdateOnDutyEvents()",
+			fmt.Errorf("men of duty list is nil"))
 	}
-	err := t.DeleteDutyEvents(months, dutyTag)
-	if err != nil {
-		return err
+	if err := t.DeleteDutyEvents(months, dutyTag); err != nil {
+		return CtxError("data.UpdateOnDutyEvents()", err)
 	}
 
-	err = t.CreateOnDutyEvents(months, contDays, dutyTag)
-	if err != nil {
-		return err
+	if err := t.CreateOnDutyEvents(months, contDays, dutyTag); err != nil {
+		return CtxError("data.UpdateOnDutyEvents()", err)
 	}
 
 	return nil
@@ -28,18 +27,19 @@ func (t *CalData) UpdateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) error {
 	stime, _, err := firstLastMonthDay(months)
 	if err != nil {
-		return err
+		return CtxError("data.CreateOnDutyEvents()", err)
 	}
 
 	// Check if men on-duty is initialized
 	if t.dutyMen == nil {
-		return fmt.Errorf("you need to load on-duty men list first")
+		return CtxError("data.CreateOnDutyEvents()",
+			fmt.Errorf("you need to load on-duty men list first"))
 	}
 
 	// Creating slice with sorted men on-duty
 	menOnDuty, err := genListMenOnDuty(*t.dutyMen)
 	if err != nil {
-		return err
+		return CtxError("data.CreateOnDutyEvents()", err)
 	}
 
 	// Generate slice with valid menOnDuty count iteration (following length of duty days)
@@ -58,7 +58,7 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 
 		nwd, _, err := t.checkDayTag(&d, NonWorkingDay) // Check if current day is non-working day
 		if err != nil {
-			return err
+			return CtxError("data.CreateOnDutyEvents()", err)
 		}
 		if nwd { // Don't create any on-duty events if non-working day
 			continue
@@ -66,7 +66,7 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 
 		isOffDuty, menOffDuty, err := t.checkDayTag(&d, OffDutyTag) // Check if current day is off-duty for current man
 		if err != nil {
-			return err
+			return CtxError("data.CreateOnDutyEvents()", err)
 		}
 
 		// Check if all on-duty men is out off they duty
@@ -104,9 +104,8 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 		event := genEvent(tempMen[menCount], string(dutyTag), clrID, d.Format(DateShort), d.Format(DateShort))
 
 		// Add calendar event
-		_, err = t.addEvent(event)
-		if err != nil {
-			return err
+		if _, err = t.addEvent(event); err != nil {
+			return CtxError("data.CreateOnDutyEvents()", err)
 		}
 
 		menCount++
@@ -118,28 +117,27 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 func (t *CalData) DeleteDutyEvents(months int, dutyTag CalTag) error {
 	stime, etime, err := firstLastMonthDay(months)
 	if err != nil {
-		return err
+		return CtxError("data.DeleteDutyEvents()", err)
 	}
 
 	events, err := t.cal.Events.List(t.calID).ShowDeleted(false).
 		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
 		TimeMax(etime.Format(time.RFC3339)).MaxResults(SearchMaxResults).Do()
 	if err != nil {
-		return err
+		return CtxError("data.DeleteDutyEvents()", err)
 	}
 
 	if len(events.Items) != 0 {
 		for _, item := range events.Items {
 			if item.Description == string(dutyTag) {
-				err := t.cal.Events.Delete(t.calID, item.Id).Do()
-				if err != nil {
-					return err
+				if err := t.cal.Events.Delete(t.calID, item.Id).Do(); err != nil {
+					return CtxError("data.DeleteDutyEvents()", err)
 				}
 				log.Printf("Deleted event id: %v\n", item.Id)
 			}
 		}
 	} else {
-		return fmt.Errorf("no items found for delete")
+		return CtxError("data.DeleteDutyEvents()", fmt.Errorf("no items found for delete"))
 	}
 	return nil
 }
@@ -148,18 +146,16 @@ func (t *CalData) DeleteDutyEvents(months int, dutyTag CalTag) error {
 func (t *CalData) CreateOffDutyEvents(manOffDuty string, fromDate time.Time, toDate time.Time) error {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return err
+		return CtxError("data.CreateOffDutyEvents()", err)
 	}
 	stime := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, loc)
 	etime := time.Date(toDate.Year(), toDate.Month(), toDate.Day(), 23, 59, 59, 0, loc)
 
 	event := genEvent(manOffDuty, string(OffDutyTag), CalOrange, stime.Format(DateShort), etime.Format(DateShort))
 
-	_, err = t.addEvent(event)
-	if err != nil {
-		return err
+	if _, err = t.addEvent(event); err != nil {
+		return CtxError("data.CreateOffDutyEvents()", err)
 	}
-
 	return nil
 }
 
@@ -167,7 +163,7 @@ func (t *CalData) CreateOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toDate time.Time) error {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return err
+		return CtxError("data.DeleteOffDutyEvents()", err)
 	}
 	stime := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, loc)
 	etime := time.Date(toDate.Year(), toDate.Month(), toDate.Day(), 23, 59, 59, 0, loc)
@@ -176,7 +172,7 @@ func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
 		TimeMax(etime.Format(time.RFC3339)).MaxResults(SearchMaxResults).Do()
 	if err != nil {
-		return err
+		return CtxError("data.DeleteOffDutyEvents()", err)
 	}
 
 	if len(events.Items) != 0 {
@@ -184,13 +180,13 @@ func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 			if item.Description == string(OffDutyTag) && item.Summary == manOffDuty {
 				err := t.cal.Events.Delete(t.calID, item.Id).Do()
 				if err != nil {
-					return err
+					return CtxError("data.DeleteOffDutyEvents()", err)
 				}
 				log.Printf("Deleted event id: %v\n", item.Id)
 			}
 		}
 	} else {
-		return fmt.Errorf("no items found for delete")
+		return CtxError("data.DeleteOffDutyEvents()", fmt.Errorf("no items found for delete"))
 	}
 	return nil
 }
