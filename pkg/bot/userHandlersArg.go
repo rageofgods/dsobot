@@ -17,8 +17,13 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 		var err error
 		tn, err = checkArgHasDate(arg)
 		if err != nil {
-			t.msg.Text = fmt.Sprintf("%v", err)
-			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			messageText := fmt.Sprintf("%v", err)
+			if err := t.sendMessage(messageText,
+				t.update.Message.Chat.ID,
+				&t.update.Message.MessageID,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 			return
 		}
 	}
@@ -36,11 +41,21 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %v", err)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Не удалось выполнить запрос: %v", err)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	} else {
-		t.msg.Text = fmt.Sprintf("Дежурный: %s", man)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Дежурный: %s", man)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	}
 }
 
@@ -53,8 +68,13 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 		var err error
 		tn, err = checkArgHasDate(arg)
 		if err != nil {
-			t.msg.Text = fmt.Sprintf("%v", err)
-			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			messageText := fmt.Sprintf("%v", err)
+			if err := t.sendMessage(messageText,
+				t.update.Message.Chat.ID,
+				&t.update.Message.MessageID,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 			return
 		}
 	}
@@ -72,11 +92,21 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %v", err)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Не удалось выполнить запрос: %v", err)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	} else {
-		t.msg.Text = fmt.Sprintf("Валидирующий: %s", man)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Валидирующий: %s", man)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	}
 }
 
@@ -86,13 +116,23 @@ func (t *TgBot) handleShowMyDuty(arg string) {
 
 	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnDutyTag)
 	if err != nil {
-		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
 	}
 	if len(*dates) == 0 {
-		t.msg.Text = "Дежурства в текущем месяце не найдены"
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := "Дежурства в текущем месяце не найдены"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
 	}
 	list := fmt.Sprintf("*Список дней дежурств в текущем месяце (%d):*\n", len(*dates))
@@ -102,8 +142,13 @@ func (t *TgBot) handleShowMyDuty(arg string) {
 			date.Format(botDataShort3),
 			locWeekday(date.Weekday()))
 	}
-	t.msg.Text = list
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	messageText := list
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }
 
 // Handle 'duty' user arg for 'showmy' command
@@ -112,13 +157,23 @@ func (t *TgBot) handleShowMyValidation(arg string) {
 
 	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnValidationTag)
 	if err != nil {
-		t.msg.Text = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
 	}
 	if len(*dates) == 0 {
-		t.msg.Text = "Валидации в текущем месяце не найдены"
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		messageText := "Валидации в текущем месяце не найдены"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
 	}
 	list := fmt.Sprintf("*Список дней валидаций в текущем месяце (%d):*\n", len(*dates))
@@ -128,6 +183,11 @@ func (t *TgBot) handleShowMyValidation(arg string) {
 			date.Format(botDataShort3),
 			locWeekday(date.Weekday()))
 	}
-	t.msg.Text = list
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	messageText := list
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }

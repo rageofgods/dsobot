@@ -56,13 +56,16 @@ func (t *TgBot) StartBot(version string, build string) {
 	updates := t.bot.GetUpdatesChan(updateConfig)
 
 	// Send message to admin group about current running bot build version
-	err = t.sendMessageToAdmins(fmt.Sprintf("*%s (@%s)* был запущен.\n_версия_: %q\n_билд_: %q",
+	messageText := fmt.Sprintf("*%s (@%s)* был запущен.\n_версия_: %q\n_билд_: %q",
 		t.bot.Self.FirstName,
 		t.bot.Self.UserName,
 		version,
-		build))
-	if err != nil {
-		log.Printf("unable to send message to admin: %v", err)
+		build)
+	if err := t.sendMessage(messageText,
+		t.adminGroupId,
+		nil,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
 	}
 
 	// Let's go through each update that we're getting from Telegram.
@@ -71,11 +74,6 @@ func (t *TgBot) StartBot(version string, build string) {
 		if update.Message != nil && update.Message.IsCommand() {
 			// Hold pointer to the current update for access inside handlers
 			t.update = &update
-
-			// Init empty message to fill up it later
-			*t.msg = tgbotapi.NewMessage(update.Message.Chat.ID, "")
-			// Set default name mode to markdown
-			t.msg.ParseMode = "markdown"
 
 			// Go through struct of allowed commands
 			bc := t.UserBotCommands()
@@ -109,16 +107,7 @@ func (t *TgBot) StartBot(version string, build string) {
 					t.handleNotFound()
 				}
 			}
-
-			// Okay, we're sending our message off! We don't care about the message
-			// we just sent, so we'll discard it.
-			if _, err := t.bot.Send(t.msg); err != nil {
-				log.Printf("unable to send message: %v", err)
-			}
-			// Process callback messages
-		} else if update.CallbackQuery != nil {
-			// Create empty message
-			var msg tgbotapi.MessageConfig
+		} else if update.CallbackQuery != nil { // Process callback messages
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.
 			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
@@ -143,23 +132,23 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleDeleteOffDuty:
 				err := t.callbackDeleteOffDuty(message.Answer, message.ChatId, message.UserId, message.MessageId)
 				if err != nil {
-					msg.Text = fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
-					msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-					msg.ChatID = update.CallbackQuery.Message.Chat.ID
-					// Send a message to user who was request access.
-					if _, err := t.bot.Send(msg); err != nil {
-						log.Printf("unable to send message to user: %v", err)
+					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+					if err := t.sendMessage(messageText,
+						update.CallbackQuery.Message.Chat.ID,
+						&update.CallbackQuery.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
 					}
 				}
 			case callbackHandleReindex:
 				err := t.callbackReindex(message.Answer, message.ChatId, message.UserId, message.MessageId)
 				if err != nil {
-					msg.Text = fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
-					msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-					msg.ChatID = update.CallbackQuery.Message.Chat.ID
-					// Send a message to user who was request access.
-					if _, err := t.bot.Send(msg); err != nil {
-						log.Printf("unable to send message to user: %v", err)
+					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+					if err := t.sendMessage(messageText,
+						update.CallbackQuery.Message.Chat.ID,
+						&update.CallbackQuery.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
 					}
 				}
 
