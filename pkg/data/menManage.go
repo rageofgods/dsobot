@@ -217,6 +217,13 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 
 // AddManOnDuty Add new man to duty list
 func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
+	// Check if added user is unique in the data
+	for _, man := range *t.dutyMen {
+		if tgID == man.TgID {
+			log.Printf("user %s with tgid: %d is already exists in the data", fullName, tgID)
+			return
+		}
+	}
 	ln := len(*t.dutyMen)
 	ln++
 	m := &DutyMan{FullName: fullName, Index: ln, UserName: userName, TgID: tgID}
