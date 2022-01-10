@@ -237,7 +237,7 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
 		}
 		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (%s)",
-			i+1, v.Name, v.TgID), string(jsonData)))
+			i+1, v.FullName, v.UserName), string(jsonData)))
 		rows = append(rows, row)
 	}
 

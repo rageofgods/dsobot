@@ -43,7 +43,7 @@ func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 // ShowOffDutyForMan returns slice of OffDutyData with start/end off-duty dates
 func (t *CalData) ShowOffDutyForMan(tgID string) (*[]OffDutyData, error) {
 	for _, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			return &man.OffDuty, nil
 		}
 	}
@@ -216,10 +216,10 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 }
 
 // AddManOnDuty Add new man to duty list
-func (t *CalData) AddManOnDuty(name string, tgID string) {
+func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
 	ln := len(*t.dutyMen)
 	ln++
-	m := &DutyMan{Name: name, Index: ln, TgID: tgID}
+	m := &DutyMan{FullName: fullName, Index: ln, UserName: userName, TgID: tgID}
 	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
@@ -228,7 +228,7 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 	stime := startDate.Format(DateShortSaveData)
 	etime := endDate.Format(DateShortSaveData)
 	for i, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			m := &OffDutyData{OffDutyStart: stime, OffDutyEnd: etime}
 			(*t.dutyMen)[i].OffDuty = append((*t.dutyMen)[i].OffDuty, *m)
 		}
@@ -238,7 +238,7 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 // DeleteOffDutyFromMan Removes off-duty period from specified man
 func (t *CalData) DeleteOffDutyFromMan(tgID string, offDutyDataIndex int) {
 	for i, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			tmp := (*t.dutyMen)[i].OffDuty
 			tmp = append(tmp[:offDutyDataIndex], tmp[offDutyDataIndex+1:]...)
 			(*t.dutyMen)[i].OffDuty = tmp
@@ -255,7 +255,7 @@ func deleteMan(sl []DutyMan, s int) []DutyMan {
 func (t *CalData) DeleteManOnDuty(tgID string) error {
 	var isDeleted bool
 	for index, man := range *t.dutyMen {
-		if tgID == man.TgID {
+		if tgID == man.UserName {
 			*t.dutyMen = deleteMan(*t.dutyMen, index)
 			isDeleted = true
 		}
@@ -317,7 +317,7 @@ func genListMenOnDuty(m []DutyMan) ([]string, error) {
 			fmt.Errorf("unable to load men list, please load it first"))
 	}
 	for _, man := range m {
-		retStr = append(retStr, man.TgID)
+		retStr = append(retStr, man.UserName)
 	}
 	return retStr, nil
 }
@@ -376,7 +376,7 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 // IsInDutyList returns true if provided Telegram ID is in duty list
 func (t *CalData) IsInDutyList(tgID string) bool {
 	for _, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			return true
 		}
 	}
@@ -404,7 +404,7 @@ func equalLists(searchList []string, searchInList []string) bool {
 func (t *CalData) ListMenTgID() []string {
 	var menIDs []string
 	for _, man := range *t.dutyMen {
-		menIDs = append(menIDs, man.TgID)
+		menIDs = append(menIDs, man.UserName)
 	}
 	return menIDs
 }

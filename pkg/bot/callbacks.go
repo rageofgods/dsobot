@@ -19,9 +19,10 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	}
 
 	// Create human-readable variables
-	uTgID := u.User.UserName
+	uUserName := u.User.UserName
 	uFirstName := u.User.FirstName
 	uLastName := u.User.LastName
+	uTgID := u.User.ID
 
 	// Generate correct username
 	uFullName := genUserFullName(uFirstName, uLastName)
@@ -39,14 +40,14 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 			log.Printf("unable to send message: %v", err)
 		}
 		// Add user to duty list
-		t.dc.AddManOnDuty(uFullName, uTgID)
+		t.dc.AddManOnDuty(uFullName, uUserName, uTgID)
 		// Save new data
 		_, err := t.dc.SaveMenList()
 		if err != nil {
 			log.Printf("can't save men list: %v", err)
 		} else {
 			// Send message to admins
-			messageText := fmt.Sprintf("Пользователь *@%s* успешно добавлен", uTgID)
+			messageText := fmt.Sprintf("Пользователь *@%s* успешно добавлен", uUserName)
 			if err := t.sendMessage(messageText,
 				t.adminGroupId,
 				nil,
@@ -228,7 +229,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				var list string
 				list = "*Новый порядок дежурных:*\n"
 				for i, v := range *t.tmpData {
-					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 				}
 				list += "\nСохранить?"
 
@@ -246,7 +247,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				for _, dMan := range *dutyMen {
 					var manFound bool
 					for _, dTmpMan := range *t.tmpData {
-						if dMan.TgID == dTmpMan.TgID {
+						if dMan.UserName == dTmpMan.UserName {
 							manFound = true
 						}
 					}
@@ -259,7 +260,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				var list string
 				list = "*Новый порядок дежурных:*\n"
 				for i, v := range *t.tmpData {
-					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 				}
 				list += "\nСохранить?"
 
@@ -350,7 +351,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		list = msgTextAdminHandleReindex
 		list += "\n\n"
 		for i, v := range *t.tmpData {
-			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 		}
 
 		// Create edited message (with correct keyboard)

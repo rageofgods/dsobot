@@ -31,7 +31,7 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 
 	// Generate returned string
 	for i, v := range *menData {
-		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 	}
 	messageText := fmt.Sprintf("*Список дежурных:*\n%s", list)
 	if err := t.sendMessage(messageText,
@@ -90,7 +90,7 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 	men := t.dc.DutyMenData()
 	var msgText string
 	for _, man := range *men {
-		offduty, err := t.dc.ShowOffDutyForMan(man.TgID)
+		offduty, err := t.dc.ShowOffDutyForMan(man.UserName)
 		if err != nil {
 			messageText := fmt.Sprintf("%v", err)
 			if err := t.sendMessage(messageText,
@@ -106,7 +106,7 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 			continue
 		}
 
-		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.Name, man.TgID)
+		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.FullName, man.UserName)
 		for i, od := range *offduty {
 			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
 		}

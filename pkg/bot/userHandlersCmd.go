@@ -58,8 +58,8 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 
 	// Check user telegram id
 	if t.update.Message.From.UserName == "" {
-		messageText := "У вас отсутствует Telegram User ID.\n" +
-			"Пожалуйста, укажите его в настройках вашего профиля пользователя Telegram"
+		messageText := "У вас отсутствует Telegram Username (@username)\n" +
+			"Пожалуйста, укажите его в настройках вашего профиля Telegram"
 		if err := t.sendMessage(messageText,
 			t.update.Message.Chat.ID,
 			&t.update.Message.MessageID,
