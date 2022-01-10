@@ -13,7 +13,7 @@ func (t *CalData) UpdateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 			fmt.Errorf("men of duty list is nil"))
 	}
 	if err := t.DeleteDutyEvents(months, dutyTag); err != nil {
-		return CtxError("data.UpdateOnDutyEvents()", err)
+		log.Printf("%v", err)
 	}
 
 	if err := t.CreateOnDutyEvents(months, contDays, dutyTag); err != nil {

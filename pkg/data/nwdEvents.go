@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"github.com/rageofgods/isdayoff"
+	"log"
 )
 
 // CreateNwdEvents Create non-working events
@@ -59,9 +60,8 @@ func (t *CalData) CreateNwdEvents(months int) error {
 // UpdateNwdEvents Recreate nwd events
 func (t *CalData) UpdateNwdEvents(months int) error {
 	if err := t.DeleteDutyEvents(months, NonWorkingDay); err != nil {
-		return CtxError("data.UpdateNwdEvents()", err)
+		log.Printf("%v", err)
 	}
-
 	if err := t.CreateNwdEvents(months); err != nil {
 		return CtxError("data.UpdateNwdEvents()", err)
 	}

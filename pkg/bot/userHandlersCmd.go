@@ -55,6 +55,20 @@ func (t *TgBot) handleHelp(cmdArgs string) {
 // Register new user as DSO team member
 func (t *TgBot) handleRegister(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
+
+	// Check user telegram id
+	if t.update.Message.From.UserName == "" {
+		messageText := "У вас отсутствует Telegram User ID.\n" +
+			"Пожалуйста, укажите его в настройках вашего профиля пользователя Telegram"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
 	// Check if user is already registered
 	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
