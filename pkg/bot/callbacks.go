@@ -198,13 +198,26 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 		log.Printf("unable to send message: %v", err)
 	}
 
-	// Deleting access request message in admin group
+	// Deleting access request message
 	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
 		t.update.CallbackQuery.Message.MessageID)
-	_, err = t.bot.Request(del)
-	if err != nil {
+	if _, err = t.bot.Request(del); err != nil {
 		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
 	}
+
+	// Send message to admins about deleted event
+	timeRageText := fmt.Sprintf("%s - %s",
+		stime.Format(botDataShort3),
+		etime.Format(botDataShort3))
+	messageText = fmt.Sprintf("Пользователь *@%s* удалил нерабочий период:\n%s",
+		t.update.CallbackQuery.From.UserName, timeRageText)
+	if err := t.sendMessage(messageText,
+		t.adminGroupId,
+		nil,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+
 	return nil
 }
 

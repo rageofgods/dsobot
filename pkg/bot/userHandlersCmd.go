@@ -289,6 +289,19 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
+
+	// Send message to admins about added event
+	timeRageText := fmt.Sprintf("%s - %s",
+		timeRange[0].Format(botDataShort3),
+		timeRange[1].Format(botDataShort3))
+	messageText = fmt.Sprintf("Пользователь *@%s* добавил новый нерабочий период:\n%s",
+		t.update.Message.From.UserName, timeRageText)
+	if err := t.sendMessage(messageText,
+		t.adminGroupId,
+		nil,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }
 
 // handle '/showofduty' command
