@@ -19,44 +19,50 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	}
 
 	// Create human-readable variables
-	uTgID := u.User.UserName
+	uUserName := u.User.UserName
 	uFirstName := u.User.FirstName
 	uLastName := u.User.LastName
+	uTgID := u.User.ID
 
 	// Generate correct username
 	uFullName := genUserFullName(uFirstName, uLastName)
 
 	// Generate answer to user who was requested access
-	var msg tgbotapi.MessageConfig
 	if answer == inlineKeyboardYes {
 		commands := t.UserBotCommands().commands
 		cmdList := genHelpCmdText(commands)
-		msgText := "*Запрошенный доступ был согласован.*\n\n" +
+		messageText := "*Запрошенный доступ был согласован.*\n\n" +
 			"Вам доступны следующие команды управления:\n" + cmdList
-		msg = tgbotapi.NewMessage(chatId, msgText)
-		msg.ReplyToMessageID = messageId
-		msg.ParseMode = "markdown"
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		// Add user to duty list
-		t.dc.AddManOnDuty(uFullName, uTgID)
+		t.dc.AddManOnDuty(uFullName, uUserName, uTgID)
 		// Save new data
 		_, err := t.dc.SaveMenList()
 		if err != nil {
 			log.Printf("can't save men list: %v", err)
 		} else {
 			// Send message to admins
-			err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь *@%s* успешно добавлен", uTgID))
-			if err != nil {
-				log.Printf("unable to send message admins group: %v", err)
+			messageText := fmt.Sprintf("Пользователь *@%s* успешно добавлен", uUserName)
+			if err := t.sendMessage(messageText,
+				t.adminGroupId,
+				nil,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
 			}
 		}
 	} else {
-		msg = tgbotapi.NewMessage(chatId, "Доступ не согласован.")
-		msg.ReplyToMessageID = messageId
-	}
-
-	// Send a message to user who was request access.
-	if _, err := t.bot.Send(msg); err != nil {
-		log.Printf("unable to send message to user who was requested an access: %v", err)
+		messageText := "Доступ не согласован."
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	}
 
 	// Deleting access request message in admin group
@@ -78,41 +84,56 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 	uTgID := u.User.UserName
 
 	// Generate answer to user who was requested access
-	var msg tgbotapi.MessageConfig
 	if answer == inlineKeyboardYes {
 		err := t.dc.DeleteManOnDuty(uTgID)
 		if err != nil {
-			msg = tgbotapi.NewMessage(chatId,
-				fmt.Sprintf("Возникла ошибка при попытке произвести выход: %s", err))
-			msg.ReplyToMessageID = messageId
+			messageText := fmt.Sprintf("Возникла ошибка при попытке произвести выход: %s", err)
+			if err := t.sendMessage(messageText,
+				chatId,
+				&messageId,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 		} else {
 			// Save new data
 			_, err := t.dc.SaveMenList()
 			if err != nil {
-				msg = tgbotapi.NewMessage(chatId, fmt.Sprintf("Не удалось сохранить данные: %v", err))
-				msg.ReplyToMessageID = messageId
+				messageText := fmt.Sprintf("Не удалось сохранить данные: %v", err)
+				if err := t.sendMessage(messageText,
+					chatId,
+					&messageId,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
 				log.Printf("can't save men list: %v", err)
 			} else {
 				// Generate user message
-				msg = tgbotapi.NewMessage(chatId, "Выход произведен успешно")
-				msg.ReplyToMessageID = messageId
+				messageText := "Выход произведен успешно"
+				if err := t.sendMessage(messageText,
+					chatId,
+					&messageId,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
 				// Send message to admins
-				err = t.sendMessageToAdmins(fmt.Sprintf("Пользователь *@%s* произвел выход", uTgID))
-				if err != nil {
-					log.Printf("unable to send message admins group: %v", err)
+				messageText = fmt.Sprintf("Пользователь *@%s* произвел выход", uTgID)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
 				}
 			}
 		}
 	} else {
-		msg = tgbotapi.NewMessage(chatId, "Вы отменили выход")
-		msg.ReplyToMessageID = messageId
+		messageText := "Вы отменили выход"
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 	}
-
-	// Send a message to user who was request access.
-	if _, err := t.bot.Send(msg); err != nil {
-		log.Printf("unable to send message to user who was requested an access: %v", err)
-	}
-
 	// Deleting access request message in admin group
 	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID, t.update.CallbackQuery.Message.MessageID)
 	_, err = t.bot.Request(del)
@@ -123,7 +144,6 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 }
 
 func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int) error {
-	var msg tgbotapi.MessageConfig
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -170,12 +190,12 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 		return fmt.Errorf("ошибка сохранения данных: %v", err)
 	}
 
-	msg.Text = "Событие успешно удалено"
-	msg.ReplyToMessageID = messageId
-	msg.ChatID = chatId
-	// Send a message to user who was request access.
-	if _, err := t.bot.Send(msg); err != nil {
-		log.Printf("unable to send message to user who was requested an access: %v", err)
+	messageText := "Событие успешно удалено"
+	if err := t.sendMessage(messageText,
+		chatId,
+		&messageId,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
 	}
 
 	// Deleting access request message in admin group
@@ -192,7 +212,6 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 	userId = 0 // userId is ignored here
 	// Get current men data
 	dutyMen := t.dc.DutyMenData()
-	var msg tgbotapi.MessageConfig
 
 	answerIndex, err := strconv.Atoi(answer)
 	if err != nil {
@@ -210,7 +229,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				var list string
 				list = "*Новый порядок дежурных:*\n"
 				for i, v := range *t.tmpData {
-					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 				}
 				list += "\nСохранить?"
 
@@ -228,7 +247,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				for _, dMan := range *dutyMen {
 					var manFound bool
 					for _, dTmpMan := range *t.tmpData {
-						if dMan.TgID == dTmpMan.TgID {
+						if dMan.UserName == dTmpMan.UserName {
 							manFound = true
 						}
 					}
@@ -241,7 +260,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				var list string
 				list = "*Новый порядок дежурных:*\n"
 				for i, v := range *t.tmpData {
-					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+					list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 				}
 				list += "\nСохранить?"
 
@@ -260,20 +279,17 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 					log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 				}
 			}
-			if _, err := t.bot.Send(msg); err != nil {
-				log.Printf("unable to send message to user who was requested an access: %v", err)
-			}
 		} else { // New duty list is reviewed, and we want to save it
 			_, err = t.dc.SaveMenList(t.tmpData)
 			if err != nil {
 				return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
 			}
-			msg.Text = "Новый порядок дежурных успешно сохранен"
-			msg.ReplyToMessageID = messageId
-			msg.ChatID = chatId
-			// Send a message to user who was request access.
-			if _, err := t.bot.Send(msg); err != nil {
-				log.Printf("unable to send message to user who was requested an access: %v", err)
+			messageText := "Новый порядок дежурных успешно сохранен"
+			if err := t.sendMessage(messageText,
+				chatId,
+				&messageId,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
 			}
 			// Deleting message with keyboard
 			del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
@@ -286,12 +302,12 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 			t.tmpData = new([]data.DutyMan)
 		}
 	case inlineKeyboardNo:
-		msg.Text = "Редактирование списка дежурных отменено"
-		msg.ReplyToMessageID = messageId
-		msg.ChatID = chatId
-		// Send a message to user who was request access.
-		if _, err := t.bot.Send(msg); err != nil {
-			log.Printf("unable to send message to user who was requested an access: %v", err)
+		messageText := "Редактирование списка дежурных отменено"
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
 		}
 		// Deleting access request message in admin group
 		del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
@@ -335,16 +351,13 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		list = msgTextAdminHandleReindex
 		list += "\n\n"
 		for i, v := range *t.tmpData {
-			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 		}
 
 		// Create edited message (with correct keyboard)
 		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
 			t.update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
 		changeMsg.ParseMode = "markdown"
-		//changeMsg := tgbotapi.NewEditMessageReplyMarkup(t.update.CallbackQuery.Message.Chat.ID,
-		//	t.update.CallbackQuery.Message.MessageID,
-		//	tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
 
 		// Change keyboard
 		_, err := t.bot.Request(changeMsg)

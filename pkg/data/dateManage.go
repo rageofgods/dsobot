@@ -10,7 +10,7 @@ func firstLastMonthDay(monthsCount int, startYearMonth ...int) (firstDay *time.T
 	tn := time.Now()
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, CtxError("data.firstLastMonthDay()", err)
 	}
 	// If startYearMonth not provided let init it from time.Now()
 	if len(startYearMonth) == 0 {

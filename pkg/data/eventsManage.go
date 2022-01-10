@@ -1,7 +1,7 @@
 package data
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"google.golang.org/api/calendar/v3"
@@ -11,9 +11,9 @@ import (
 func (t *CalData) addEvent(event *calendar.Event) (*calendar.Event, error) {
 	event, err := t.cal.Events.Insert(t.calID, event).Do()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create event: %v", err)
+		return nil, CtxError("data.addEvent()", err)
 	}
-	fmt.Printf("Event created: %s\n", event.HtmlLink)
+	log.Printf("Event created: %s\n", event.HtmlLink)
 
 	return event, nil
 }
@@ -22,7 +22,7 @@ func (t *CalData) addEvent(event *calendar.Event) (*calendar.Event, error) {
 func (t *CalData) dayEvents(day *time.Time) (*calendar.Events, error) {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.dayEvents()", err)
 	}
 	stime := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, loc)
 	etime := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, loc)
@@ -31,7 +31,7 @@ func (t *CalData) dayEvents(day *time.Time) (*calendar.Events, error) {
 		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
 		TimeMax(etime.Format(time.RFC3339)).MaxResults(10).Do()
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.dayEvents()", err)
 	}
 	return e, nil
 }
@@ -40,7 +40,7 @@ func (t *CalData) dayEvents(day *time.Time) (*calendar.Events, error) {
 func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events, error) {
 	firstMonthDay, lastMonthDay, err := firstLastMonthDay(1)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.monthEventsFor()", err)
 	}
 
 	// Get events with tgId && dutyTag
@@ -48,7 +48,7 @@ func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events,
 		SingleEvents(true).TimeMin(firstMonthDay.Format(time.RFC3339)).
 		TimeMax(lastMonthDay.Format(time.RFC3339)).MaxResults(100).Q(string(dutyTag) + " " + tgId).Do()
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.monthEventsFor()", err)
 	}
 	return e, nil
 }
@@ -60,7 +60,7 @@ func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events,
 func (t *CalData) checkDayTag(day *time.Time, tag CalTag) (bool, []string, error) {
 	events, err := t.dayEvents(day) // Get all events for today
 	if err != nil {
-		return false, nil, err
+		return false, nil, CtxError("data.checkDayTag()", err)
 	}
 
 	var menList []string // Slice for combining men off-duty for today
@@ -107,6 +107,5 @@ func genEvent(sum string, desc string, color string, startDate string, endDate s
 			TimeZone: TimeZone,
 		},
 	}
-
 	return event
 }

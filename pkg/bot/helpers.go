@@ -85,11 +85,17 @@ func (t *TgBot) getChatMember(userId int64, chatId int64) (*tgbotapi.ChatMember,
 	return &u, nil
 }
 
-// Send provided message to admins Telegram group
-func (t *TgBot) sendMessageToAdmins(message string) error {
-	msg := tgbotapi.NewMessage(t.adminGroupId, message)
+// Reply to user message
+func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard interface{}) error {
+	msg := tgbotapi.NewMessage(chatId, message)
 	msg.ParseMode = "markdown"
-	// Send a message to user who was request access.
+	if replyId != nil {
+		msg.ReplyToMessageID = *replyId
+	}
+	if keyboard != nil {
+		msg.ReplyMarkup = keyboard
+	}
+	// Reply to message
 	if _, err := t.bot.Send(msg); err != nil {
 		return err
 	}
@@ -99,11 +105,16 @@ func (t *TgBot) sendMessageToAdmins(message string) error {
 func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 	// Check if user is registered
 	if !t.dc.IsInDutyList(tgID) {
-		t.msg.Text = "Привет.\n" +
+		messageText := "Привет.\n" +
 			"Это бот команды DSO.\n\n" +
 			"*Вы не зарегестрированы.*\n\n" +
 			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n"
-		t.msg.ReplyToMessageID = t.update.Message.MessageID
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return false
 	}
 	return true
@@ -226,7 +237,7 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
 		}
 		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (%s)",
-			i+1, v.Name, v.TgID), string(jsonData)))
+			i+1, v.FullName, v.UserName), string(jsonData)))
 		rows = append(rows, row)
 	}
 

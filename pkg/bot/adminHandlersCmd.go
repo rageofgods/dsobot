@@ -12,9 +12,14 @@ func (t *TgBot) adminHandleHelp(cmdArgs string) {
 	// Create help message
 	commands := t.AdminBotCommands().commands
 	cmdList := genHelpCmdText(commands)
-	t.msg.Text = "Доступны следующие команды администрирования:\n\n" +
+	messageText := "Доступны следующие команды администрирования:\n\n" +
 		cmdList
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }
 
 // handle '/list' command
@@ -26,10 +31,15 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 
 	// Generate returned string
 	for i, v := range *menData {
-		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.Name, v.TgID)
+		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 	}
-	t.msg.Text = fmt.Sprintf("*Список дежурных:*\n%s", list)
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	messageText := fmt.Sprintf("*Список дежурных:*\n%s", list)
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }
 
 // Parent function for handling args commands
@@ -42,7 +52,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
 					// Run dedicated child argument function
-					arg.handleFunc(cmdArgs)
+					go arg.handleFunc(cmdArgs)
 					isArgValid = true
 				}
 			}
@@ -51,15 +61,24 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 	// If provided argument is missing or invalid show error to user
 	if !isArgValid {
 		if cmdArgs != "" {
-			t.msg.Text = fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
-			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			messageText := fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
+			if err := t.sendMessage(messageText,
+				t.update.Message.Chat.ID,
+				&t.update.Message.MessageID,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 		} else {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(abc, botCmdRollout)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
-			t.msg.Text = "Необходимо указать аргумент"
-			t.msg.ReplyMarkup = numericKeyboard
-			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			messageText := "Необходимо указать аргумент"
+			if err := t.sendMessage(messageText,
+				t.update.Message.Chat.ID,
+				&t.update.Message.MessageID,
+				numericKeyboard); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 		}
 	}
 }
@@ -71,10 +90,15 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 	men := t.dc.DutyMenData()
 	var msgText string
 	for _, man := range *men {
-		offduty, err := t.dc.ShowOffDutyForMan(man.TgID)
+		offduty, err := t.dc.ShowOffDutyForMan(man.UserName)
 		if err != nil {
-			t.msg.Text = fmt.Sprintf("%v", err)
-			t.msg.ReplyToMessageID = t.update.Message.MessageID
+			messageText := fmt.Sprintf("%v", err)
+			if err := t.sendMessage(messageText,
+				t.update.Message.Chat.ID,
+				&t.update.Message.MessageID,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
 			return
 		}
 
@@ -82,15 +106,20 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 			continue
 		}
 
-		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.Name, man.TgID)
+		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.FullName, man.UserName)
 		for i, od := range *offduty {
 			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
 		}
 		msgText += "\n"
 	}
 
-	t.msg.Text = msgText
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	messageText := msgText
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }
 
 // handle '/reindex' command
@@ -111,7 +140,11 @@ func (t *TgBot) adminHandleReindex(arg string) {
 		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
-	t.msg.ReplyMarkup = numericKeyboard
-	t.msg.Text = msgTextAdminHandleReindex
-	t.msg.ReplyToMessageID = t.update.Message.MessageID
+	messageText := msgTextAdminHandleReindex
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
 }

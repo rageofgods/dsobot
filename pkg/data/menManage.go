@@ -11,40 +11,44 @@ import (
 func (t *CalData) WhoIsOnDuty(day *time.Time, dutyTag CalTag) (string, error) {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return "", fmt.Errorf("unable to load timezone %s", err)
+		return "", CtxError("data.WhoIsOnDuty()",
+			fmt.Errorf("unable to load timezone %s", err))
 	}
 	d := day.In(loc)
 
 	events, err := t.dayEvents(&d)
 	if err != nil {
-		return "", err
+		return "", CtxError("data.WhoIsOnDuty()", err)
 	}
 
 	if len(events.Items) == 0 {
-		return "", fmt.Errorf("no upcoming events found for %s", day.Format(DateShort))
+		return "", CtxError("data.WhoIsOnDuty()",
+			fmt.Errorf("no upcoming events found for %s", day.Format(DateShort)))
 	}
 
 	for _, item := range events.Items {
 		e, err := t.cal.Events.Get(t.calID, item.Id).Do()
 		if err != nil {
-			return "", err
+			return "", CtxError("data.WhoIsOnDuty()", err)
 		}
 		if e.Description == string(dutyTag) {
 			return e.Summary, nil
 		}
 
 	}
-	return "", fmt.Errorf("дежурств не найдено для %s", day.Format(DateShort))
+	return "", CtxError("data.WhoIsOnDuty()",
+		fmt.Errorf("дежурств не найдено для %s", day.Format(DateShort)))
 }
 
 // ShowOffDutyForMan returns slice of OffDutyData with start/end off-duty dates
 func (t *CalData) ShowOffDutyForMan(tgID string) (*[]OffDutyData, error) {
 	for _, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			return &man.OffDuty, nil
 		}
 	}
-	return nil, fmt.Errorf("can't find user with tgID: @%s in saved data", tgID)
+	return nil, CtxError("data.ShowOffDutyForMan()",
+		fmt.Errorf("can't find user with tgID: @%s in saved data", tgID))
 }
 
 // ManDutiesList returns slice of dates with requested duty type for specified man tgId
@@ -55,20 +59,21 @@ func (t *CalData) ManDutiesList(tgId string, dutyTag CalTag) (*[]time.Time, erro
 	// Get events for current month
 	events, err := t.monthEventsFor(tgId, dutyTag)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.ManDutiesList()", err)
 	}
 	if len(events.Items) == 0 {
-		return nil, fmt.Errorf("no upcoming events found for current month")
+		return nil, CtxError("data.ManDutiesList()",
+			fmt.Errorf("no upcoming events found for current month"))
 	}
 	// Fill up dutyDates slice
 	for _, event := range events.Items {
 		sdate, err := time.Parse(DateShort, event.Start.Date)
 		if err != nil {
-			return nil, err
+			return nil, CtxError("data.ManDutiesList()", err)
 		}
 		edate, err := time.Parse(DateShort, event.End.Date)
 		if err != nil {
-			return nil, err
+			return nil, CtxError("data.ManDutiesList()", err)
 		}
 		// Duty events must be presented as single day events.
 		if sdate == edate {
@@ -85,7 +90,7 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 	// Get first and last date of provided month
 	firstMonthDay, lastMonthDay, err := firstLastMonthDay(1, lastYear, int(lastMonth))
 	if err != nil {
-		return "", 0, err
+		return "", 0, CtxError("data.WhoWasOnDuty()", err)
 	}
 
 	var foundPrevMan string // Save founded on-duty man to check next iteration
@@ -93,7 +98,7 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 	for d := *lastMonthDay; d.After(firstMonthDay.Local()); d = d.AddDate(0, 0, -1) {
 		nwd, _, err := t.checkDayTag(&d, NonWorkingDay) // Check if current past day is non-working day
 		if err != nil {
-			return "", 0, err
+			return "", 0, CtxError("data.WhoWasOnDuty()", err)
 		}
 		if nwd { // If day is non-working when go to the next past day
 			continue
@@ -101,7 +106,7 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 		if foundPrevMan == "" { // If we starts from the beginning
 			man, err := t.WhoIsOnDuty(&d, dutyTag)
 			if err != nil {
-				return "", 0, err
+				return "", 0, CtxError("data.WhoWasOnDuty()", err)
 			}
 			foundPrevMan = man
 			manCounter++
@@ -117,52 +122,53 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 			return foundPrevMan, manCounter, nil // If we found different man we're done now
 		}
 	}
-	return "", 0, fmt.Errorf("can't find previous month on-duty man")
+	return "", 0, CtxError("data.WhoWasOnDuty()",
+		fmt.Errorf("can't find previous month on-duty man"))
 }
 
 // SaveMenList Create events via API call
 func (t *CalData) SaveMenList(d ...*[]DutyMan) (*string, error) {
 	if len(d) != 0 {
 		if d[0] == nil {
-			return nil, fmt.Errorf("no data for saving")
+			return nil, CtxError("data.SaveMenList()", fmt.Errorf("no data for saving"))
 		}
 		t.dutyMen = d[0]
 	}
 	if t.dutyMen == nil {
-		return nil, fmt.Errorf("no data for saving")
+		return nil, CtxError("data.SaveMenList()", fmt.Errorf("no data for saving"))
 	}
 	jsonStr, err := json.Marshal(t.dutyMen)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.SaveMenList()", err)
 	}
 
 	event := genEvent(SaveListName, string(jsonStr), CalOrange, SaveListDate, SaveListDate)
 
 	tn, err := time.Parse(DateShort, SaveListDate)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.SaveMenList()", err)
 	}
 
 	events, err := t.dayEvents(&tn)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.SaveMenList()", err)
 	}
 
 	if len(events.Items) == 0 { // If it's new save
 		event, err = t.cal.Events.Insert(t.calID, event).Do()
 		if err != nil {
-			return nil, err
+			return nil, CtxError("data.SaveMenList()", err)
 		}
 	} else { // if we're updating existing save
 		for _, item := range events.Items {
 			e, err := t.cal.Events.Get(t.calID, item.Id).Do()
 			if err != nil {
-				return nil, err
+				return nil, CtxError("data.SaveMenList()", err)
 			}
 			if e.Summary == SaveListName {
 				event, err = t.cal.Events.Update(t.calID, e.Id, event).Do()
 				if err != nil {
-					return nil, err
+					return nil, CtxError("data.SaveMenList()", err)
 				}
 			}
 		}
@@ -177,43 +183,43 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 	var men []DutyMan
 	tn, err := time.Parse(DateShort, SaveListDate)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.LoadMenList()", err)
 	}
 
 	events, err := t.dayEvents(&tn)
 	if err != nil {
-		return nil, err
+		return nil, CtxError("data.LoadMenList()", err)
 	}
 
 	if len(events.Items) == 0 {
-		return nil, fmt.Errorf("data not found")
+		return nil, CtxError("data.LoadMenList()", fmt.Errorf("data not found"))
 	}
 	for _, item := range events.Items {
 		e, err := t.cal.Events.Get(t.calID, item.Id).Do()
 		if err != nil {
-			return nil, err
+			return nil, CtxError("data.LoadMenList()", err)
 		}
 		if e.Summary == SaveListName {
 			err := json.Unmarshal([]byte(e.Description), &men)
 			if err != nil {
-				return nil, err
+				return nil, CtxError("data.LoadMenList()", err)
 			}
 			if men == nil {
-				return nil, fmt.Errorf("can't load null data")
+				return nil, CtxError("data.LoadMenList()", fmt.Errorf("can't load null data"))
 			}
 
 			t.dutyMen = &men
 			return &men, nil
 		}
 	}
-	return nil, fmt.Errorf("data not found")
+	return nil, CtxError("data.LoadMenList()", fmt.Errorf("data not found"))
 }
 
 // AddManOnDuty Add new man to duty list
-func (t *CalData) AddManOnDuty(name string, tgID string) {
+func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
 	ln := len(*t.dutyMen)
 	ln++
-	m := &DutyMan{Name: name, Index: ln, TgID: tgID}
+	m := &DutyMan{FullName: fullName, Index: ln, UserName: userName, TgID: tgID}
 	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
@@ -222,7 +228,7 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 	stime := startDate.Format(DateShortSaveData)
 	etime := endDate.Format(DateShortSaveData)
 	for i, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			m := &OffDutyData{OffDutyStart: stime, OffDutyEnd: etime}
 			(*t.dutyMen)[i].OffDuty = append((*t.dutyMen)[i].OffDuty, *m)
 		}
@@ -232,7 +238,7 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 // DeleteOffDutyFromMan Removes off-duty period from specified man
 func (t *CalData) DeleteOffDutyFromMan(tgID string, offDutyDataIndex int) {
 	for i, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			tmp := (*t.dutyMen)[i].OffDuty
 			tmp = append(tmp[:offDutyDataIndex], tmp[offDutyDataIndex+1:]...)
 			(*t.dutyMen)[i].OffDuty = tmp
@@ -249,7 +255,7 @@ func deleteMan(sl []DutyMan, s int) []DutyMan {
 func (t *CalData) DeleteManOnDuty(tgID string) error {
 	var isDeleted bool
 	for index, man := range *t.dutyMen {
-		if tgID == man.TgID {
+		if tgID == man.UserName {
 			*t.dutyMen = deleteMan(*t.dutyMen, index)
 			isDeleted = true
 		}
@@ -259,7 +265,8 @@ func (t *CalData) DeleteManOnDuty(tgID string) error {
 		t.reIndexManOnDutyList()
 		return nil
 	}
-	return fmt.Errorf("search string not found in map. nothing was deleted")
+	return CtxError("data.DeleteManOnDuty()",
+		fmt.Errorf("search string not found in map. nothing was deleted"))
 }
 
 // Recreate indexes for on-duty men to persist duty order
@@ -306,10 +313,11 @@ func genListMenOnDuty(m []DutyMan) ([]string, error) {
 	var retStr []string
 
 	if m == nil || len(m) == 0 {
-		return nil, fmt.Errorf("unable to load men list, please load it first")
+		return nil, CtxError("data.genListMenOnDuty()",
+			fmt.Errorf("unable to load men list, please load it first"))
 	}
 	for _, man := range m {
-		retStr = append(retStr, man.TgID)
+		retStr = append(retStr, man.UserName)
 	}
 	return retStr, nil
 }
@@ -329,7 +337,8 @@ func genContListMenOnDuty(menOnDuty []string, contDays int) []string {
 func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDutyCount int) (int, error) {
 	var manIndex int // index for founding man latest position in the men slice
 	if len(men) == 0 {
-		return 0, fmt.Errorf("men list is empty")
+		return 0, CtxError("data.indexOfCurrentOnDutyMan()",
+			fmt.Errorf("men list is empty"))
 	}
 	var isManFound bool
 	for i, name := range men {
@@ -367,7 +376,7 @@ func indexOfCurrentOnDutyMan(contDays int, men []string, man string, manPrevDuty
 // IsInDutyList returns true if provided Telegram ID is in duty list
 func (t *CalData) IsInDutyList(tgID string) bool {
 	for _, man := range *t.dutyMen {
-		if man.TgID == tgID {
+		if man.UserName == tgID {
 			return true
 		}
 	}
@@ -395,7 +404,7 @@ func equalLists(searchList []string, searchInList []string) bool {
 func (t *CalData) ListMenTgID() []string {
 	var menIDs []string
 	for _, man := range *t.dutyMen {
-		menIDs = append(menIDs, man.TgID)
+		menIDs = append(menIDs, man.UserName)
 	}
 	return menIDs
 }

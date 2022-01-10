@@ -104,24 +104,24 @@ func Test_indexOfCurrentOnDutyMan(t *testing.T) {
 
 func Test_removeMan(t *testing.T) {
 	sDutyMan1 := []DutyMan{
-		{Index: 1, Name: "Test1", TgID: "test_one"},
-		{Index: 2, Name: "Test2", TgID: "test_two"},
-		{Index: 3, Name: "Test3", TgID: "test_three"},
+		{Index: 1, FullName: "Test1", UserName: "test_one"},
+		{Index: 2, FullName: "Test2", UserName: "test_two"},
+		{Index: 3, FullName: "Test3", UserName: "test_three"},
 	}
 	sInt1 := 1 // Deleting slice with index "2"
 	w1 := []DutyMan{
-		{Index: 1, Name: "Test1", TgID: "test_one"},
-		{Index: 3, Name: "Test3", TgID: "test_three"},
+		{Index: 1, FullName: "Test1", UserName: "test_one"},
+		{Index: 3, FullName: "Test3", UserName: "test_three"},
 	}
 	sDutyMan2 := []DutyMan{
-		{Index: 1, Name: "Test1", TgID: "test_one"},
-		{Index: 2, Name: "Test2", TgID: "test_two"},
-		{Index: 3, Name: "Test3", TgID: "test_three"},
+		{Index: 1, FullName: "Test1", UserName: "test_one"},
+		{Index: 2, FullName: "Test2", UserName: "test_two"},
+		{Index: 3, FullName: "Test3", UserName: "test_three"},
 	}
 	sInt2 := 2 // Deleting slice with index "3"
 	w2 := []DutyMan{
-		{Index: 1, Name: "Test1", TgID: "test_one"},
-		{Index: 2, Name: "Test2", TgID: "test_two"},
+		{Index: 1, FullName: "Test1", UserName: "test_one"},
+		{Index: 2, FullName: "Test2", UserName: "test_two"},
 	}
 
 	type args struct {
@@ -147,9 +147,9 @@ func Test_removeMan(t *testing.T) {
 
 func Test_genListMenOnDuty(t *testing.T) {
 	testMap := &[]DutyMan{
-		{Index: 10, Name: "One", TgID: "TG_ONE"},
-		{Index: 20, Name: "Two", TgID: "TG_TWO"},
-		{Index: 30, Name: "Three", TgID: "TG_THREE"},
+		{Index: 10, FullName: "One", UserName: "TG_ONE"},
+		{Index: 20, FullName: "Two", UserName: "TG_TWO"},
+		{Index: 30, FullName: "Three", UserName: "TG_THREE"},
 	}
 	wantString := []string{"TG_ONE", "TG_TWO", "TG_THREE"}
 	type args struct {

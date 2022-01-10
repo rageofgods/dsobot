@@ -1,6 +1,6 @@
 # dsobot
 
-Simple overview of use/purpose.
+The purpose of this bot is to manage and track a day to day duty order of DSO team engineers.
 
 ## Description
 
@@ -10,7 +10,8 @@ An in-depth paragraph about your project and overview of use.
 
 ### Dependencies
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
+* Google calendar API (google.golang.org/api)
+* IsDayOff (github.com/rageofgods/isdayoff)
 
 
 ### Installing
