@@ -7,7 +7,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	str "strings"
-	"time"
 )
 
 type TgBot struct {
@@ -69,14 +68,6 @@ func (t *TgBot) StartBot(version string, build string) {
 		log.Printf("unable to send message: %v", err)
 	}
 
-	// Define callback burst control variables
-	waitDuration := time.Duration(2) * time.Second // wait 2 seconds before next callback
-	var (
-		isCallbackHandleRegisterFired      bool
-		isCallbackHandleUnregisterFired    bool
-		isCallbackHandleDeleteOffDutyFired bool
-	)
-
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
 		// Process ordinary command messages
@@ -136,22 +127,22 @@ func (t *TgBot) StartBot(version string, build string) {
 			switch message.FromHandle {
 			case callbackHandleRegister:
 				if !isCallbackHandleRegisterFired {
-					isCallbackHandleRegisterFired = true
-					go func(t *bool) { time.Sleep(waitDuration); *t = false }(&isCallbackHandleRegisterFired)
-					t.callbackRegister(message.Answer, message.ChatId, message.UserId, message.MessageId)
+					dec := burstDecorator(2, &isCallbackHandleRegisterFired, t.callbackRegister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
 				}
 			case callbackHandleUnregister:
 				if !isCallbackHandleUnregisterFired {
-					isCallbackHandleUnregisterFired = true
-					go func(t *bool) { time.Sleep(waitDuration); *t = false }(&isCallbackHandleUnregisterFired)
-					t.callbackUnregister(message.Answer, message.ChatId, message.UserId, message.MessageId)
+					dec := burstDecorator(2, &isCallbackHandleUnregisterFired, t.callbackUnregister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
 				}
 			case callbackHandleDeleteOffDuty:
 				if !isCallbackHandleDeleteOffDutyFired {
-					isCallbackHandleDeleteOffDutyFired = true
-					go func(t *bool) { time.Sleep(waitDuration); *t = false }(&isCallbackHandleDeleteOffDutyFired)
-					err := t.callbackDeleteOffDuty(message.Answer, message.ChatId, message.UserId, message.MessageId)
-					if err != nil {
+					dec := burstDecorator(2, &isCallbackHandleDeleteOffDutyFired, t.callbackDeleteOffDuty)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
@@ -162,8 +153,8 @@ func (t *TgBot) StartBot(version string, build string) {
 					}
 				}
 			case callbackHandleReindex:
-				err := t.callbackReindex(message.Answer, message.ChatId, message.UserId, message.MessageId)
-				if err != nil {
+				dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
+				if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
 					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 					if err := t.sendMessage(messageText,
 						update.CallbackQuery.Message.Chat.ID,

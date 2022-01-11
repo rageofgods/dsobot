@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, messageId int) {
+func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, messageId int) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -71,9 +71,11 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
 	}
+
+	return nil
 }
 
-func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, messageId int) {
+func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, messageId int) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -140,7 +142,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
 	}
-
+	return nil
 }
 
 func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int) error {
