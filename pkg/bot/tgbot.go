@@ -126,23 +126,35 @@ func (t *TgBot) StartBot(version string, build string) {
 			// Checking where callback come from and run specific function
 			switch message.FromHandle {
 			case callbackHandleRegister:
-				t.callbackRegister(message.Answer, message.ChatId, message.UserId, message.MessageId)
+				if !isCallbackHandleRegisterFired {
+					dec := burstDecorator(2, &isCallbackHandleRegisterFired, t.callbackRegister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
+				}
 			case callbackHandleUnregister:
-				t.callbackUnregister(message.Answer, message.ChatId, message.UserId, message.MessageId)
+				if !isCallbackHandleUnregisterFired {
+					dec := burstDecorator(2, &isCallbackHandleUnregisterFired, t.callbackUnregister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
+				}
 			case callbackHandleDeleteOffDuty:
-				err := t.callbackDeleteOffDuty(message.Answer, message.ChatId, message.UserId, message.MessageId)
-				if err != nil {
-					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
-					if err := t.sendMessage(messageText,
-						update.CallbackQuery.Message.Chat.ID,
-						&update.CallbackQuery.Message.MessageID,
-						nil); err != nil {
-						log.Printf("unable to send message: %v", err)
+				if !isCallbackHandleDeleteOffDutyFired {
+					dec := burstDecorator(2, &isCallbackHandleDeleteOffDutyFired, t.callbackDeleteOffDuty)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
 					}
 				}
 			case callbackHandleReindex:
-				err := t.callbackReindex(message.Answer, message.ChatId, message.UserId, message.MessageId)
-				if err != nil {
+				dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
+				if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
 					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 					if err := t.sendMessage(messageText,
 						update.CallbackQuery.Message.Chat.ID,
@@ -151,7 +163,6 @@ func (t *TgBot) StartBot(version string, build string) {
 						log.Printf("unable to send message: %v", err)
 					}
 				}
-
 			}
 		}
 	}
