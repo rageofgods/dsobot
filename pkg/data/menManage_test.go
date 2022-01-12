@@ -147,9 +147,9 @@ func Test_removeMan(t *testing.T) {
 
 func Test_genListMenOnDuty(t *testing.T) {
 	testMap := &[]DutyMan{
-		{Index: 10, FullName: "One", UserName: "TG_ONE"},
-		{Index: 20, FullName: "Two", UserName: "TG_TWO"},
-		{Index: 30, FullName: "Three", UserName: "TG_THREE"},
+		{Index: 10, FullName: "One", UserName: "TG_ONE", Enabled: true},
+		{Index: 20, FullName: "Two", UserName: "TG_TWO", Enabled: true},
+		{Index: 30, FullName: "Three", UserName: "TG_THREE", Enabled: true},
 	}
 	wantString := []string{"TG_ONE", "TG_TWO", "TG_THREE"}
 	type args struct {

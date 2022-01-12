@@ -106,6 +106,12 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdReindex, args: nil},
 			description: "Изменить порядок дежурных (повлияет на очередность дежурств)",
 			handleFunc:  t.adminHandleReindex},
+		{command: &cmd{name: botCmdEnable, args: nil},
+			description: "Добавить активных дежурных (повлияет на очередность дежурств)",
+			handleFunc:  t.adminHandleEnable},
+		{command: &cmd{name: botCmdDisable, args: nil},
+			description: "Добавить неактивных дежурных (повлияет на очередность дежурств)",
+			handleFunc:  t.adminHandleDisable},
 	}}
 }
 
@@ -118,6 +124,8 @@ const (
 	callbackHandleUnregister    = "fhu"
 	callbackHandleDeleteOffDuty = "fhdod"
 	callbackHandleReindex       = "fhre"
+	callbackHandleEnable        = "fhe"
+	callbackHandleDisable       = "fhd"
 )
 
 // Bot available commands
@@ -134,6 +142,8 @@ const (
 	botCmdList          tCmd = "list"
 	botCmdRollout       tCmd = "rollout"
 	botCmdReindex       tCmd = "reindex"
+	botCmdEnable        tCmd = "enable"
+	botCmdDisable       tCmd = "disable"
 )
 
 // Bot available args
@@ -170,4 +180,8 @@ type callbackMessage struct {
 const (
 	msgTextAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
 		"в нужной последовательности):"
+	msgTextAdminHandleEnable = "Укажите активных дежурных из текущего списка неактивных" +
+		" (поочередно нажимая на кнопки участников в нужной последовательности):"
+	msgTextAdminHandleDisable = "Укажите неактивных дежурных из текущего списка активных" +
+		" (поочередно нажимая на кнопки участников в нужной последовательности):"
 )

@@ -153,14 +153,42 @@ func (t *TgBot) StartBot(version string, build string) {
 					}
 				}
 			case callbackHandleReindex:
-				dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
-				if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
-					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
-					if err := t.sendMessage(messageText,
-						update.CallbackQuery.Message.Chat.ID,
-						&update.CallbackQuery.Message.MessageID,
-						nil); err != nil {
-						log.Printf("unable to send message: %v", err)
+				if !isCallbackHandleReindexFired {
+					dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleEnable:
+				if !isCallbackHandleEnableFired {
+					dec := burstDecorator(1, &isCallbackHandleEnableFired, t.callbackEnable)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleDisable:
+				if !isCallbackHandleDisableFired {
+					dec := burstDecorator(1, &isCallbackHandleDisableFired, t.callbackDisable)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
 					}
 				}
 			}

@@ -18,6 +18,7 @@ type CalTag string
 // DutyMan struct for data save
 type DutyMan struct {
 	Index    int           `json:"index"`
+	Enabled  bool          `json:"enabled"`
 	FullName string        `json:"full-name"`
 	UserName string        `json:"user-name"`
 	TgID     int64         `json:"tg-id"`

@@ -284,3 +284,20 @@ func locWeekday(weekday time.Weekday) string {
 	}
 	return locWeekday
 }
+
+// Generate final message for user after he is hit "ok" button at inline keyboard and delete keyboard with message
+func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, messageId int) {
+	if err := t.sendMessage(messageText,
+		chatId,
+		&messageId,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+	// Deleting access request message in admin group
+	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
+		t.update.CallbackQuery.Message.MessageID)
+	_, err := t.bot.Request(del)
+	if err != nil {
+		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
+	}
+}

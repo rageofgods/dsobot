@@ -8,6 +8,8 @@ var (
 	isCallbackHandleUnregisterFired    bool
 	isCallbackHandleDeleteOffDutyFired bool
 	isCallbackHandleReindexFired       bool
+	isCallbackHandleEnableFired        bool
+	isCallbackHandleDisableFired       bool
 )
 
 // Define function type for decorator

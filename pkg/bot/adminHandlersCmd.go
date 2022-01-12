@@ -25,15 +25,32 @@ func (t *TgBot) adminHandleHelp(cmdArgs string) {
 // handle '/list' command
 func (t *TgBot) adminHandleList(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
-	var list string
+	var listActive string
+	var listPassive string
 	// Get menOnDuty list
 	menData := t.dc.DutyMenData()
 
 	// Generate returned string
-	for i, v := range *menData {
-		list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
+	var indActive int  // Index for Active list men
+	var indPassive int // Index for passive list men
+	for _, v := range *menData {
+		if v.Enabled {
+			indActive++
+			listActive += fmt.Sprintf("*%d*: %s (*@%s*)\n", indActive, v.FullName, v.UserName)
+		} else {
+			indPassive++
+			listPassive += fmt.Sprintf("*%d*: %s (*@%s*)\n", indPassive, v.FullName, v.UserName)
+		}
 	}
-	messageText := fmt.Sprintf("*Список дежурных:*\n%s", list)
+
+	if indActive == 0 {
+		listActive = "*-*"
+	} else if indPassive == 0 {
+		listPassive = "*-*"
+	}
+	messageText := fmt.Sprintf("*Список дежурных:*\n_Активные:_\n%s\n_Неактивные:_\n%s",
+		listActive,
+		listPassive)
 	if err := t.sendMessage(messageText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,
@@ -135,12 +152,99 @@ func (t *TgBot) adminHandleReindex(arg string) {
 	}
 
 	men := t.dc.DutyMenData()
+	if len(*men) == 0 {
+		messageText := "Дежурных не найдено"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
 	numericKeyboard, err := genIndexKeyboard(men, *callbackData)
 	if err != nil {
 		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
 	messageText := msgTextAdminHandleReindex
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}
+
+// handle '/enable' command
+func (t *TgBot) adminHandleEnable(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		FromHandle: callbackHandleEnable,
+	}
+
+	men := t.dc.DutyMenData(false) // Get only passive men list
+	if len(*men) == 0 {
+		messageText := "Неактивных дежурных не найдено"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	numericKeyboard, err := genIndexKeyboard(men, *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := msgTextAdminHandleEnable
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}
+
+// handle '/disable' command
+func (t *TgBot) adminHandleDisable(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		FromHandle: callbackHandleDisable,
+	}
+
+	men := t.dc.DutyMenData(true) // Get only active men list
+	if len(*men) == 0 {
+		messageText := "Активных дежурных не найдено"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	numericKeyboard, err := genIndexKeyboard(men, *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := msgTextAdminHandleDisable
 	if err := t.sendMessage(messageText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,

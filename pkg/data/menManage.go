@@ -226,7 +226,13 @@ func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
 	}
 	ln := len(*t.dutyMen)
 	ln++
-	m := &DutyMan{FullName: fullName, Index: ln, UserName: userName, TgID: tgID}
+	m := &DutyMan{
+		FullName: fullName,
+		Index:    ln,
+		UserName: userName,
+		TgID:     tgID,
+		Enabled:  false,
+	}
 	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
@@ -286,8 +292,32 @@ func (t *CalData) reIndexManOnDutyList() {
 	t.dutyMen = &reMap
 }
 
-// DutyMenData Show current men on duty list
-func (t *CalData) DutyMenData() *[]DutyMan {
+// DutyMenData Returns current men on duty list
+// Optional argument returns only "active" men if true
+// Returns only "passive" men if false
+func (t *CalData) DutyMenData(enabled ...bool) *[]DutyMan {
+	// Check if we have some argument
+	if len(enabled) == 1 {
+		switch enabled[0] {
+		case true:
+			var r []DutyMan
+			for _, v := range *t.dutyMen {
+				if v.Enabled {
+					r = append(r, v)
+				}
+			}
+			return &r
+		case false:
+			var r []DutyMan
+			for _, v := range *t.dutyMen {
+				if !v.Enabled {
+					r = append(r, v)
+				}
+			}
+			return &r
+		}
+	}
+	// Return full by default
 	return t.dutyMen
 }
 
@@ -324,7 +354,10 @@ func genListMenOnDuty(m []DutyMan) ([]string, error) {
 			fmt.Errorf("unable to load men list, please load it first"))
 	}
 	for _, man := range m {
-		retStr = append(retStr, man.UserName)
+		// Add only active men to menOnDuty list
+		if man.Enabled {
+			retStr = append(retStr, man.UserName)
+		}
 	}
 	return retStr, nil
 }
@@ -386,23 +419,6 @@ func (t *CalData) IsInDutyList(tgID string) bool {
 		if man.UserName == tgID {
 			return true
 		}
-	}
-	return false
-}
-
-// Compare two slices and return true if they are equal (don't care about order)
-func equalLists(searchList []string, searchInList []string) bool {
-	var m int
-	for _, offDutyMan := range searchList {
-		for _, man := range searchInList {
-			if man == offDutyMan {
-				m++
-			}
-		}
-	}
-	// If count is equal len
-	if m == len(searchInList) {
-		return true
 	}
 	return false
 }
