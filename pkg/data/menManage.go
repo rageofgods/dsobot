@@ -350,7 +350,7 @@ func checkOffDutyManInList(man string, offDutyList *[]string) bool {
 }
 
 // Creating slice with sorted men on-duty
-func genListMenOnDuty(m []DutyMan) ([]string, error) {
+func genListMenOnDuty(m []DutyMan, dutyTag CalTag) ([]string, error) {
 	var retStr []string
 
 	if m == nil || len(m) == 0 {
@@ -360,7 +360,21 @@ func genListMenOnDuty(m []DutyMan) ([]string, error) {
 	for _, man := range m {
 		// Add only active men to menOnDuty list
 		if man.Enabled {
-			retStr = append(retStr, man.UserName)
+			// Check requested duty type
+			for _, duty := range man.DutyType {
+				switch dutyTag {
+				case OnDutyTag:
+					// Check if user is up for duty type
+					if duty.Type == OrdinaryDutyType && duty.Enabled {
+						retStr = append(retStr, man.UserName)
+					}
+				case OnValidationTag:
+					// Check if user is up for duty type
+					if duty.Type == ValidationDutyType && duty.Enabled {
+						retStr = append(retStr, man.UserName)
+					}
+				}
+			}
 		}
 	}
 	return retStr, nil
