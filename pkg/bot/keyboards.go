@@ -7,6 +7,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
@@ -120,6 +121,16 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.InlineKeyboardButton, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
+	// Generate columns names
+	var keyboardButtons []tgbotapi.InlineKeyboardButton
+	keyboardButtons = append(keyboardButtons,
+		tgbotapi.NewInlineKeyboardButtonData("ИМЯ", "{}"))
+	for _, dt := range data.DutyNames {
+		keyboardButtons = append(keyboardButtons,
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", strings.ToUpper(dt)), "{}"))
+	}
+	row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
+	rows = append(rows, row)
 	// Iterate over all duty men
 	for manIndex, man := range *dm {
 		jsonData, err := marshalCallbackDataForEditDuty(cm, manIndex, 0)
@@ -128,10 +139,15 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		}
 		// Add leftmost button to hold man name
 		var keyboardButtons []tgbotapi.InlineKeyboardButton
+		var manButtonCaption string
+		if man.Enabled {
+			manButtonCaption = man.FullName
+		} else {
+			manButtonCaption = fmt.Sprintf("❗️%s", man.FullName)
+		}
 		keyboardButtons = append(keyboardButtons,
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s",
-				manIndex+1,
-				man.FullName),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s",
+				manButtonCaption),
 				string(jsonData)))
 		// Iterate over currently supported duty types
 		for _, dt := range data.DutyTypes {
@@ -175,7 +191,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 	}
-	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
+	row = tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
 		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
 	rows = append(rows, row)
 

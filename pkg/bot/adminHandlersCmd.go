@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -314,11 +313,11 @@ func (t *TgBot) adminHandleEditDutyType(arg string) {
 	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(*rows...)
 
 	messageText := msgTextAdminHandleEditDuty
-	appendedText := "`| Имя дежурного |`"
+	/*appendedText := "`| Имя дежурного |`"
 	for _, dt := range data.DutyNames {
 		appendedText += fmt.Sprintf("` %s |`", dt)
 	}
-	messageText += appendedText
+	messageText += appendedText*/
 	if err := t.sendMessage(messageText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,
