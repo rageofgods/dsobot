@@ -112,6 +112,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdDisable, args: nil},
 			description: "Добавить неактивных дежурных (повлияет на очередность дежурств)",
 			handleFunc:  t.adminHandleDisable},
+		{command: &cmd{name: botCmdEditDutyType, args: nil},
+			description: "Отредактировать типы дежурств для всех дежурных",
+			handleFunc:  t.adminHandleEditDutyType},
 	}}
 }
 
@@ -120,12 +123,16 @@ const (
 	inlineKeyboardYes = "99"
 	inlineKeyboardNo  = "98"
 
+	inlineKeyboardEditDutyYes = "1"
+	inlineKeyboardEditDutyNo  = "0"
+
 	callbackHandleRegister      = "fhr"
 	callbackHandleUnregister    = "fhu"
 	callbackHandleDeleteOffDuty = "fhdod"
 	callbackHandleReindex       = "fhre"
 	callbackHandleEnable        = "fhe"
 	callbackHandleDisable       = "fhd"
+	callbackHandleEditDuty      = "fhed"
 )
 
 // Bot available commands
@@ -144,6 +151,7 @@ const (
 	botCmdReindex       tCmd = "reindex"
 	botCmdEnable        tCmd = "enable"
 	botCmdDisable       tCmd = "disable"
+	botCmdEditDutyType  tCmd = "editduty"
 )
 
 // Bot available args
@@ -184,4 +192,7 @@ const (
 		" (поочередно нажимая на кнопки участников в нужной последовательности):"
 	msgTextAdminHandleDisable = "Укажите неактивных дежурных из текущего списка активных" +
 		" (поочередно нажимая на кнопки участников в нужной последовательности):"
+	msgTextAdminHandleEditDuty = "Укажите нужные типы дежурства для текущего списка дежурных\n\n" +
+		"✅ - включает тип дежурства\n" +
+		"❌ - выключает тип дежуртсва\n\n"
 )

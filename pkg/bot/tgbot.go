@@ -191,6 +191,19 @@ func (t *TgBot) StartBot(version string, build string) {
 						}
 					}
 				}
+			case callbackHandleEditDuty:
+				if !isCallbackHandleEditDutyFired {
+					dec := burstDecorator(1, &isCallbackHandleEditDutyFired, t.callbackEditDuty)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
 			}
 		}
 	}

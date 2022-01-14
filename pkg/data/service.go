@@ -9,17 +9,6 @@ import (
 	"net/http"
 )
 
-// CalData struct for creating calendar events
-type CalData struct {
-	ctx     *context.Context
-	token   string
-	calID   string
-	cal     *calendar.Service
-	bToken  *[]byte
-	httpC   *http.Client
-	dutyMen *[]DutyMan
-}
-
 // NewCalData CalData constructor
 func NewCalData(token string, calID string) *CalData {
 	c := context.Background() // Init background context

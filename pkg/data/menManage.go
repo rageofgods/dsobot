@@ -232,6 +232,10 @@ func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
 		UserName: userName,
 		TgID:     tgID,
 		Enabled:  false,
+		DutyType: []Duty{
+			{Type: OrdinaryDutyType, Name: OrdinaryDutyName, Enabled: false},
+			{Type: ValidationDutyType, Name: ValidationDutyName, Enabled: false},
+		},
 	}
 	*t.dutyMen = append(*t.dutyMen, *m)
 }

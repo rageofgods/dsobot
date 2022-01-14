@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"dso_bot/pkg/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -31,21 +32,29 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 	menData := t.dc.DutyMenData()
 
 	// Generate returned string
-	var indActive int  // Index for Active list men
-	var indPassive int // Index for passive list men
+	var indexActive int  // Index for Active list men
+	var indexPassive int // Index for passive list men
 	for _, v := range *menData {
 		if v.Enabled {
-			indActive++
-			listActive += fmt.Sprintf("*%d*: %s (*@%s*)\n", indActive, v.FullName, v.UserName)
+			indexActive++
+			listActive += fmt.Sprintf("*%d*: %s (*@%s*) [[%s]]\n",
+				indexActive,
+				v.FullName,
+				v.UserName,
+				typesOfDuties(&v))
 		} else {
-			indPassive++
-			listPassive += fmt.Sprintf("*%d*: %s (*@%s*)\n", indPassive, v.FullName, v.UserName)
+			indexPassive++
+			listPassive += fmt.Sprintf("*%d*: %s (*@%s*) [[%s]]\n",
+				indexPassive,
+				v.FullName,
+				v.UserName,
+				typesOfDuties(&v))
 		}
 	}
 
-	if indActive == 0 {
+	if indexActive == 0 {
 		listActive = "*-*"
-	} else if indPassive == 0 {
+	} else if indexPassive == 0 {
 		listPassive = "*-*"
 	}
 	messageText := fmt.Sprintf("*Список дежурных:*\n_Активные:_\n%s\n_Неактивные:_\n%s",
@@ -106,6 +115,7 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 
 	men := t.dc.DutyMenData()
 	var msgText string
+	var isOffDutyFound bool
 	for _, man := range *men {
 		offduty, err := t.dc.ShowOffDutyForMan(man.UserName)
 		if err != nil {
@@ -122,12 +132,24 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 		if len(*offduty) == 0 {
 			continue
 		}
+		isOffDutyFound = true
 
 		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.FullName, man.UserName)
 		for i, od := range *offduty {
 			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
 		}
 		msgText += "\n"
+	}
+
+	if !isOffDutyFound {
+		messageText := "Нерабочие периоды не найдены"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
 	}
 
 	messageText := msgText
@@ -245,6 +267,58 @@ func (t *TgBot) adminHandleDisable(arg string) {
 	}
 
 	messageText := msgTextAdminHandleDisable
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}
+
+// handle '/editduty' command
+func (t *TgBot) adminHandleEditDutyType(arg string) {
+	arg = "" // Ignore cmdArgs
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		FromHandle: callbackHandleEditDuty,
+	}
+
+	men := t.dc.DutyMenData()
+	if len(*men) == 0 {
+		messageText := "Дежурных не найдено"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	rows, err := genEditDutyKeyboard(men, *callbackData)
+	if err != nil {
+		if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка дежурных",
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		log.Printf("unable to generate new inline keyboard: %v", err)
+		return
+	}
+
+	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(*rows...)
+
+	messageText := msgTextAdminHandleEditDuty
+	appendedText := "`| Имя дежурного |`"
+	for _, dt := range data.DutyNames {
+		appendedText += fmt.Sprintf("` %s |`", dt)
+	}
+	messageText += appendedText
 	if err := t.sendMessage(messageText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,

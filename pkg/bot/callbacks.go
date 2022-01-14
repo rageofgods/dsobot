@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	deep "github.com/mitchellh/copystructure"
 	"log"
 	"strconv"
 	"strings"
@@ -519,8 +520,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 				}
 			}
 			// Save data
-			_, err = t.dc.SaveMenList(dutyMen)
-			if err != nil {
+			if _, err := t.dc.SaveMenList(dutyMen); err != nil {
 				return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
 			}
 
@@ -583,6 +583,96 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		_, err := t.bot.Request(changeMsg)
 		if err != nil {
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+		}
+	}
+	return nil
+}
+
+func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, messageId int) error {
+	// If we just spawn inline keyboard let's load our temporary data
+	if *t.tmpData == nil {
+		// Get current men data
+		origData := *t.dc.DutyMenData()
+		// Deep copy original data
+		d, err := deep.Copy(origData)
+		if err != nil {
+			return err
+		}
+		// Assign deep copied data to tmpData
+		*t.tmpData = d.([]data.DutyMan)
+	}
+
+	switch answer {
+	case inlineKeyboardYes:
+		// Save data
+		if _, err := t.dc.SaveMenList(t.tmpData); err != nil {
+			return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
+		}
+		messageText := "Список типов дежурств успешно сохранен"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		// Clearing index
+		t.tmpData = new([]data.DutyMan)
+	case inlineKeyboardNo:
+		messageText := "Редактирование списка типов дежурств отменено"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		// Clearing index
+		t.tmpData = new([]data.DutyMan)
+	default:
+		// Format: 'manIndex-buttonIndex-Answer'
+		splitAnswer := strings.Split(answer, "-")
+		// Check only duty type button (separated by '-')
+		if len(splitAnswer) == 3 {
+			manIndex := splitAnswer[0] // Save man index
+			mi, err := strconv.Atoi(manIndex)
+			if err != nil {
+				return err
+			}
+
+			buttonIndex := splitAnswer[1] // Save button index
+			bi, err := strconv.Atoi(buttonIndex)
+			if err != nil {
+				return err
+			}
+
+			buttonState := splitAnswer[2] // Save button state
+
+			// Edit tmp dutyMan data
+			if buttonState == inlineKeyboardEditDutyYes {
+				(*t.tmpData)[mi].DutyType[bi].Enabled = false
+			} else {
+				(*t.tmpData)[mi].DutyType[bi].Enabled = true
+			}
+
+			// Create returned data (without data)
+			callbackData := &callbackMessage{
+				UserId:     userId,
+				ChatId:     chatId,
+				MessageId:  messageId,
+				FromHandle: callbackHandleEditDuty,
+			}
+			// Generate edited keyboard
+			rows, err := genEditDutyKeyboard(t.tmpData, *callbackData)
+			if err != nil {
+				if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка дежурных",
+					t.update.Message.Chat.ID,
+					&t.update.Message.MessageID,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+				log.Printf("unable to generate new inline keyboard: %v", err)
+				return err
+			}
+
+			// Create edited message (with correct keyboard)
+			changeMsg := tgbotapi.NewEditMessageReplyMarkup(t.update.CallbackQuery.Message.Chat.ID,
+				t.update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup(*rows...))
+
+			// Change keyboard
+			if _, err := t.bot.Request(changeMsg); err != nil {
+				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+			}
 		}
 	}
 	return nil

@@ -10,6 +10,7 @@ var (
 	isCallbackHandleReindexFired       bool
 	isCallbackHandleEnableFired        bool
 	isCallbackHandleDisableFired       bool
+	isCallbackHandleEditDutyFired      bool
 )
 
 // Define function type for decorator

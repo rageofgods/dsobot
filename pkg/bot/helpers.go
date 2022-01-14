@@ -263,6 +263,72 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 	return &numericKeyboard, nil
 }
 
+// Generate keyboard with edit-duty data
+func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.InlineKeyboardButton, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	// Iterate over all duty men
+	for manIndex, man := range *dm {
+		jsonData, err := marshalCallbackDataForEditDuty(cm, manIndex, 0)
+		if err != nil {
+			return nil, err
+		}
+		// Add leftmost button to hold man name
+		var keyboardButtons []tgbotapi.InlineKeyboardButton
+		keyboardButtons = append(keyboardButtons,
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s",
+				manIndex+1,
+				man.FullName),
+				string(jsonData)))
+		// Iterate over currently supported duty types
+		for _, dt := range data.DutyTypes {
+			for dutyIndex, d := range man.DutyType {
+				if dt == d.Type {
+					// Generate jsonData with current man's duty type state (false/true)
+					jsonData, err := marshalCallbackDataForEditDuty(cm, manIndex, dutyIndex, d.Enabled)
+					if err != nil {
+						return nil, err
+					}
+					// Generate correct buttons based on current duty type state
+					if d.Enabled {
+						keyboardButtons = append(keyboardButtons,
+							tgbotapi.NewInlineKeyboardButtonData("✅", string(jsonData)))
+					} else {
+						keyboardButtons = append(keyboardButtons,
+							tgbotapi.NewInlineKeyboardButtonData("❌", string(jsonData)))
+					}
+				}
+			}
+		}
+		// Check if keyboard is generated correctly
+		if len(keyboardButtons) == 1 {
+			return nil, fmt.Errorf("unable to generate keyboard buttons for: *@%s*", man.FullName)
+		}
+		row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
+		rows = append(rows, row)
+	}
+
+	// Add row with ok/cancel buttons
+	cmYes, cmNo := cm, cm
+	cmYes.Answer = inlineKeyboardYes
+	cmNo.Answer = inlineKeyboardNo
+	jsonDataYes, err := json.Marshal(cmYes)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	jsonDataNo, err := json.Marshal(cmNo)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
+	rows = append(rows, row)
+
+	return &rows, nil
+}
+
 // Covert weekday to localized weekday
 func locWeekday(weekday time.Weekday) string {
 	var locWeekday string
@@ -300,4 +366,46 @@ func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, m
 	if err != nil {
 		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
 	}
+}
+
+// Return string with duty types data for specified man
+func typesOfDuties(m *data.DutyMan) string {
+	if len(m.DutyType) == 0 {
+		return "❗️"
+	}
+	var list string
+	for _, dt := range m.DutyType {
+		list += fmt.Sprintf("%s ", dt.Name)
+	}
+	return strings.Trim(list, " ")
+}
+
+// Return json marshaled object for callback message data
+func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
+	// Generate callback data
+	// Format: 'manIndex-buttonIndex-Answer'
+	cm.Answer = strconv.Itoa(manIndex)                         // Save current man index to data
+	cm.Answer += fmt.Sprintf("-%s", strconv.Itoa(buttonIndex)) // Save current button index to data
+	// If we have optional argument
+	if len(enabled) == 1 {
+		// Append current button state as suffix
+		// '-1' - button is 'active' ✅
+		// '-0' - button is 'passive' ❌
+		if enabled[0] {
+			cm.Answer += fmt.Sprintf("-%s", inlineKeyboardEditDutyYes)
+		} else {
+			cm.Answer += fmt.Sprintf("-%s", inlineKeyboardEditDutyNo)
+		}
+	}
+	// Save our data
+	jsonData, err := json.Marshal(cm)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
+	if len(jsonData) > 64 {
+		return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
+	}
+	return jsonData, nil
 }
