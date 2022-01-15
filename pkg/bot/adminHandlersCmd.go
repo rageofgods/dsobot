@@ -97,6 +97,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(abc, botCmdRollout)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
 				t.update.Message.Chat.ID,

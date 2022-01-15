@@ -225,6 +225,7 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(bc, botCmdWhoIsOn)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
 				t.update.Message.Chat.ID,
@@ -444,6 +445,7 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(bc, botCmdShowMy)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
 				t.update.Message.Chat.ID,
