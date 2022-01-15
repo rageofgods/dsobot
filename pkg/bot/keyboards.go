@@ -124,10 +124,10 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 	// Generate columns names
 	var keyboardButtons []tgbotapi.InlineKeyboardButton
 	keyboardButtons = append(keyboardButtons,
-		tgbotapi.NewInlineKeyboardButtonData("ИМЯ", "{}"))
+		tgbotapi.NewInlineKeyboardButtonData("ИМЯ", inlineKeyboardVoid))
 	for _, dt := range data.DutyNames {
 		keyboardButtons = append(keyboardButtons,
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", strings.ToUpper(dt)), "{}"))
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", strings.ToUpper(dt)), inlineKeyboardVoid))
 	}
 	row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
 	rows = append(rows, row)

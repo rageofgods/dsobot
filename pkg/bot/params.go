@@ -120,6 +120,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 
 // Some const's for working with callbacks (use short names to workaround Telegram 64b callback data limit)
 const (
+	// Void answer for buttons without any helpful data
+	inlineKeyboardVoid = "{}"
+
 	inlineKeyboardYes = "99"
 	inlineKeyboardNo  = "98"
 
