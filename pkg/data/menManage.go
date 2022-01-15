@@ -216,7 +216,7 @@ func (t *CalData) LoadMenList() (*[]DutyMan, error) {
 }
 
 // AddManOnDuty Add new man to duty list
-func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
+func (t *CalData) AddManOnDuty(fullName string, userName string, customName string, tgID int64) {
 	// Check if added user is unique in the data
 	for _, man := range *t.dutyMen {
 		if tgID == man.TgID {
@@ -227,14 +227,15 @@ func (t *CalData) AddManOnDuty(fullName string, userName string, tgID int64) {
 	ln := len(*t.dutyMen)
 	ln++
 	m := &DutyMan{
-		FullName: fullName,
-		Index:    ln,
-		UserName: userName,
-		TgID:     tgID,
-		Enabled:  false,
+		FullName:   fullName,
+		Index:      ln,
+		UserName:   userName,
+		CustomName: customName,
+		TgID:       tgID,
+		Enabled:    true, // Set every new user as an active by default
 		DutyType: []Duty{
-			{Type: OrdinaryDutyType, Name: OrdinaryDutyName, Enabled: false},
-			{Type: ValidationDutyType, Name: ValidationDutyName, Enabled: false},
+			{Type: OrdinaryDutyType, Name: OrdinaryDutyName, Enabled: false},     // Set Duty type to disabled by default
+			{Type: ValidationDutyType, Name: ValidationDutyName, Enabled: false}, // Set Duty type to disabled by default
 		},
 	}
 	*t.dutyMen = append(*t.dutyMen, *m)

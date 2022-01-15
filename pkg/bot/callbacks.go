@@ -41,7 +41,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 			log.Printf("unable to send message: %v", err)
 		}
 		// Add user to duty list
-		t.dc.AddManOnDuty(uFullName, uUserName, uTgID)
+		t.dc.AddManOnDuty(uFullName, uUserName, (*t.tmpData)[0].CustomName, uTgID)
 		// Save new data
 		_, err := t.dc.SaveMenList()
 		if err != nil {
@@ -72,6 +72,9 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
 	}
+
+	// Clearing index
+	t.tmpData = new([]data.DutyMan)
 
 	return nil
 }
@@ -675,5 +678,87 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 			}
 		}
 	}
+	return nil
+}
+
+func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64, messageId int) error {
+	// Get requested user info
+	u, err := t.getChatMember(userId, chatId)
+	if err != nil {
+		log.Printf("unable to get user info: %v", err)
+	}
+
+	// Generate answer to user who was requested access
+	if answer == inlineKeyboardYes {
+		// Send info to user
+		messageText := "Запрос на добавление отправлен администраторам.\n" +
+			"По факту согласования вам придет уведомление.\n"
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+
+		// Create returned data with Yes/No button
+		callbackDataYes := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			Answer:     inlineKeyboardYes,
+			FromHandle: callbackHandleRegister,
+		}
+		callbackDataNo := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			Answer:     inlineKeyboardNo,
+			FromHandle: callbackHandleRegister,
+		}
+
+		numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
+		if err != nil {
+			log.Printf("unable to generate new inline keyboard: %v", err)
+		}
+
+		// Create human-readable variables
+		uUserName := u.User.UserName
+		uFirstName := u.User.FirstName
+		uLastName := u.User.LastName
+
+		// Generate correct username
+		uFullName := genUserFullName(uFirstName, uLastName)
+
+		// Send message to admins with inlineKeyboard question
+		messageText = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n "+
+			"*@%s* - %s (%s).\n\n Добавить?",
+			uUserName,
+			(*t.tmpData)[0].CustomName,
+			uFullName)
+		if err := t.sendMessage(messageText,
+			t.adminGroupId,
+			nil,
+			numericKeyboard); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	} else {
+		messageText := "Вы отменили регистрацию"
+		if err := t.sendMessage(messageText,
+			chatId,
+			&messageId,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		// Clearing index
+		t.tmpData = new([]data.DutyMan)
+	}
+
+	// Deleting register request message
+	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID, t.update.CallbackQuery.Message.MessageID)
+	_, err = t.bot.Request(del)
+	if err != nil {
+		log.Printf("unable to delete admin group message with requested access: %v", err)
+	}
+
 	return nil
 }

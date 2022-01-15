@@ -223,3 +223,54 @@ func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonInde
 	}
 	return jsonData, nil
 }
+
+func (t *TgBot) userHandleRegisterHelper() {
+	// Check if user is already registered
+	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
+		messageText := "Вы уже зарегестрированы.\n" +
+			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	// Create returned data with Yes/No button
+	callbackDataYes := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		Answer:     inlineKeyboardYes,
+		FromHandle: callbackHandleRegisterHelper,
+	}
+	callbackDataNo := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		Answer:     inlineKeyboardNo,
+		FromHandle: callbackHandleRegisterHelper,
+	}
+
+	numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := fmt.Sprintf("Проверьте ваши данные перед отправкой"+
+		" запроса на согласование администраторам:\n\n*%s (@%s)*\n\nПродолжить?",
+		t.update.Message.Text, t.update.Message.From.UserName)
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+
+	// Save user data to process later in callback
+	userTmpNameSurname := t.update.Message.Text
+	tmpCustomName := &data.DutyMan{CustomName: userTmpNameSurname}
+	*t.tmpData = append(*t.tmpData, *tmpCustomName)
+}

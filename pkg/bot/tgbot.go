@@ -70,6 +70,16 @@ func (t *TgBot) StartBot(version string, build string) {
 
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
+		// Process user registration
+		if update.Message != nil {
+			if update.Message.ReplyToMessage != nil {
+				if update.Message.ReplyToMessage.From.ID == t.bot.Self.ID &&
+					str.Contains(update.Message.ReplyToMessage.Text, msgTextUserHandleRegister) {
+					// Show to user Yes/No message to allow him to check his Name and Surname
+					t.userHandleRegisterHelper()
+				}
+			}
+		}
 		// Process ordinary command messages
 		if update.Message != nil && update.Message.IsCommand() {
 			// Hold pointer to the current update for access inside handlers
@@ -133,6 +143,13 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleRegister:
 				if !isCallbackHandleRegisterFired {
 					dec := burstDecorator(2, &isCallbackHandleRegisterFired, t.callbackRegister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
+				}
+			case callbackHandleRegisterHelper:
+				if !isCallbackHandleRegisterHelperFired {
+					dec := burstDecorator(2, &isCallbackHandleRegisterHelperFired, t.callbackRegisterHelper)
 					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
 						log.Printf("%v", err)
 					}

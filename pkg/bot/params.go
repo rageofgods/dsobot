@@ -126,13 +126,14 @@ const (
 	inlineKeyboardEditDutyYes = "1"
 	inlineKeyboardEditDutyNo  = "0"
 
-	callbackHandleRegister      = "fhr"
-	callbackHandleUnregister    = "fhu"
-	callbackHandleDeleteOffDuty = "fhdod"
-	callbackHandleReindex       = "fhre"
-	callbackHandleEnable        = "fhe"
-	callbackHandleDisable       = "fhd"
-	callbackHandleEditDuty      = "fhed"
+	callbackHandleRegister       = "fhr"
+	callbackHandleRegisterHelper = "fhrh"
+	callbackHandleUnregister     = "fhu"
+	callbackHandleDeleteOffDuty  = "fhdod"
+	callbackHandleReindex        = "fhre"
+	callbackHandleEnable         = "fhe"
+	callbackHandleDisable        = "fhd"
+	callbackHandleEditDuty       = "fhed"
 )
 
 // Bot available commands
@@ -185,6 +186,7 @@ type callbackMessage struct {
 }
 
 // Text strings for messages
+// Don't use markdown here because returned message will be always in plain text
 const (
 	msgTextAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
 		"в нужной последовательности):"
@@ -196,4 +198,7 @@ const (
 		"✅ - включает тип дежурства\n" +
 		"❌ - выключает тип дежуртсва\n\n" +
 		"❗ - неактивный дежурный\n\n"
+	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста пришлите мне " +
+		"ваши реальные Имя и Фамилию в ОТВЕТЕ (Reply) на это сообщение.\n\n" +
+		"Например: 'Вася Пупкин' или 'Пупкин Василий'.\n\n"
 )
