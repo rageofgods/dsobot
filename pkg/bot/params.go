@@ -1,5 +1,27 @@
 package bot
 
+import (
+	"dso_bot/pkg/data"
+)
+
+// Structure to hold answer data for newly registered users
+type tmpRegisterData struct {
+	userId int64
+	data   string
+}
+
+// Structure to hold temporary dutyMan data before saving it
+type tmpDutyManData struct {
+	userId int64
+	data   []data.DutyMan
+}
+
+// Structure (parent) for different types of tmp data
+type tmpDataa struct {
+	tmpRegisterData []tmpRegisterData
+	tmpDutyManData  []tmpDutyManData
+}
+
 // Custom struct for bot commands
 type cmd struct {
 	name tCmd
@@ -201,7 +223,7 @@ const (
 		"✅ - включает тип дежурства\n" +
 		"❌ - выключает тип дежуртсва\n\n" +
 		"❗ - неактивный дежурный\n\n"
-	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста пришлите мне " +
+	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста, отправьте " +
 		"ваши реальные Имя и Фамилию в ОТВЕТЕ (Reply) на это сообщение.\n\n" +
 		"Например: 'Вася Пупкин' или 'Пупкин Василий'.\n\n"
 )

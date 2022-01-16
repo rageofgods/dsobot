@@ -270,7 +270,91 @@ func (t *TgBot) userHandleRegisterHelper() {
 	}
 
 	// Save user data to process later in callback
-	userTmpNameSurname := t.update.Message.Text
-	tmpCustomName := &data.DutyMan{CustomName: userTmpNameSurname}
-	*t.tmpData = append(*t.tmpData, *tmpCustomName)
+	t.addTmpRegisterDataForUser(t.update.Message.From.ID, t.update.Message.Text)
+}
+
+func (t *TgBot) tmpRegisterDataForUser(userId int64) (string, error) {
+	for _, v := range t.tmpData.tmpRegisterData {
+		if v.userId == userId {
+			return v.data, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string) {
+	var isUserIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpRegisterData {
+		if v.userId == userId {
+			t.tmpData.tmpRegisterData[i].data = name
+			isUserIdFound = true
+		}
+	}
+	if isUserIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		tmpCustomName := tmpRegisterData{userId: t.update.Message.From.ID, data: name}
+		t.tmpData.tmpRegisterData = append(t.tmpData.tmpRegisterData, tmpCustomName)
+	}
+}
+
+func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data.DutyMan, error) {
+	for _, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpDutyManDataForUser(userId int64, man data.DutyMan) {
+	var isUserIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			t.tmpData.tmpDutyManData[i].data = append(t.tmpData.tmpDutyManData[i].data, man)
+			isUserIdFound = true
+		}
+	}
+	if isUserIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		var tmp []data.DutyMan
+		tmp = append(tmp, man)
+		tmpNewMan := tmpDutyManData{userId: userId, data: tmp}
+		t.tmpData.tmpDutyManData = append(t.tmpData.tmpDutyManData, tmpNewMan)
+	}
+}
+
+func (t *TgBot) clearTmpDutyManDataForUser(userId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			t.tmpData.tmpDutyManData[i].data = nil
+		}
+	}
+}
+
+// Return true if tmpData is still in use by another call
+func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64) bool {
+	// If we got error here we can safely continue
+	// Because tmpData is empty
+	// If we get err == nil - some other function is still running
+	if _, err := t.tmpDutyManDataForUser(userId); err == nil {
+		messageText := "Вы уже работаете с данными дежурных. Для того, чтобы продолжить, пожалуйста " +
+			"сохраните или отмените работу с текущими данными."
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return true
+	}
+	return false
 }

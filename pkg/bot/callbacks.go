@@ -40,11 +40,17 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
-		// Add user to duty list
-		t.dc.AddManOnDuty(uFullName, uUserName, (*t.tmpData)[0].CustomName, uTgID)
-		// Save new data
-		_, err := t.dc.SaveMenList()
+
+		// Get saved user data
+		userNameSurname, err := t.tmpRegisterDataForUser(userId)
 		if err != nil {
+			return err
+		}
+
+		// Add user to duty list
+		t.dc.AddManOnDuty(uFullName, uUserName, userNameSurname, uTgID)
+		// Save new data
+		if _, err := t.dc.SaveMenList(); err != nil {
 			log.Printf("can't save men list: %v", err)
 		} else {
 			// Send message to admins
@@ -72,9 +78,6 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
 	}
-
-	// Clearing index
-	t.tmpData = new([]data.DutyMan)
 
 	return nil
 }
@@ -228,7 +231,6 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 }
 
 func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messageId int) error {
-	userId = 0 // userId is ignored here
 	// Get current men data
 	dutyMen := t.dc.DutyMenData()
 
@@ -240,25 +242,43 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 
 	switch answer {
 	case inlineKeyboardYes:
+		// Get saved user data
+		_, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			messageText := "Нет данных для сохранения"
+			// Send final message and remove inline keyboard
+			if err := t.sendMessage(messageText, chatId, &messageId, nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+			return nil
+		}
 		// If we're still editing duty index
 		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleReindex) {
-			// Append absent men to tmpData
+			// Append absent men to tmpDutyData
 			for _, dMan := range *dutyMen {
 				var manFound bool
-				for _, dTmpMan := range *t.tmpData {
+				tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+				if err != nil {
+					return err
+				}
+				for _, dTmpMan := range tmpDutyData {
 					if dMan.UserName == dTmpMan.UserName {
 						manFound = true
 					}
 				}
 				if !manFound {
-					dMan.Index = len(*t.tmpData) + 1 // Generate correct new man index value
-					*t.tmpData = append(*t.tmpData, dMan)
+					dMan.Index = len(tmpDutyData) + 1        // Generate correct new man index value
+					t.addTmpDutyManDataForUser(userId, dMan) // Append edited man to tmpDutyData
 				}
 			}
 			// Generate returned string
 			var list string
+			tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+			if err != nil {
+				return err
+			}
 			list = "*Новый порядок дежурных:*\n"
-			for i, v := range *t.tmpData {
+			for i, v := range tmpDutyData {
 				list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 			}
 			list += "\nСохранить?"
@@ -273,34 +293,40 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
-			_, err := t.bot.Request(editedMessage)
-			if err != nil {
+			if _, err := t.bot.Request(editedMessage); err != nil {
 				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 			}
 		} else { // New duty list is reviewed, and we want to save it
-			_, err = t.dc.SaveMenList(t.tmpData)
+			tmpDutyData, err := t.tmpDutyManDataForUser(userId)
 			if err != nil {
+				return err
+			}
+			if _, err = t.dc.SaveMenList(&tmpDutyData); err != nil {
 				return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
 			}
 			messageText := "Новый порядок дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
 			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-			// Clearing index
-			t.tmpData = new([]data.DutyMan)
+			// Clear tmp data
+			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка дежурных отменено"
 		// Send final message and remove inline keyboard
 		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
+		// Clear tmp data
+		t.clearTmpDutyManDataForUser(userId)
 	default:
+		// Get current tmpDutyData (we can safety ignore error here)
+		tmpDutyData, _ := t.tmpDutyManDataForUser(userId)
+
 		// Append selected man to a new slice of DutyMan
-		for _, man := range *dutyMen {
+		for i, man := range *dutyMen {
 			// Find dutyMan for reindex
-			if man.Index == answerIndex+1 {
-				man.Index = len(*t.tmpData) + 1 // Generate correct new man index value
-				*t.tmpData = append(*t.tmpData, man)
+			if i == answerIndex {
+				man.Index = len(tmpDutyData) + 1 // Generate correct new man index value
+				t.addTmpDutyManDataForUser(userId, man)
+				break
 			}
 		}
 
@@ -326,7 +352,12 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		var list string
 		list = msgTextAdminHandleReindex
 		list += "\n\n"
-		for i, v := range *t.tmpData {
+		// Get current tmpDutyData
+		tmpDutyData, err = t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		for i, v := range tmpDutyData {
 			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 		}
 
@@ -336,8 +367,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
-		_, err := t.bot.Request(changeMsg)
-		if err != nil {
+		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 		}
 	}
@@ -345,7 +375,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 }
 
 func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messageId int) error {
-	userId = 0 // userId is ignored here
+	//userId = 0 // userId is ignored here
 	answerIndex, err := strconv.Atoi(answer)
 	if err != nil {
 		log.Printf("unable to convert string answer to integer: %v", err)
@@ -354,6 +384,16 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 
 	switch answer {
 	case inlineKeyboardYes:
+		// Get saved user data
+		tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			messageText := "Нет данных для сохранения"
+			// Send final message and remove inline keyboard
+			if err := t.sendMessage(messageText, chatId, &messageId, nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+			return nil
+		}
 		// If we're still editing duty index
 		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleEnable) {
 			// If all buttons with men was pressed
@@ -368,7 +408,7 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 				index++
 				list += fmt.Sprintf("*%d*: %s (*@%s*)\n", index, v.FullName, v.UserName)
 			}
-			for _, v := range *t.tmpData {
+			for _, v := range tmpDutyData {
 				index++
 				list += fmt.Sprintf("*%d*: *%s* (*@%s*)\n", index, v.FullName, v.UserName)
 			}
@@ -384,15 +424,14 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
-			_, err := t.bot.Request(editedMessage)
-			if err != nil {
+			if _, err := t.bot.Request(editedMessage); err != nil {
 				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 			}
 		} else { // New duty list is reviewed, and we want to save it
 			// Get current men data
 			dutyMen := t.dc.DutyMenData()
 			for i, dMan := range *dutyMen {
-				for _, dTmpMan := range *t.tmpData {
+				for _, dTmpMan := range tmpDutyData {
 					if dMan.TgID == dTmpMan.TgID {
 						(*dutyMen)[i].Enabled = true
 					}
@@ -407,15 +446,15 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 			messageText := "Новый список активных дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
 			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-			// Clearing index
-			t.tmpData = new([]data.DutyMan)
+			// Clear tmp data
+			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка активных дежурных отменено"
 		// Send final message and remove inline keyboard
 		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
+		// Clear tmp data
+		t.clearTmpDutyManDataForUser(userId)
 	default:
 		// Get passive men data
 		dutyMen := t.dc.DutyMenData(false)
@@ -424,7 +463,8 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 		for i, man := range *dutyMen {
 			// Found right man for clicked button index and append him to temporary data list
 			if i == answerIndex {
-				*t.tmpData = append(*t.tmpData, man)
+				t.addTmpDutyManDataForUser(userId, man)
+				break
 			}
 		}
 
@@ -450,7 +490,12 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 		var list string
 		list = msgTextAdminHandleEnable
 		list += "\n\n"
-		for i, v := range *t.tmpData {
+		// Get current tmpDutyData
+		tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		for i, v := range tmpDutyData {
 			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 		}
 
@@ -460,8 +505,7 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
-		_, err := t.bot.Request(changeMsg)
-		if err != nil {
+		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 		}
 	}
@@ -469,7 +513,6 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 }
 
 func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messageId int) error {
-	userId = 0 // userId is ignored here
 	answerIndex, err := strconv.Atoi(answer)
 	if err != nil {
 		log.Printf("unable to convert string answer to integer: %v", err)
@@ -478,6 +521,16 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 
 	switch answer {
 	case inlineKeyboardYes:
+		// Get saved user data
+		tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			messageText := "Нет данных для сохранения"
+			// Send final message and remove inline keyboard
+			if err := t.sendMessage(messageText, chatId, &messageId, nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+			return nil
+		}
 		// If we're still editing duty index
 		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleDisable) {
 			// If all buttons with men was pressed
@@ -492,7 +545,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 				index++
 				list += fmt.Sprintf("*%d*: %s (*@%s*)\n", index, v.FullName, v.UserName)
 			}
-			for _, v := range *t.tmpData {
+			for _, v := range tmpDutyData {
 				index++
 				list += fmt.Sprintf("*%d*: *%s* (*@%s*)\n", index, v.FullName, v.UserName)
 			}
@@ -508,15 +561,14 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
-			_, err := t.bot.Request(editedMessage)
-			if err != nil {
+			if _, err := t.bot.Request(editedMessage); err != nil {
 				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 			}
 		} else { // New duty list is reviewed, and we want to save it
 			// Get current men data
 			dutyMen := t.dc.DutyMenData()
 			for i, dMan := range *dutyMen {
-				for _, dTmpMan := range *t.tmpData {
+				for _, dTmpMan := range tmpDutyData {
 					if dMan.TgID == dTmpMan.TgID {
 						(*dutyMen)[i].Enabled = false
 					}
@@ -530,15 +582,15 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 			messageText := "Новый список неактивных дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
 			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-			// Clearing index
-			t.tmpData = new([]data.DutyMan)
+			// Clear tmp data
+			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка неактивных дежурных отменено"
 		// Send final message and remove inline keyboard
 		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
+		// Clear tmp data
+		t.clearTmpDutyManDataForUser(userId)
 	default:
 		// Get passive men data
 		dutyMen := t.dc.DutyMenData(true)
@@ -547,7 +599,8 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		for i, man := range *dutyMen {
 			// Found right man for clicked button index and append him to temporary data list
 			if i == answerIndex {
-				*t.tmpData = append(*t.tmpData, man)
+				t.addTmpDutyManDataForUser(userId, man)
+				break
 			}
 		}
 
@@ -573,7 +626,12 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		var list string
 		list = msgTextAdminHandleDisable
 		list += "\n\n"
-		for i, v := range *t.tmpData {
+		// Get current tmpDutyData
+		tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		for i, v := range tmpDutyData {
 			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
 		}
 
@@ -583,8 +641,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
-		_, err := t.bot.Request(changeMsg)
-		if err != nil {
+		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 		}
 	}
@@ -593,7 +650,8 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 
 func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, messageId int) error {
 	// If we just spawn inline keyboard let's load our temporary data
-	if *t.tmpData == nil {
+	_, err := t.tmpDutyManDataForUser(userId)
+	if err != nil {
 		// Get current men data
 		origData := *t.dc.DutyMenData()
 		// Deep copy original data
@@ -601,27 +659,32 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 		if err != nil {
 			return err
 		}
-		// Assign deep copied data to tmpData
-		*t.tmpData = d.([]data.DutyMan)
+		// Assign deep copied data to tmpDutyData
+		for _, man := range d.([]data.DutyMan) {
+			t.addTmpDutyManDataForUser(userId, man)
+		}
 	}
-
 	switch answer {
 	case inlineKeyboardYes:
+		tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+		if err != nil {
+			return err
+		}
 		// Save data
-		if _, err := t.dc.SaveMenList(t.tmpData); err != nil {
+		if _, err := t.dc.SaveMenList(&tmpDutyData); err != nil {
 			return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
 		}
 		messageText := "Список типов дежурств успешно сохранен"
 		// Send final message and remove inline keyboard
 		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
+		// Clear tmp data
+		t.clearTmpDutyManDataForUser(userId)
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка типов дежурств отменено"
 		// Send final message and remove inline keyboard
 		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
+		// Clear tmp data
+		t.clearTmpDutyManDataForUser(userId)
 	default:
 		// Format: 'manIndex-buttonIndex-Answer'
 		splitAnswer := strings.Split(answer, "-")
@@ -642,10 +705,14 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 			buttonState := splitAnswer[2] // Save button state
 
 			// Edit tmp dutyMan data
-			if buttonState == inlineKeyboardEditDutyYes {
-				(*t.tmpData)[mi].DutyType[bi].Enabled = false
-			} else {
-				(*t.tmpData)[mi].DutyType[bi].Enabled = true
+			for i, v := range t.tmpData.tmpDutyManData {
+				if v.userId == userId {
+					if buttonState == inlineKeyboardEditDutyYes {
+						t.tmpData.tmpDutyManData[i].data[mi].DutyType[bi].Enabled = false
+					} else {
+						t.tmpData.tmpDutyManData[i].data[mi].DutyType[bi].Enabled = true
+					}
+				}
 			}
 
 			// Create returned data (without data)
@@ -656,7 +723,11 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 				FromHandle: callbackHandleEditDuty,
 			}
 			// Generate edited keyboard
-			rows, err := genEditDutyKeyboard(t.tmpData, *callbackData)
+			tmpDutyData, err := t.tmpDutyManDataForUser(userId)
+			if err != nil {
+				return err
+			}
+			rows, err := genEditDutyKeyboard(&tmpDutyData, *callbackData)
 			if err != nil {
 				if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка дежурных",
 					t.update.Message.Chat.ID,
@@ -729,11 +800,17 @@ func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64
 		// Generate correct username
 		uFullName := genUserFullName(uFirstName, uLastName)
 
+		// Get saved user data
+		userNameSurname, err := t.tmpRegisterDataForUser(userId)
+		if err != nil {
+			return err
+		}
+
 		// Send message to admins with inlineKeyboard question
 		messageText = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n "+
 			"*@%s* - %s (%s).\n\n Добавить?",
 			uUserName,
-			(*t.tmpData)[0].CustomName,
+			userNameSurname,
 			uFullName)
 		if err := t.sendMessage(messageText,
 			t.adminGroupId,
@@ -749,8 +826,6 @@ func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
-		// Clearing index
-		t.tmpData = new([]data.DutyMan)
 	}
 
 	// Deleting register request message

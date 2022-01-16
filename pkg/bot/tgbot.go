@@ -17,7 +17,7 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	update       *tgbotapi.Update
-	tmpData      *[]data.DutyMan
+	tmpData      tmpDataa
 }
 
 func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
@@ -28,7 +28,6 @@ func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *T
 		adminGroupId: adminGroupId,
 		debug:        debug,
 		update:       new(tgbotapi.Update),
-		tmpData:      new([]data.DutyMan),
 	}
 }
 

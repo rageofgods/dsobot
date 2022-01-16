@@ -165,6 +165,11 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 func (t *TgBot) adminHandleReindex(arg string) {
 	arg = "" // Ignore cmdArgs
 
+	// Check if we are still editing tmpData at another function call
+	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+		return
+	}
+
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
@@ -202,6 +207,11 @@ func (t *TgBot) adminHandleReindex(arg string) {
 // handle '/enable' command
 func (t *TgBot) adminHandleEnable(arg string) {
 	arg = "" // Ignore cmdArgs
+
+	// Check if we are still editing tmpData at another function call
+	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+		return
+	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
@@ -241,6 +251,11 @@ func (t *TgBot) adminHandleEnable(arg string) {
 func (t *TgBot) adminHandleDisable(arg string) {
 	arg = "" // Ignore cmdArgs
 
+	// Check if we are still editing tmpData at another function call
+	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+		return
+	}
+
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
 		UserId:     t.update.Message.From.ID,
@@ -278,6 +293,11 @@ func (t *TgBot) adminHandleDisable(arg string) {
 // handle '/editduty' command
 func (t *TgBot) adminHandleEditDutyType(arg string) {
 	arg = "" // Ignore cmdArgs
+
+	// Check if we are still editing tmpData at another function call
+	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+		return
+	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{

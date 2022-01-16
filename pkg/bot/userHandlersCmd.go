@@ -87,7 +87,7 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 	userFullName := genUserFullName(t.update.Message.From.FirstName, t.update.Message.From.LastName)
 	msgText := msgTextUserHandleRegister + fmt.Sprintf("Эта информация будет использоваться"+
 		" для корректного отображения имен участников т.к. ваши теущие данные из Telegram (%s) могут не "+
-		"соотвествовать реальным.", userFullName)
+		"соответствовать реальным.", userFullName)
 	if err := t.sendMessage(msgText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,
