@@ -54,7 +54,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 			log.Printf("can't save men list: %v", err)
 		} else {
 			// Send message to admins
-			messageText := fmt.Sprintf("Пользователь *@%s* успешно добавлен", uUserName)
+			messageText := fmt.Sprintf("Пользователь %s *(@%s)* успешно добавлен", userNameSurname, uUserName)
 			if err := t.sendMessage(messageText,
 				t.adminGroupId,
 				nil,
@@ -92,6 +92,15 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 	// Create human-readable variables
 	uTgID := u.User.UserName
 
+	// Get current men data
+	dutyMen := t.dc.DutyMenData()
+	// Get Custom Name for deleted user
+	var uCustomName string
+	for _, v := range *dutyMen {
+		if v.TgID == userId {
+			uCustomName = v.CustomName
+		}
+	}
 	// Generate answer to user who was requested access
 	if answer == inlineKeyboardYes {
 		err := t.dc.DeleteManOnDuty(uTgID)
@@ -125,7 +134,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 					log.Printf("unable to send message: %v", err)
 				}
 				// Send message to admins
-				messageText = fmt.Sprintf("Пользователь *@%s* произвел выход", uTgID)
+				messageText = fmt.Sprintf("Пользователь %s *(@%s)* произвел выход", uCustomName, uTgID)
 				if err := t.sendMessage(messageText,
 					t.adminGroupId,
 					nil,
