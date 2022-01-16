@@ -4,6 +4,7 @@ import (
 	"dso_bot/pkg/data"
 )
 
+/////////////////////////////////
 // Structure to hold answer data for newly registered users
 type tmpRegisterData struct {
 	userId int64
@@ -17,11 +18,12 @@ type tmpDutyManData struct {
 }
 
 // Structure (parent) for different types of tmp data
-type tmpDataa struct {
+type tmpData struct {
 	tmpRegisterData []tmpRegisterData
 	tmpDutyManData  []tmpDutyManData
 }
 
+/////////////////////////////////
 // Custom struct for bot commands
 type cmd struct {
 	name tCmd
@@ -50,6 +52,8 @@ type botCommand struct {
 type botCommands struct {
 	commands []botCommand
 }
+
+/////////////////////////////////
 
 // UserBotCommands returns slice of ordinary user botCommand struct
 func (t *TgBot) UserBotCommands() *botCommands {
@@ -111,6 +115,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 			description: "Вывести список участников",
 			handleFunc:  t.adminHandleList},
 		{command: &cmd{name: botCmdRollout, args: &[]arg{
+			{name: botCmdArgAll,
+				handleFunc:  t.adminHandleRolloutAll,
+				description: "Все события типов дежурств"},
 			{name: botCmdArgDuty,
 				handleFunc:  t.adminHandleRolloutDuty,
 				description: "Дежурства"},
@@ -182,6 +189,7 @@ const (
 
 // Bot available args
 const (
+	botCmdArgAll           tArg = "all"
 	botCmdArgDuty          tArg = "duty"
 	botCmdArgValidation    tArg = "validation"
 	botCmdArgNonWorkingDay tArg = "nwd"

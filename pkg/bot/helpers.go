@@ -77,7 +77,7 @@ func genHelpCmdText(commands []botCommand) string {
 		if cmd.command.args != nil {
 			argList = fmt.Sprintf("*Возможные значения аргумента:*\n")
 			for index, arg := range *cmd.command.args {
-				argList += fmt.Sprintf("*%s*: *%s* %q\n",
+				argList += fmt.Sprintf("  *%s*: *%s* %q\n",
 					string(rune('a'-1+index+1)), // Convert number 1,2,3,etc. to char accordingly a,b,c,etc.
 					arg.name,
 					arg.description,

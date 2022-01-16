@@ -17,7 +17,7 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	update       *tgbotapi.Update
-	tmpData      tmpDataa
+	tmpData      tmpData
 }
 
 func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
@@ -69,6 +69,20 @@ func (t *TgBot) StartBot(version string, build string) {
 
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
+		// Process adding to new group
+		if update.MyChatMember != nil {
+			if update.MyChatMember.NewChatMember.Status == "member" &&
+				update.MyChatMember.Chat.Type == "group" {
+				messageText := fmt.Sprintf("*Меня добавили в новую группу*:\n*ID*: `%d`\n*Title*: `%s`",
+					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			}
+		}
 		// Process user registration
 		if update.Message != nil {
 			if update.Message.ReplyToMessage != nil {
