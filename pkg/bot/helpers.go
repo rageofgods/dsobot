@@ -149,10 +149,23 @@ func checkArgIsOffDutyRange(arg string) ([]time.Time, error) {
 			}
 			timeRange = append(timeRange, parsedTime)
 		}
+		// Check if dates is in future
+		for _, v := range timeRange {
+			if v.Before(time.Now()) {
+				return nil, fmt.Errorf("указанные даты не должны находится в прошлом: %v",
+					v.Format(botDataShort3))
+			}
+		}
+		// Check if dates is on valid order (first must be older than second)
+		if timeRange[1].Before(timeRange[0]) {
+			return nil, fmt.Errorf("дата %v должна быть старше, чем %v",
+				timeRange[1].Format(botDataShort3),
+				timeRange[0].Format(botDataShort3))
+		}
 		// If valid - return true
 		return timeRange, nil
 	}
-	return timeRange, fmt.Errorf("формат аргумента должен быть: " +
+	return nil, fmt.Errorf("формат аргумента должен быть: " +
 		"*DDMMYYYY-DDMMYYYY* (период _'от-до'_ через дефис)")
 }
 
