@@ -23,56 +23,6 @@ func genUserFullName(firstName string, lastName string) string {
 	return fullName
 }
 
-func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
-	// Generate jsons for data
-	jsonYes, err := json.Marshal(yes)
-	if err != nil {
-		log.Println(err)
-	}
-	jsonNo, err := json.Marshal(no)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-	if len(jsonNo) > 64 {
-		return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonNo))
-	} else if len(jsonYes) > 64 {
-		return nil, fmt.Errorf("jsonYes size is greater then 64b: %v", len(jsonNo))
-	}
-
-	// Create numeric inline keyboard
-	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Yes", string(jsonYes)),
-			tgbotapi.NewInlineKeyboardButtonData("No", string(jsonNo)),
-		),
-	)
-	return &numericKeyboard, nil
-}
-
-func genInlineOffDutyKeyboardWithData(offDutyList []string, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
-	// Create numeric inline keyboard
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for i, v := range offDutyList {
-		cm.Answer = strconv.Itoa(i) // Save current index to data
-		jsonData, err := json.Marshal(cm)
-		if err != nil {
-			log.Println(err)
-			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-		}
-		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-		if len(jsonData) > 64 {
-			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
-		}
-		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(v, string(jsonData)))
-		rows = append(rows, row)
-	}
-
-	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
-	return &numericKeyboard, nil
-}
-
 // Get requested user info
 func (t *TgBot) getChatMember(userId int64, chatId int64) (*tgbotapi.ChatMember, error) {
 	u, err := t.bot.GetChatMember(tgbotapi.GetChatMemberConfig{
@@ -127,7 +77,7 @@ func genHelpCmdText(commands []botCommand) string {
 		if cmd.command.args != nil {
 			argList = fmt.Sprintf("*Возможные значения аргумента:*\n")
 			for index, arg := range *cmd.command.args {
-				argList += fmt.Sprintf("*%s*: *%s* %q\n",
+				argList += fmt.Sprintf("  *%s*: *%s* %q\n",
 					string(rune('a'-1+index+1)), // Convert number 1,2,3,etc. to char accordingly a,b,c,etc.
 					arg.name,
 					arg.description,
@@ -199,68 +149,24 @@ func checkArgIsOffDutyRange(arg string) ([]time.Time, error) {
 			}
 			timeRange = append(timeRange, parsedTime)
 		}
+		// Check if dates is in future
+		for _, v := range timeRange {
+			if v.Before(time.Now()) {
+				return nil, fmt.Errorf("указанные даты не должны находится в прошлом: %v",
+					v.Format(botDataShort3))
+			}
+		}
+		// Check if dates is on valid order (first must be older than second)
+		if timeRange[1].Before(timeRange[0]) {
+			return nil, fmt.Errorf("дата %v должна быть старше, чем %v",
+				timeRange[1].Format(botDataShort3),
+				timeRange[0].Format(botDataShort3))
+		}
 		// If valid - return true
 		return timeRange, nil
 	}
-	return timeRange, fmt.Errorf("формат аргумента должен быть: " +
+	return nil, fmt.Errorf("формат аргумента должен быть: " +
 		"*DDMMYYYY-DDMMYYYY* (период _'от-до'_ через дефис)")
-}
-
-// Generate keyboard with available args
-func genArgsKeyboard(bc *botCommands, command tCmd) [][]tgbotapi.KeyboardButton {
-	var rows [][]tgbotapi.KeyboardButton
-	for _, cmd := range bc.commands {
-		if cmd.command.name == command {
-			for _, arg := range *cmd.command.args {
-				row := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(fmt.Sprintf("/%s %s",
-					cmd.command.name, arg.name)))
-				rows = append(rows, row)
-			}
-		}
-	}
-	return rows
-}
-
-// Generate keyboard with men on-duty indexes
-func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
-	// Create numeric inline keyboard
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for i, v := range *dm {
-		cm.Answer = strconv.Itoa(i) // Save current index to data
-		jsonData, err := json.Marshal(cm)
-		if err != nil {
-			log.Println(err)
-			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-		}
-		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-		if len(jsonData) > 64 {
-			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
-		}
-		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (%s)",
-			i+1, v.FullName, v.UserName), string(jsonData)))
-		rows = append(rows, row)
-	}
-
-	// Add row with ok/cancel buttons
-	cmYes, cmNo := cm, cm
-	cmYes.Answer = inlineKeyboardYes
-	cmNo.Answer = inlineKeyboardNo
-	jsonDataYes, err := json.Marshal(cmYes)
-	if err != nil {
-		log.Println(err)
-		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-	}
-	jsonDataNo, err := json.Marshal(cmNo)
-	if err != nil {
-		log.Println(err)
-		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-	}
-	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
-		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
-	rows = append(rows, row)
-
-	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
-	return &numericKeyboard, nil
 }
 
 // Covert weekday to localized weekday
@@ -283,4 +189,190 @@ func locWeekday(weekday time.Weekday) string {
 		locWeekday = "Суббота"
 	}
 	return locWeekday
+}
+
+// Return string with duty types data for specified man
+func typesOfDuties(m *data.DutyMan) string {
+	var list string
+	var isAnyDuty bool
+	for _, dt := range m.DutyType {
+		if dt.Enabled {
+			list += fmt.Sprintf("%s, ", dt.Name)
+			isAnyDuty = true
+		}
+	}
+	if !isAnyDuty {
+		return "❗️"
+	}
+	return strings.Trim(strings.Trim(list, " "), ",")
+}
+
+// Return json marshaled object for callback message data
+func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
+	// Generate callback data
+	// Format: 'manIndex-buttonIndex-Answer'
+	cm.Answer = strconv.Itoa(manIndex)                         // Save current man index to data
+	cm.Answer += fmt.Sprintf("-%s", strconv.Itoa(buttonIndex)) // Save current button index to data
+	// If we have optional argument
+	if len(enabled) == 1 {
+		// Append current button state as suffix
+		// '-1' - button is 'active' ✅
+		// '-0' - button is 'passive' ❌
+		if enabled[0] {
+			cm.Answer += fmt.Sprintf("-%s", inlineKeyboardEditDutyYes)
+		} else {
+			cm.Answer += fmt.Sprintf("-%s", inlineKeyboardEditDutyNo)
+		}
+	}
+	// Save our data
+	jsonData, err := json.Marshal(cm)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
+	if len(jsonData) > 64 {
+		return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
+	}
+	return jsonData, nil
+}
+
+func (t *TgBot) userHandleRegisterHelper(messageId int) {
+	// Deleting register request message
+	del := tgbotapi.NewDeleteMessage(t.update.Message.Chat.ID, messageId)
+	if _, err := t.bot.Request(del); err != nil {
+		log.Printf("unable to delete admin group message with requested access: %v", err)
+	}
+	// Check if user is already registered
+	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
+		messageText := "Вы уже зарегестрированы.\n" +
+			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	// Create returned data with Yes/No button
+	callbackDataYes := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		Answer:     inlineKeyboardYes,
+		FromHandle: callbackHandleRegisterHelper,
+	}
+	callbackDataNo := &callbackMessage{
+		UserId:     t.update.Message.From.ID,
+		ChatId:     t.update.Message.Chat.ID,
+		MessageId:  t.update.Message.MessageID,
+		Answer:     inlineKeyboardNo,
+		FromHandle: callbackHandleRegisterHelper,
+	}
+
+	numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := fmt.Sprintf("Проверьте ваши данные перед отправкой"+
+		" запроса на согласование администраторам:\n\n*%s (@%s)*\n\nПродолжить?",
+		t.update.Message.Text, t.update.Message.From.UserName)
+	if err := t.sendMessage(messageText,
+		t.update.Message.Chat.ID,
+		&t.update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+
+	// Save user data to process later in callback
+	t.addTmpRegisterDataForUser(t.update.Message.From.ID, t.update.Message.Text)
+}
+
+func (t *TgBot) tmpRegisterDataForUser(userId int64) (string, error) {
+	for _, v := range t.tmpData.tmpRegisterData {
+		if v.userId == userId {
+			return v.data, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string) {
+	var isUserIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpRegisterData {
+		if v.userId == userId {
+			t.tmpData.tmpRegisterData[i].data = name
+			isUserIdFound = true
+		}
+	}
+	if isUserIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		tmpCustomName := tmpRegisterData{userId: t.update.Message.From.ID, data: name}
+		t.tmpData.tmpRegisterData = append(t.tmpData.tmpRegisterData, tmpCustomName)
+	}
+}
+
+func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data.DutyMan, error) {
+	for _, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpDutyManDataForUser(userId int64, man data.DutyMan) {
+	var isUserIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			t.tmpData.tmpDutyManData[i].data = append(t.tmpData.tmpDutyManData[i].data, man)
+			isUserIdFound = true
+		}
+	}
+	if isUserIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		var tmp []data.DutyMan
+		tmp = append(tmp, man)
+		tmpNewMan := tmpDutyManData{userId: userId, data: tmp}
+		t.tmpData.tmpDutyManData = append(t.tmpData.tmpDutyManData, tmpNewMan)
+	}
+}
+
+func (t *TgBot) clearTmpDutyManDataForUser(userId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpDutyManData {
+		if v.userId == userId {
+			t.tmpData.tmpDutyManData[i].data = nil
+		}
+	}
+}
+
+// Return true if tmpData is still in use by another call
+func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64) bool {
+	// If we got error here we can safely continue
+	// Because tmpData is empty
+	// If we get err == nil - some other function is still running
+	if _, err := t.tmpDutyManDataForUser(userId); err == nil {
+		messageText := "Вы уже работаете с данными дежурных. Для того, чтобы продолжить, пожалуйста " +
+			"сохраните или отмените работу с текущими данными."
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return true
+	}
+	return false
 }

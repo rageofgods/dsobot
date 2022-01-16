@@ -37,7 +37,7 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 	}
 
 	// Creating slice with sorted men on-duty
-	menOnDuty, err := genListMenOnDuty(*t.dutyMen)
+	menOnDuty, err := genListMenOnDuty(*t.dutyMen, dutyTag)
 	if err != nil {
 		return CtxError("data.CreateOnDutyEvents()", err)
 	}

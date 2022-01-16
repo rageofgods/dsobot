@@ -35,13 +35,13 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 	// Generate returned string
 	for _, v := range *dutyMen {
 		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.FullName, v.UserName)
+			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
 		}
 	}
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		messageText := fmt.Sprintf("Не удалось выполнить запрос: %v", err)
+		messageText := fmt.Sprintf("Дежурства не найдены.")
 		if err := t.sendMessage(messageText,
 			t.update.Message.Chat.ID,
 			&t.update.Message.MessageID,
@@ -86,13 +86,13 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 	// Generate returned string
 	for _, v := range *dutyMen {
 		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.FullName, v.UserName)
+			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
 		}
 	}
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		messageText := fmt.Sprintf("Не удалось выполнить запрос: %v", err)
+		messageText := fmt.Sprintf("Валидации не найдены.")
 		if err := t.sendMessage(messageText,
 			t.update.Message.Chat.ID,
 			&t.update.Message.MessageID,

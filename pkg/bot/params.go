@@ -1,5 +1,29 @@
 package bot
 
+import (
+	"dso_bot/pkg/data"
+)
+
+/////////////////////////////////
+// Structure to hold answer data for newly registered users
+type tmpRegisterData struct {
+	userId int64
+	data   string
+}
+
+// Structure to hold temporary dutyMan data before saving it
+type tmpDutyManData struct {
+	userId int64
+	data   []data.DutyMan
+}
+
+// Structure (parent) for different types of tmp data
+type tmpData struct {
+	tmpRegisterData []tmpRegisterData
+	tmpDutyManData  []tmpDutyManData
+}
+
+/////////////////////////////////
 // Custom struct for bot commands
 type cmd struct {
 	name tCmd
@@ -28,6 +52,8 @@ type botCommand struct {
 type botCommands struct {
 	commands []botCommand
 }
+
+/////////////////////////////////
 
 // UserBotCommands returns slice of ordinary user botCommand struct
 func (t *TgBot) UserBotCommands() *botCommands {
@@ -89,6 +115,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 			description: "Вывести список участников",
 			handleFunc:  t.adminHandleList},
 		{command: &cmd{name: botCmdRollout, args: &[]arg{
+			{name: botCmdArgAll,
+				handleFunc:  t.adminHandleRolloutAll,
+				description: "Все события типов дежурств"},
 			{name: botCmdArgDuty,
 				handleFunc:  t.adminHandleRolloutDuty,
 				description: "Дежурства"},
@@ -106,18 +135,37 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdReindex, args: nil},
 			description: "Изменить порядок дежурных (повлияет на очередность дежурств)",
 			handleFunc:  t.adminHandleReindex},
+		{command: &cmd{name: botCmdEnable, args: nil},
+			description: "Добавить активных дежурных (повлияет на очередность дежурств)",
+			handleFunc:  t.adminHandleEnable},
+		{command: &cmd{name: botCmdDisable, args: nil},
+			description: "Добавить неактивных дежурных (повлияет на очередность дежурств)",
+			handleFunc:  t.adminHandleDisable},
+		{command: &cmd{name: botCmdEditDutyType, args: nil},
+			description: "Отредактировать типы дежурств для всех дежурных",
+			handleFunc:  t.adminHandleEditDutyType},
 	}}
 }
 
 // Some const's for working with callbacks (use short names to workaround Telegram 64b callback data limit)
 const (
+	// Void answer for buttons without any helpful data
+	inlineKeyboardVoid = "{}"
+
 	inlineKeyboardYes = "99"
 	inlineKeyboardNo  = "98"
 
-	callbackHandleRegister      = "fhr"
-	callbackHandleUnregister    = "fhu"
-	callbackHandleDeleteOffDuty = "fhdod"
-	callbackHandleReindex       = "fhre"
+	inlineKeyboardEditDutyYes = "1"
+	inlineKeyboardEditDutyNo  = "0"
+
+	callbackHandleRegister       = "fhr"
+	callbackHandleRegisterHelper = "fhrh"
+	callbackHandleUnregister     = "fhu"
+	callbackHandleDeleteOffDuty  = "fhdod"
+	callbackHandleReindex        = "fhre"
+	callbackHandleEnable         = "fhe"
+	callbackHandleDisable        = "fhd"
+	callbackHandleEditDuty       = "fhed"
 )
 
 // Bot available commands
@@ -134,10 +182,14 @@ const (
 	botCmdList          tCmd = "list"
 	botCmdRollout       tCmd = "rollout"
 	botCmdReindex       tCmd = "reindex"
+	botCmdEnable        tCmd = "enable"
+	botCmdDisable       tCmd = "disable"
+	botCmdEditDutyType  tCmd = "editduty"
 )
 
 // Bot available args
 const (
+	botCmdArgAll           tArg = "all"
 	botCmdArgDuty          tArg = "duty"
 	botCmdArgValidation    tArg = "validation"
 	botCmdArgNonWorkingDay tArg = "nwd"
@@ -167,7 +219,19 @@ type callbackMessage struct {
 }
 
 // Text strings for messages
+// Don't use markdown here because returned message will be always in plain text
 const (
 	msgTextAdminHandleReindex = "Укажите новую очередность дежурств (поочередно нажимая на кнопки участников " +
 		"в нужной последовательности):"
+	msgTextAdminHandleEnable = "Укажите активных дежурных из текущего списка неактивных" +
+		" (поочередно нажимая на кнопки участников в нужной последовательности):"
+	msgTextAdminHandleDisable = "Укажите неактивных дежурных из текущего списка активных" +
+		" (поочередно нажимая на кнопки участников в нужной последовательности):"
+	msgTextAdminHandleEditDuty = "Укажите нужные типы дежурства для текущего списка дежурных\n\n" +
+		"✅ - включает тип дежурства\n" +
+		"❌ - выключает тип дежуртсва\n\n" +
+		"❗ - неактивный дежурный\n\n"
+	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста, отправьте " +
+		"ваши реальные Имя и Фамилию в ОТВЕТЕ (Reply) на это сообщение.\n\n" +
+		"Например: 'Вася Пупкин' или 'Пупкин Василий'.\n\n"
 )

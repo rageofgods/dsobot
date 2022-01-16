@@ -55,20 +55,6 @@ func (t *TgBot) handleHelp(cmdArgs string) {
 // Register new user as DSO team member
 func (t *TgBot) handleRegister(cmdArgs string) {
 	cmdArgs = "" // Ignore cmdArgs
-
-	// Check user telegram id
-	if t.update.Message.From.UserName == "" {
-		messageText := "У вас отсутствует Telegram Username (@username)\n" +
-			"Пожалуйста, укажите его в настройках вашего профиля Telegram"
-		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
-			nil); err != nil {
-			log.Printf("unable to send message: %v", err)
-		}
-		return
-	}
-
 	// Check if user is already registered
 	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
@@ -82,55 +68,34 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 		return
 	}
 
+	// Check if user have telegram id
+	if t.update.Message.From.UserName == "" {
+		messageText := "У вас отсутствует Telegram Username (@username)\n" +
+			"Пожалуйста, укажите его в настройках вашего профиля Telegram"
+		if err := t.sendMessage(messageText,
+			t.update.Message.Chat.ID,
+			&t.update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	// Request and process user custom name
 	// Send info to user
-	messageText := "Запрос на добавление отправлен администраторам.\n" +
-		"По факту согласования вам придет уведомление.\n"
-	if err := t.sendMessage(messageText,
+	// Generate correct username
+	userFullName := genUserFullName(t.update.Message.From.FirstName, t.update.Message.From.LastName)
+	msgText := msgTextUserHandleRegister + fmt.Sprintf("Эта информация будет использоваться"+
+		" для корректного отображения имен участников т.к. ваши теущие данные из Telegram (%s) могут не "+
+		"соответствовать реальным.", userFullName)
+	if err := t.sendMessage(msgText,
 		t.update.Message.Chat.ID,
 		&t.update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 
-	// Create returned data with Yes/No button
-	callbackDataYes := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
-		Answer:     inlineKeyboardYes,
-		FromHandle: callbackHandleRegister,
-	}
-	callbackDataNo := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
-		Answer:     inlineKeyboardNo,
-		FromHandle: callbackHandleRegister,
-	}
-
-	numericKeyboard, err := genInlineYesNoKeyboardWithData(callbackDataYes, callbackDataNo)
-	if err != nil {
-		log.Printf("unable to generate new inline keyboard: %v", err)
-	}
-
-	// Create human-readable variables
-	uTgID := t.update.Message.From.UserName
-	uFirstName := t.update.Message.From.FirstName
-	uLastName := t.update.Message.From.LastName
-
-	// Generate correct username
-	uFullName := genUserFullName(uFirstName, uLastName)
-
-	// Send message to admins with inlineKeyboard question
-	messageText = fmt.Sprintf("Новый запрос на добавление от пользователя:\n\n *@%s* (%s).\n\n Добавить?",
-		uTgID,
-		uFullName)
-	if err := t.sendMessage(messageText,
-		t.adminGroupId,
-		nil,
-		numericKeyboard); err != nil {
-		log.Printf("unable to send message: %v", err)
-	}
+	return
 }
 
 func (t *TgBot) handleUnregister(cmdArgs string) {
@@ -225,6 +190,7 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(bc, botCmdWhoIsOn)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
 				t.update.Message.Chat.ID,
@@ -444,6 +410,7 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 			// Show keyboard with available args
 			rows := genArgsKeyboard(bc, botCmdShowMy)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
 				t.update.Message.Chat.ID,

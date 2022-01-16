@@ -147,13 +147,26 @@ func Test_removeMan(t *testing.T) {
 
 func Test_genListMenOnDuty(t *testing.T) {
 	testMap := &[]DutyMan{
-		{Index: 10, FullName: "One", UserName: "TG_ONE"},
-		{Index: 20, FullName: "Two", UserName: "TG_TWO"},
-		{Index: 30, FullName: "Three", UserName: "TG_THREE"},
+		{Index: 10,
+			FullName: "One",
+			UserName: "TG_ONE",
+			Enabled:  true,
+			DutyType: []Duty{{Type: OrdinaryDutyType, Enabled: true}}},
+		{Index: 20,
+			FullName: "Two",
+			UserName: "TG_TWO",
+			Enabled:  true,
+			DutyType: []Duty{{Type: OrdinaryDutyType, Enabled: true}}},
+		{Index: 30,
+			FullName: "Three",
+			UserName: "TG_THREE",
+			Enabled:  true,
+			DutyType: []Duty{{Type: OrdinaryDutyType, Enabled: true}}},
 	}
 	wantString := []string{"TG_ONE", "TG_TWO", "TG_THREE"}
 	type args struct {
 		m []DutyMan
+		d CalTag
 	}
 	tests := []struct {
 		name    string
@@ -161,11 +174,11 @@ func Test_genListMenOnDuty(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{name: "Check returned strings", args: args{m: *testMap}, want: wantString, wantErr: false},
+		{name: "Check returned strings", args: args{m: *testMap, d: OnDutyTag}, want: wantString, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := genListMenOnDuty(tt.args.m)
+			got, err := genListMenOnDuty(tt.args.m, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genListMenOnDuty() error = %v, wantErr %v", err, tt.wantErr)
 				return

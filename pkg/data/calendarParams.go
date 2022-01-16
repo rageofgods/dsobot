@@ -1,40 +1,43 @@
 package data
 
-//CalBlue      = "1"
-//CalGreen     = "2"
-//CalPurple    = "3"
-//CalRed       = "4"
-//CalYellow    = "5"
-//CalOrange    = "6"
-//CalTurquoise = "7"
-//CalGray      = "8"
-//CalBoldBlue  = "9"
-//CalBoldGreen = "10"
-//CalBoldRed   = "11"
+import (
+	"context"
+	"google.golang.org/api/calendar/v3"
+	"net/http"
+)
+
+// CalData struct for creating calendar events
+type CalData struct {
+	ctx     *context.Context
+	token   string
+	calID   string
+	cal     *calendar.Service
+	bToken  *[]byte
+	httpC   *http.Client
+	dutyMen *[]DutyMan
+}
+
+// Possible calendar color values
+// CalBlue      = "1"
+// CalGreen     = "2"
+// CalPurple    = "3"
+// CalRed       = "4"
+// CalYellow    = "5"
+// CalOrange    = "6"
+// CalTurquoise = "7"
+// CalGray      = "8"
+// CalBoldBlue  = "9"
+// CalBoldGreen = "10"
+// CalBoldRed   = "11"
 
 // CalTag custom type for calendar TAGs
 type CalTag string
 
-// DutyMan struct for data save
-type DutyMan struct {
-	Index    int           `json:"index"`
-	FullName string        `json:"full-name"`
-	UserName string        `json:"user-name"`
-	TgID     int64         `json:"tg-id"`
-	OffDuty  []OffDutyData `json:"off-d,omitempty"`
-}
-
-// OffDutyData holds off-duty data save
-type OffDutyData struct {
-	OffDutyStart string `json:"off-d-s"`
-	OffDutyEnd   string `json:"off-d-e"`
-}
-
 const (
 	// OnValidationTag Validation calendar TAG
-	OnValidationTag CalTag = "validation"
+	OnValidationTag CalTag = "validation-duty"
 	// OnDutyTag Duty calendar TAG
-	OnDutyTag CalTag = "on-duty"
+	OnDutyTag CalTag = "ordinary-duty"
 	// OffDutyTag Off-duty day (Holiday/Illness)
 	OffDutyTag CalTag = "off-duty"
 	// NonWorkingDay Non-working day calendar TAG

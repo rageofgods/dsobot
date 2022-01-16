@@ -40,3 +40,28 @@ func Test_firstLastMonthDay(t *testing.T) {
 		})
 	}
 }
+
+func Test_equalLists(t *testing.T) {
+	list1 := []string{"a", "b", "c", "d", "1", "2"}
+	list2 := []string{"d", "c", "b", "a", "2", "1"}
+	list3 := []string{"a", "1", "2"}
+	type args struct {
+		searchList   []string
+		searchInList []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "Equal compare two lists", args: args{searchList: list2, searchInList: list1}, want: true},
+		{name: "Unequal compare two lists", args: args{searchList: list3, searchInList: list1}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := equalLists(tt.args.searchList, tt.args.searchInList); got != tt.want {
+				t.Errorf("equalLists() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

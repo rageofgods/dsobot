@@ -17,7 +17,7 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	update       *tgbotapi.Update
-	tmpData      *[]data.DutyMan
+	tmpData      tmpData
 }
 
 func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
@@ -28,7 +28,6 @@ func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *T
 		adminGroupId: adminGroupId,
 		debug:        debug,
 		update:       new(tgbotapi.Update),
-		tmpData:      new([]data.DutyMan),
 	}
 }
 
@@ -70,6 +69,30 @@ func (t *TgBot) StartBot(version string, build string) {
 
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
+		// Process adding to new group
+		if update.MyChatMember != nil {
+			if update.MyChatMember.NewChatMember.Status == "member" &&
+				update.MyChatMember.Chat.Type == "group" {
+				messageText := fmt.Sprintf("*Меня добавили в новую группу*:\n*ID*: `%d`\n*Title*: `%s`",
+					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			}
+		}
+		// Process user registration
+		if update.Message != nil {
+			if update.Message.ReplyToMessage != nil {
+				if update.Message.ReplyToMessage.From.ID == t.bot.Self.ID &&
+					str.Contains(update.Message.ReplyToMessage.Text, msgTextUserHandleRegister) {
+					// Show to user Yes/No message to allow him to check his Name and Surname
+					t.userHandleRegisterHelper(update.Message.ReplyToMessage.MessageID)
+				}
+			}
+		}
 		// Process ordinary command messages
 		if update.Message != nil && update.Message.IsCommand() {
 			// Hold pointer to the current update for access inside handlers
@@ -123,11 +146,23 @@ func (t *TgBot) StartBot(version string, build string) {
 				log.Printf("Can't unmarshal data json: %v", err)
 			}
 
+			// If we got callback from not an original user - ignore it.
+			if update.CallbackQuery.From.ID != message.UserId {
+				continue
+			}
+
 			// Checking where callback come from and run specific function
 			switch message.FromHandle {
 			case callbackHandleRegister:
 				if !isCallbackHandleRegisterFired {
 					dec := burstDecorator(2, &isCallbackHandleRegisterFired, t.callbackRegister)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						log.Printf("%v", err)
+					}
+				}
+			case callbackHandleRegisterHelper:
+				if !isCallbackHandleRegisterHelperFired {
+					dec := burstDecorator(2, &isCallbackHandleRegisterHelperFired, t.callbackRegisterHelper)
 					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
 						log.Printf("%v", err)
 					}
@@ -153,14 +188,55 @@ func (t *TgBot) StartBot(version string, build string) {
 					}
 				}
 			case callbackHandleReindex:
-				dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
-				if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
-					messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
-					if err := t.sendMessage(messageText,
-						update.CallbackQuery.Message.Chat.ID,
-						&update.CallbackQuery.Message.MessageID,
-						nil); err != nil {
-						log.Printf("unable to send message: %v", err)
+				if !isCallbackHandleReindexFired {
+					dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleEnable:
+				if !isCallbackHandleEnableFired {
+					dec := burstDecorator(1, &isCallbackHandleEnableFired, t.callbackEnable)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleDisable:
+				if !isCallbackHandleDisableFired {
+					dec := burstDecorator(1, &isCallbackHandleDisableFired, t.callbackDisable)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleEditDuty:
+				if !isCallbackHandleEditDutyFired {
+					dec := burstDecorator(1, &isCallbackHandleEditDutyFired, t.callbackEditDuty)
+					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
 					}
 				}
 			}

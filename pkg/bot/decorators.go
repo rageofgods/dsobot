@@ -4,10 +4,14 @@ import "time"
 
 // Define callback burst control variables
 var (
-	isCallbackHandleRegisterFired      bool
-	isCallbackHandleUnregisterFired    bool
-	isCallbackHandleDeleteOffDutyFired bool
-	isCallbackHandleReindexFired       bool
+	isCallbackHandleRegisterFired       bool
+	isCallbackHandleRegisterHelperFired bool
+	isCallbackHandleUnregisterFired     bool
+	isCallbackHandleDeleteOffDutyFired  bool
+	isCallbackHandleReindexFired        bool
+	isCallbackHandleEnableFired         bool
+	isCallbackHandleDisableFired        bool
+	isCallbackHandleEditDutyFired       bool
 )
 
 // Define function type for decorator
