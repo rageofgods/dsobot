@@ -75,7 +75,7 @@ func (t *TgBot) StartBot(version string, build string) {
 				if update.Message.ReplyToMessage.From.ID == t.bot.Self.ID &&
 					str.Contains(update.Message.ReplyToMessage.Text, msgTextUserHandleRegister) {
 					// Show to user Yes/No message to allow him to check his Name and Surname
-					t.userHandleRegisterHelper()
+					t.userHandleRegisterHelper(update.Message.ReplyToMessage.MessageID)
 				}
 			}
 		}

@@ -237,7 +237,12 @@ func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonInde
 	return jsonData, nil
 }
 
-func (t *TgBot) userHandleRegisterHelper() {
+func (t *TgBot) userHandleRegisterHelper(messageId int) {
+	// Deleting register request message
+	del := tgbotapi.NewDeleteMessage(t.update.Message.Chat.ID, messageId)
+	if _, err := t.bot.Request(del); err != nil {
+		log.Printf("unable to delete admin group message with requested access: %v", err)
+	}
 	// Check if user is already registered
 	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
