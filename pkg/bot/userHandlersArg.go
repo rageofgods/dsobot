@@ -35,7 +35,7 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 	// Generate returned string
 	for _, v := range *dutyMen {
 		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.FullName, v.UserName)
+			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
 		}
 	}
 
@@ -86,7 +86,7 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 	// Generate returned string
 	for _, v := range *dutyMen {
 		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.FullName, v.UserName)
+			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
 		}
 	}
 

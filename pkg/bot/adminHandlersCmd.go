@@ -36,17 +36,19 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 	for _, v := range *menData {
 		if v.Enabled {
 			indexActive++
-			listActive += fmt.Sprintf("*%d*: %s (*@%s*) [[%s]]\n",
+			listActive += fmt.Sprintf("*%d*: %s *@%s* (%s) [[%s]]\n",
 				indexActive,
-				v.FullName,
+				v.CustomName,
 				v.UserName,
+				v.FullName,
 				typesOfDuties(&v))
 		} else {
 			indexPassive++
-			listPassive += fmt.Sprintf("*%d*: %s (*@%s*) [[%s]]\n",
+			listPassive += fmt.Sprintf("*%d*: %s *@%s* (%s) [[%s]]\n",
 				indexPassive,
-				v.FullName,
+				v.CustomName,
 				v.UserName,
+				v.FullName,
 				typesOfDuties(&v))
 		}
 	}
