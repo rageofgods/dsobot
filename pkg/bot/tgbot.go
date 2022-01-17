@@ -69,9 +69,22 @@ func (t *TgBot) StartBot(version string, build string) {
 	for update := range updates {
 		// Process adding to new group
 		if update.MyChatMember != nil {
+			// Check if bot was added to some users group
 			if update.MyChatMember.NewChatMember.Status == "member" &&
 				update.MyChatMember.Chat.Type == "group" {
 				messageText := fmt.Sprintf("*Меня добавили в новую группу*:\n*ID*: `%d`\n*Title*: `%s`",
+					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			}
+			// Check if bot removed from some users group
+			if update.MyChatMember.NewChatMember.Status == "left" &&
+				update.MyChatMember.Chat.Type == "group" {
+				messageText := fmt.Sprintf("*Меня удалили из группы*:\n*ID*: `%d`\n*Title*: `%s`",
 					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
 				if err := t.sendMessage(messageText,
 					t.adminGroupId,
