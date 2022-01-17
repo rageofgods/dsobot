@@ -146,10 +146,10 @@ func (t *TgBot) StartBot(version string, build string) {
 				log.Printf("Can't unmarshal data json: %v", err)
 			}
 
-			// If we got callback from not an original user - ignore it.
-			//if update.CallbackQuery.From.ID != message.UserId {
-			//	continue
-			//}
+			// If we got callback from not an original user - ignore it. (Except user registration flow)
+			if message.FromHandle != callbackHandleRegister && update.CallbackQuery.From.ID != message.UserId {
+				continue
+			}
 
 			// Checking where callback come from and run specific function
 			switch message.FromHandle {
