@@ -3,23 +3,24 @@ package bot
 import (
 	"dso_bot/pkg/data"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
 // Handle 'all' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutAll(arg string) {
+func (t *TgBot) adminHandleRolloutAll(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
-	go t.adminHandleRolloutDuty("")
-	go t.adminHandleRolloutValidation("")
+	go t.adminHandleRolloutDuty("", update)
+	go t.adminHandleRolloutValidation("", update)
 }
 
 // Handle 'duty' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutDuty(arg string) {
+func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.OrdinaryDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
-		&t.update.Message.MessageID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
@@ -46,12 +47,12 @@ func (t *TgBot) adminHandleRolloutDuty(arg string) {
 }
 
 // Handle 'validation' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutValidation(arg string) {
+func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.ValidationDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
-		&t.update.Message.MessageID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
@@ -69,7 +70,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string) {
 	} else {
 		messageText = "События валидации успешно сгенерированы"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
+			update.Message.Chat.ID,
 			nil,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
@@ -78,12 +79,12 @@ func (t *TgBot) adminHandleRolloutValidation(arg string) {
 }
 
 // Handle 'nwd' user arg for 'rollout' command
-func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string) {
+func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.NonWorkingDaySum)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
-		&t.update.Message.MessageID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -73,7 +73,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	}
 
 	// Deleting access request message in admin group
-	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID, t.update.CallbackQuery.Message.MessageID)
+	del := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 	_, err = t.bot.Request(del)
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
@@ -82,7 +82,7 @@ func (t *TgBot) callbackRegister(answer string, chatId int64, userId int64, mess
 	return nil
 }
 
-func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -153,7 +153,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 		}
 	}
 	// Deleting access request message in admin group
-	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID, t.update.CallbackQuery.Message.MessageID)
+	del := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 	_, err = t.bot.Request(del)
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
@@ -161,7 +161,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 	return nil
 }
 
-func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -217,8 +217,8 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	}
 
 	// Deleting access request message
-	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
-		t.update.CallbackQuery.Message.MessageID)
+	del := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID,
+		update.CallbackQuery.Message.MessageID)
 	if _, err = t.bot.Request(del); err != nil {
 		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
 	}
@@ -228,7 +228,7 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 		stime.Format(botDataShort3),
 		etime.Format(botDataShort3))
 	messageText = fmt.Sprintf("Пользователь *@%s* удалил нерабочий период:\n%s",
-		t.update.CallbackQuery.From.UserName, timeRageText)
+		update.CallbackQuery.From.UserName, timeRageText)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		nil,
@@ -239,7 +239,7 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	return nil
 }
 
-func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// Get current men data
 	dutyMen := t.dc.DutyMenData()
 
@@ -262,7 +262,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 			return nil
 		}
 		// If we're still editing duty index
-		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleReindex) {
+		if strings.Contains(update.CallbackQuery.Message.Text, msgTextAdminHandleReindex) {
 			// Append absent men to tmpDutyData
 			for _, dMan := range *dutyMen {
 				var manFound bool
@@ -294,12 +294,12 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 
 			// Get last row of current keyboard (with yes/no buttons)
 			yesNoKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-				t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
-					t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
+				update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
+					update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
 
 			// Generate new keyboard with final message
-			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
+			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
 			if _, err := t.bot.Request(editedMessage); err != nil {
@@ -315,14 +315,14 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 			}
 			messageText := "Новый порядок дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
-			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+			t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 			// Clear tmp data
 			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка дежурных отменено"
 		// Send final message and remove inline keyboard
-		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 		// Clear tmp data
 		t.clearTmpDutyManDataForUser(userId)
 	default:
@@ -340,7 +340,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		}
 
 		// Get current keyboard
-		curCallbackKeyboard := t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
+		curCallbackKeyboard := update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
 		// Create returned keyboard
 		var newCallbackKeyboard [][]tgbotapi.InlineKeyboardButton
 		// Go through all element of current keyboard
@@ -371,8 +371,8 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 		}
 
 		// Create edited message (with correct keyboard)
-		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-			t.update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
+		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
@@ -383,7 +383,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 	return nil
 }
 
-func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	//userId = 0 // userId is ignored here
 	answerIndex, err := strconv.Atoi(answer)
 	if err != nil {
@@ -404,7 +404,7 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 			return nil
 		}
 		// If we're still editing duty index
-		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleEnable) {
+		if strings.Contains(update.CallbackQuery.Message.Text, msgTextAdminHandleEnable) {
 			// If all buttons with men was pressed
 
 			// Get current men data
@@ -425,12 +425,12 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 
 			// Get last row of current keyboard (with yes/no buttons)
 			yesNoKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-				t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
-					t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
+				update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
+					update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
 
 			// Generate new keyboard with final message
-			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
+			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
 			if _, err := t.bot.Request(editedMessage); err != nil {
@@ -454,14 +454,14 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 
 			messageText := "Новый список активных дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
-			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+			t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 			// Clear tmp data
 			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка активных дежурных отменено"
 		// Send final message and remove inline keyboard
-		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 		// Clear tmp data
 		t.clearTmpDutyManDataForUser(userId)
 	default:
@@ -478,7 +478,7 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 		}
 
 		// Get current keyboard
-		curCallbackKeyboard := t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
+		curCallbackKeyboard := update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
 		// Create returned keyboard
 		var newCallbackKeyboard [][]tgbotapi.InlineKeyboardButton
 		// Go through all element of current keyboard
@@ -509,8 +509,8 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 		}
 
 		// Create edited message (with correct keyboard)
-		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-			t.update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
+		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
@@ -521,7 +521,7 @@ func (t *TgBot) callbackEnable(answer string, chatId int64, userId int64, messag
 	return nil
 }
 
-func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	answerIndex, err := strconv.Atoi(answer)
 	if err != nil {
 		log.Printf("unable to convert string answer to integer: %v", err)
@@ -541,7 +541,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 			return nil
 		}
 		// If we're still editing duty index
-		if strings.Contains(t.update.CallbackQuery.Message.Text, msgTextAdminHandleDisable) {
+		if strings.Contains(update.CallbackQuery.Message.Text, msgTextAdminHandleDisable) {
 			// If all buttons with men was pressed
 
 			// Get current men data
@@ -562,12 +562,12 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 
 			// Get last row of current keyboard (with yes/no buttons)
 			yesNoKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-				t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
-					t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
+				update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
+					update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
 
 			// Generate new keyboard with final message
-			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-				t.update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
+			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, list, yesNoKeyboard)
 			editedMessage.ParseMode = "markdown"
 			// Change original message
 			if _, err := t.bot.Request(editedMessage); err != nil {
@@ -590,14 +590,14 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 
 			messageText := "Новый список неактивных дежурных успешно сохранен"
 			// Send final message and remove inline keyboard
-			t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+			t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 			// Clear tmp data
 			t.clearTmpDutyManDataForUser(userId)
 		}
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка неактивных дежурных отменено"
 		// Send final message and remove inline keyboard
-		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 		// Clear tmp data
 		t.clearTmpDutyManDataForUser(userId)
 	default:
@@ -614,7 +614,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		}
 
 		// Get current keyboard
-		curCallbackKeyboard := t.update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
+		curCallbackKeyboard := update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard
 		// Create returned keyboard
 		var newCallbackKeyboard [][]tgbotapi.InlineKeyboardButton
 		// Go through all element of current keyboard
@@ -645,8 +645,8 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 		}
 
 		// Create edited message (with correct keyboard)
-		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(t.update.CallbackQuery.Message.Chat.ID,
-			t.update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
+		changeMsg := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, list, tgbotapi.NewInlineKeyboardMarkup(newCallbackKeyboard...))
 		changeMsg.ParseMode = "markdown"
 
 		// Change keyboard
@@ -657,7 +657,7 @@ func (t *TgBot) callbackDisable(answer string, chatId int64, userId int64, messa
 	return nil
 }
 
-func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// If we just spawn inline keyboard let's load our temporary data
 	_, err := t.tmpDutyManDataForUser(userId)
 	if err != nil {
@@ -685,13 +685,13 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 		}
 		messageText := "Список типов дежурств успешно сохранен"
 		// Send final message and remove inline keyboard
-		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 		// Clear tmp data
 		t.clearTmpDutyManDataForUser(userId)
 	case inlineKeyboardNo:
 		messageText := "Редактирование списка типов дежурств отменено"
 		// Send final message and remove inline keyboard
-		t.delInlineKeyboardWithMessage(messageText, chatId, messageId)
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 		// Clear tmp data
 		t.clearTmpDutyManDataForUser(userId)
 	default:
@@ -739,8 +739,8 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 			rows, err := genEditDutyKeyboard(&tmpDutyData, *callbackData)
 			if err != nil {
 				if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка дежурных",
-					t.update.Message.Chat.ID,
-					&t.update.Message.MessageID,
+					update.Message.Chat.ID,
+					&update.Message.MessageID,
 					nil); err != nil {
 					log.Printf("unable to send message: %v", err)
 				}
@@ -749,8 +749,8 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 			}
 
 			// Create edited message (with correct keyboard)
-			changeMsg := tgbotapi.NewEditMessageReplyMarkup(t.update.CallbackQuery.Message.Chat.ID,
-				t.update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup(*rows...))
+			changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup(*rows...))
 
 			// Change keyboard
 			if _, err := t.bot.Request(changeMsg); err != nil {
@@ -761,7 +761,7 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 	return nil
 }
 
-func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64, messageId int) error {
+func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -838,7 +838,7 @@ func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64
 	}
 
 	// Deleting register request message
-	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID, t.update.CallbackQuery.Message.MessageID)
+	del := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 	_, err = t.bot.Request(del)
 	if err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)

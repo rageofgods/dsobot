@@ -52,7 +52,7 @@ func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard
 	return nil
 }
 
-func (t *TgBot) checkIsUserRegistered(tgID string) bool {
+func (t *TgBot) checkIsUserRegistered(tgID string, update *tgbotapi.Update) bool {
 	// Check if user is registered
 	if !t.dc.IsInDutyList(tgID) {
 		messageText := "Привет.\n" +
@@ -60,8 +60,8 @@ func (t *TgBot) checkIsUserRegistered(tgID string) bool {
 			"*Вы не зарегестрированы.*\n\n" +
 			"Используйте команду */register* для того, чтобы уведомить администраторов, о новом участнике.\n\n"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -237,19 +237,19 @@ func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonInde
 	return jsonData, nil
 }
 
-func (t *TgBot) userHandleRegisterHelper(messageId int) {
+func (t *TgBot) userHandleRegisterHelper(messageId int, update *tgbotapi.Update) {
 	// Deleting register request message
-	del := tgbotapi.NewDeleteMessage(t.update.Message.Chat.ID, messageId)
+	del := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, messageId)
 	if _, err := t.bot.Request(del); err != nil {
 		log.Printf("unable to delete admin group message with requested access: %v", err)
 	}
 	// Check if user is already registered
-	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
+	if t.dc.IsInDutyList(update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
 			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -258,16 +258,16 @@ func (t *TgBot) userHandleRegisterHelper(messageId int) {
 
 	// Create returned data with Yes/No button
 	callbackDataYes := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		Answer:     inlineKeyboardYes,
 		FromHandle: callbackHandleRegisterHelper,
 	}
 	callbackDataNo := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		Answer:     inlineKeyboardNo,
 		FromHandle: callbackHandleRegisterHelper,
 	}
@@ -279,16 +279,16 @@ func (t *TgBot) userHandleRegisterHelper(messageId int) {
 
 	messageText := fmt.Sprintf("Проверьте ваши данные перед отправкой"+
 		" запроса на согласование администраторам:\n\n*%s (@%s)*\n\nПродолжить?",
-		t.update.Message.Text, t.update.Message.From.UserName)
+		update.Message.Text, update.Message.From.UserName)
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 
 	// Save user data to process later in callback
-	t.addTmpRegisterDataForUser(t.update.Message.From.ID, t.update.Message.Text)
+	t.addTmpRegisterDataForUser(update.Message.From.ID, update.Message.Text, update)
 }
 
 func (t *TgBot) tmpRegisterDataForUser(userId int64) (string, error) {
@@ -300,7 +300,7 @@ func (t *TgBot) tmpRegisterDataForUser(userId int64) (string, error) {
 	return "", fmt.Errorf("unable to find saved data for userId: %d\n", userId)
 }
 
-func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string) {
+func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string, update *tgbotapi.Update) {
 	var isUserIdFound bool
 	// If we already have some previously saved data for current userId
 	for i, v := range t.tmpData.tmpRegisterData {
@@ -313,7 +313,7 @@ func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string) {
 		return
 	} else {
 		// If it's a fresh new data
-		tmpCustomName := tmpRegisterData{userId: t.update.Message.From.ID, data: name}
+		tmpCustomName := tmpRegisterData{userId: update.Message.From.ID, data: name}
 		t.tmpData.tmpRegisterData = append(t.tmpData.tmpRegisterData, tmpCustomName)
 	}
 }
@@ -359,7 +359,7 @@ func (t *TgBot) clearTmpDutyManDataForUser(userId int64) {
 }
 
 // Return true if tmpData is still in use by another call
-func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64) bool {
+func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64, update *tgbotapi.Update) bool {
 	// If we got error here we can safely continue
 	// Because tmpData is empty
 	// If we get err == nil - some other function is still running
@@ -367,8 +367,8 @@ func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64) bool {
 		messageText := "Вы уже работаете с данными дежурных. Для того, чтобы продолжить, пожалуйста " +
 			"сохраните или отмените работу с текущими данными."
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}

@@ -3,13 +3,14 @@ package bot
 import (
 	"dso_bot/pkg/data"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strings"
 	"time"
 )
 
 // Handle 'duty' user arg for 'whoison' command
-func (t *TgBot) handleWhoIsOnDuty(arg string) {
+func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
 	// Set current day for request by default
 	tn := time.Now()
 	// Check if we have two arguments
@@ -19,8 +20,8 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 		if err != nil {
 			messageText := fmt.Sprintf("%v", err)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -43,16 +44,16 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Дежурства не найдены.")
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
 		messageText := fmt.Sprintf("Дежурный: %s", man)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -60,7 +61,7 @@ func (t *TgBot) handleWhoIsOnDuty(arg string) {
 }
 
 // Handle 'duty' user arg for 'whoison' command
-func (t *TgBot) handleWhoIsOnValidation(arg string) {
+func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
 	// Set current day for request by default
 	tn := time.Now()
 	// Check if we have two arguments
@@ -70,8 +71,8 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 		if err != nil {
 			messageText := fmt.Sprintf("%v", err)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -94,16 +95,16 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Валидации не найдены.")
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
 		messageText := fmt.Sprintf("Валидирующий: %s", man)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -111,15 +112,15 @@ func (t *TgBot) handleWhoIsOnValidation(arg string) {
 }
 
 // Handle 'duty' user arg for 'showmy' command
-func (t *TgBot) handleShowMyDuty(arg string) {
+func (t *TgBot) handleShowMyDuty(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
 
-	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnDutyTag)
+	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnDutyTag)
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -128,8 +129,8 @@ func (t *TgBot) handleShowMyDuty(arg string) {
 	if len(*dates) == 0 {
 		messageText := "Дежурства в текущем месяце не найдены"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -144,23 +145,23 @@ func (t *TgBot) handleShowMyDuty(arg string) {
 	}
 	messageText := list
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // Handle 'duty' user arg for 'showmy' command
-func (t *TgBot) handleShowMyValidation(arg string) {
+func (t *TgBot) handleShowMyValidation(arg string, update *tgbotapi.Update) {
 	arg = "" // Ignore cmdArgs
 
-	dates, err := t.dc.ManDutiesList(t.update.Message.From.UserName, data.OnValidationTag)
+	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnValidationTag)
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -169,8 +170,8 @@ func (t *TgBot) handleShowMyValidation(arg string) {
 	if len(*dates) == 0 {
 		messageText := "Валидации в текущем месяце не найдены"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -185,8 +186,8 @@ func (t *TgBot) handleShowMyValidation(arg string) {
 	}
 	messageText := list
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}

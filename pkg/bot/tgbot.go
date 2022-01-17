@@ -16,7 +16,6 @@ type TgBot struct {
 	msg          *tgbotapi.MessageConfig
 	adminGroupId int64
 	debug        bool
-	update       *tgbotapi.Update
 	tmpData      tmpData
 }
 
@@ -27,7 +26,6 @@ func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *T
 		msg:          new(tgbotapi.MessageConfig),
 		adminGroupId: adminGroupId,
 		debug:        debug,
-		update:       new(tgbotapi.Update),
 	}
 }
 
@@ -89,15 +87,12 @@ func (t *TgBot) StartBot(version string, build string) {
 				if update.Message.ReplyToMessage.From.ID == t.bot.Self.ID &&
 					str.Contains(update.Message.ReplyToMessage.Text, msgTextUserHandleRegister) {
 					// Show to user Yes/No message to allow him to check his Name and Surname
-					t.userHandleRegisterHelper(update.Message.ReplyToMessage.MessageID)
+					t.userHandleRegisterHelper(update.Message.ReplyToMessage.MessageID, &update)
 				}
 			}
 		}
 		// Process ordinary command messages
 		if update.Message != nil && update.Message.IsCommand() {
-			// Hold pointer to the current update for access inside handlers
-			t.update = &update
-
 			// Go through struct of allowed commands
 			bc := t.UserBotCommands()
 			abc := t.AdminBotCommands()
@@ -107,27 +102,27 @@ func (t *TgBot) StartBot(version string, build string) {
 				var isCmdFound bool
 				for _, cmd := range abc.commands {
 					if str.ToLower(update.Message.Command()) == string(cmd.command.name) {
-						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()))
+						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()), &update)
 						isCmdFound = true
 						break
 					}
 				}
 				// Show not found message
 				if !isCmdFound {
-					t.handleNotFound()
+					t.handleNotFound(&update)
 				}
 			} else { // Handle ordinary user commands
 				var isCmdFound bool
 				for _, cmd := range bc.commands {
 					if str.ToLower(update.Message.Command()) == string(cmd.command.name) {
-						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()))
+						cmd.handleFunc(str.ToLower(update.Message.CommandArguments()), &update)
 						isCmdFound = true
 						break
 					}
 				}
 				// Show not found message
 				if !isCmdFound {
-					t.handleNotFound()
+					t.handleNotFound(&update)
 				}
 			}
 		} else if update.CallbackQuery != nil { // Process callback messages
@@ -139,7 +134,7 @@ func (t *TgBot) StartBot(version string, build string) {
 			}
 
 			// Get callback data and convert json to struct
-			callbackData := t.update.CallbackQuery.Data
+			callbackData := update.CallbackQuery.Data
 			var message callbackMessage
 			err := json.Unmarshal([]byte(callbackData), &message)
 			if err != nil {
@@ -156,28 +151,44 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleRegister:
 				if !isCallbackHandleRegisterFired {
 					dec := burstDecorator(2, &isCallbackHandleRegisterFired, t.callbackRegister)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						log.Printf("%v", err)
 					}
 				}
 			case callbackHandleRegisterHelper:
 				if !isCallbackHandleRegisterHelperFired {
 					dec := burstDecorator(2, &isCallbackHandleRegisterHelperFired, t.callbackRegisterHelper)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						log.Printf("%v", err)
 					}
 				}
 			case callbackHandleUnregister:
 				if !isCallbackHandleUnregisterFired {
 					dec := burstDecorator(2, &isCallbackHandleUnregisterFired, t.callbackUnregister)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						log.Printf("%v", err)
 					}
 				}
 			case callbackHandleDeleteOffDuty:
 				if !isCallbackHandleDeleteOffDutyFired {
 					dec := burstDecorator(2, &isCallbackHandleDeleteOffDutyFired, t.callbackDeleteOffDuty)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
@@ -190,7 +201,11 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleReindex:
 				if !isCallbackHandleReindexFired {
 					dec := burstDecorator(1, &isCallbackHandleReindexFired, t.callbackReindex)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
@@ -203,7 +218,11 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleEnable:
 				if !isCallbackHandleEnableFired {
 					dec := burstDecorator(1, &isCallbackHandleEnableFired, t.callbackEnable)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
@@ -216,7 +235,11 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleDisable:
 				if !isCallbackHandleDisableFired {
 					dec := burstDecorator(1, &isCallbackHandleDisableFired, t.callbackDisable)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
@@ -229,7 +252,11 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleEditDuty:
 				if !isCallbackHandleEditDutyFired {
 					dec := burstDecorator(1, &isCallbackHandleEditDutyFired, t.callbackEditDuty)
-					if err := dec(message.Answer, message.ChatId, message.UserId, message.MessageId); err != nil {
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
 						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
 						if err := t.sendMessage(messageText,
 							update.CallbackQuery.Message.Chat.ID,
