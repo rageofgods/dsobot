@@ -7,7 +7,7 @@ import (
 )
 
 // handle '/help' command
-func (t *TgBot) adminHandleHelp(cmdArgs string) {
+func (t *TgBot) adminHandleHelp(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Create help message
 	commands := t.AdminBotCommands().commands
@@ -15,15 +15,15 @@ func (t *TgBot) adminHandleHelp(cmdArgs string) {
 	messageText := "Доступны следующие команды администрирования:\n\n" +
 		cmdList
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/list' command
-func (t *TgBot) adminHandleList(cmdArgs string) {
+func (t *TgBot) adminHandleList(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	var listActive string
 	var listPassive string
@@ -62,15 +62,15 @@ func (t *TgBot) adminHandleList(cmdArgs string) {
 		listActive,
 		listPassive)
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // Parent function for handling args commands
-func (t *TgBot) adminHandleRollout(cmdArgs string) {
+func (t *TgBot) adminHandleRollout(cmdArgs string, update *tgbotapi.Update) {
 	abc := t.AdminBotCommands()
 	var isArgValid bool
 	for _, cmd := range abc.commands {
@@ -79,7 +79,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
 					// Run dedicated child argument function
-					go arg.handleFunc(cmdArgs)
+					go arg.handleFunc(cmdArgs, update)
 					isArgValid = true
 				}
 			}
@@ -90,8 +90,8 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 		if cmdArgs != "" {
 			messageText := fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -102,8 +102,8 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				numericKeyboard); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -112,8 +112,8 @@ func (t *TgBot) adminHandleRollout(cmdArgs string) {
 }
 
 // handle '/showoffduty' command
-func (t *TgBot) adminHandleShowOffDuty(arg string) {
-	arg = "" // Ignore cmdArgs
+func (t *TgBot) adminHandleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 
 	men := t.dc.DutyMenData()
 	var msgText string
@@ -123,8 +123,8 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 		if err != nil {
 			messageText := fmt.Sprintf("%v", err)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -146,8 +146,8 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 	if !isOffDutyFound {
 		messageText := "Нерабочие периоды не найдены"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -156,27 +156,27 @@ func (t *TgBot) adminHandleShowOffDuty(arg string) {
 
 	messageText := msgText
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/reindex' command
-func (t *TgBot) adminHandleReindex(arg string) {
-	arg = "" // Ignore cmdArgs
+func (t *TgBot) adminHandleReindex(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 
 	// Check if we are still editing tmpData at another function call
-	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
 	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		FromHandle: callbackHandleReindex,
 	}
 
@@ -184,8 +184,8 @@ func (t *TgBot) adminHandleReindex(arg string) {
 	if len(*men) == 0 {
 		messageText := "Дежурных не найдено"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -199,27 +199,27 @@ func (t *TgBot) adminHandleReindex(arg string) {
 
 	messageText := msgTextAdminHandleReindex
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/enable' command
-func (t *TgBot) adminHandleEnable(arg string) {
-	arg = "" // Ignore cmdArgs
+func (t *TgBot) adminHandleEnable(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 
 	// Check if we are still editing tmpData at another function call
-	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
 	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		FromHandle: callbackHandleEnable,
 	}
 
@@ -227,8 +227,8 @@ func (t *TgBot) adminHandleEnable(arg string) {
 	if len(*men) == 0 {
 		messageText := "Неактивных дежурных не найдено"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -242,27 +242,27 @@ func (t *TgBot) adminHandleEnable(arg string) {
 
 	messageText := msgTextAdminHandleEnable
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/disable' command
-func (t *TgBot) adminHandleDisable(arg string) {
-	arg = "" // Ignore cmdArgs
+func (t *TgBot) adminHandleDisable(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 
 	// Check if we are still editing tmpData at another function call
-	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
 	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		FromHandle: callbackHandleDisable,
 	}
 
@@ -270,8 +270,8 @@ func (t *TgBot) adminHandleDisable(arg string) {
 	if len(*men) == 0 {
 		messageText := "Активных дежурных не найдено"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -285,27 +285,27 @@ func (t *TgBot) adminHandleDisable(arg string) {
 
 	messageText := msgTextAdminHandleDisable
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/editduty' command
-func (t *TgBot) adminHandleEditDutyType(arg string) {
-	arg = "" // Ignore cmdArgs
+func (t *TgBot) adminHandleEditDutyType(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 
 	// Check if we are still editing tmpData at another function call
-	if t.checkTmpDutyMenDataIsEditing(t.update.Message.From.ID) {
+	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
 	}
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		FromHandle: callbackHandleEditDuty,
 	}
 
@@ -313,8 +313,8 @@ func (t *TgBot) adminHandleEditDutyType(arg string) {
 	if len(*men) == 0 {
 		messageText := "Дежурных не найдено"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -324,8 +324,8 @@ func (t *TgBot) adminHandleEditDutyType(arg string) {
 	rows, err := genEditDutyKeyboard(men, *callbackData)
 	if err != nil {
 		if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка дежурных",
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -342,8 +342,8 @@ func (t *TgBot) adminHandleEditDutyType(arg string) {
 	}
 	messageText += appendedText*/
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"dso_bot/pkg/data"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 /////////////////////////////////
@@ -34,7 +35,7 @@ type cmd struct {
 type arg struct {
 	name        tArg
 	description string
-	handleFunc  func(arg string)
+	handleFunc  func(arg string, update *tgbotapi.Update)
 }
 
 // Custom types for commands and arguments
@@ -45,7 +46,7 @@ type tArg string
 type botCommand struct {
 	command     *cmd
 	description string
-	handleFunc  func(cmdArgs string)
+	handleFunc  func(cmdArgs string, update *tgbotapi.Update)
 }
 
 // Structure to hold list of bot commands

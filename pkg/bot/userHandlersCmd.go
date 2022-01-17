@@ -8,10 +8,10 @@ import (
 )
 
 // handle '/start' command
-func (t *TgBot) handleStart(cmdArgs string) {
+func (t *TgBot) handleStart(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
@@ -23,18 +23,18 @@ func (t *TgBot) handleStart(cmdArgs string) {
 		"Вам доступны следующие команды:\n" +
 		cmdList
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/help' command
-func (t *TgBot) handleHelp(cmdArgs string) {
+func (t *TgBot) handleHelp(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
@@ -45,23 +45,23 @@ func (t *TgBot) handleHelp(cmdArgs string) {
 	messageText := "Вам доступны следующие команды управления:\n" +
 		cmdList
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // Register new user as DSO team member
-func (t *TgBot) handleRegister(cmdArgs string) {
+func (t *TgBot) handleRegister(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already registered
-	if t.dc.IsInDutyList(t.update.Message.From.UserName) {
+	if t.dc.IsInDutyList(update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
 			"Используйте команду */unregister* для того, чтобы исключить себя из списка участников."
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -69,12 +69,12 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 	}
 
 	// Check if user have telegram id
-	if t.update.Message.From.UserName == "" {
+	if update.Message.From.UserName == "" {
 		messageText := "У вас отсутствует Telegram Username (@username)\n" +
 			"Пожалуйста, укажите его в настройках вашего профиля Telegram"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -84,13 +84,13 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 	// Request and process user custom name
 	// Send info to user
 	// Generate correct username
-	userFullName := genUserFullName(t.update.Message.From.FirstName, t.update.Message.From.LastName)
+	userFullName := genUserFullName(update.Message.From.FirstName, update.Message.From.LastName)
 	msgText := msgTextUserHandleRegister + fmt.Sprintf("Эта информация будет использоваться"+
 		" для корректного отображения имен участников т.к. ваши теущие данные из Telegram (%s) могут не "+
 		"соответствовать реальным.", userFullName)
 	if err := t.sendMessage(msgText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
@@ -98,25 +98,25 @@ func (t *TgBot) handleRegister(cmdArgs string) {
 	return
 }
 
-func (t *TgBot) handleUnregister(cmdArgs string) {
+func (t *TgBot) handleUnregister(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
 	// Create returned data with Yes/No button
 	callbackDataYes := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		Answer:     inlineKeyboardYes,
 		FromHandle: callbackHandleUnregister,
 	}
 	callbackDataNo := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		Answer:     inlineKeyboardNo,
 		FromHandle: callbackHandleUnregister,
 	}
@@ -128,17 +128,17 @@ func (t *TgBot) handleUnregister(cmdArgs string) {
 
 	messageText := fmt.Sprintf("Вы уверены, что хотите выйти?")
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // Parent function for handling args commands
-func (t *TgBot) handleWhoIsOn(cmdArgs string) {
+func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
@@ -155,21 +155,21 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 						if _, err := checkArgHasDate(cmdArgs); err != nil {
 							messageText := fmt.Sprintf("%v", err)
 							if err := t.sendMessage(messageText,
-								t.update.Message.Chat.ID,
-								&t.update.Message.MessageID,
+								update.Message.Chat.ID,
+								&update.Message.MessageID,
 								nil); err != nil {
 								log.Printf("unable to send message: %v", err)
 							}
 							return
 						}
 						// Run dedicated child argument function
-						arg.handleFunc(cmdArgs)
+						arg.handleFunc(cmdArgs, update)
 						isArgValid = true
 					}
 				} else if len(s) == 1 {
 					if s[0] == string(arg.name) {
 						// Run dedicated child argument function
-						arg.handleFunc(cmdArgs)
+						arg.handleFunc(cmdArgs, update)
 						isArgValid = true
 					}
 				}
@@ -181,8 +181,8 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 		if cmdArgs != "" {
 			messageText := fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -193,8 +193,8 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				numericKeyboard); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -203,9 +203,9 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string) {
 }
 
 // handle '/addoffduty' command
-func (t *TgBot) handleAddOffDuty(cmdArgs string) {
+func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
@@ -213,36 +213,36 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 	if err != nil {
 		messageText := fmt.Sprintf("%v", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
 		return
 	}
-	firstName := t.update.Message.From.FirstName
-	lastName := t.update.Message.From.LastName
+	firstName := update.Message.From.FirstName
+	lastName := update.Message.From.LastName
 	fullName := genUserFullName(firstName, lastName)
 
 	err = t.dc.CreateOffDutyEvents(fullName, timeRange[0], timeRange[1])
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось добавить событие: %v", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
 		return
 	}
 	// Save off-duty data
-	t.dc.AddOffDutyToMan(t.update.Message.From.UserName, timeRange[0], timeRange[1])
+	t.dc.AddOffDutyToMan(update.Message.From.UserName, timeRange[0], timeRange[1])
 	_, err = t.dc.SaveMenList()
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось сохранить событие: %v", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -250,8 +250,8 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 	}
 	messageText := "Событие добавлено успешно"
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
@@ -261,7 +261,7 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 		timeRange[0].Format(botDataShort3),
 		timeRange[1].Format(botDataShort3))
 	messageText = fmt.Sprintf("Пользователь *@%s* добавил новый нерабочий период:\n%s",
-		t.update.Message.From.UserName, timeRageText)
+		update.Message.From.UserName, timeRageText)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		nil,
@@ -271,19 +271,19 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string) {
 }
 
 // handle '/showofduty' command
-func (t *TgBot) handleShowOffDuty(cmdArgs string) {
+func (t *TgBot) handleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
-	offduty, err := t.dc.ShowOffDutyForMan(t.update.Message.From.UserName)
+	offduty, err := t.dc.ShowOffDutyForMan(update.Message.From.UserName)
 	if err != nil {
 		messageText := fmt.Sprintf("%v", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -293,8 +293,8 @@ func (t *TgBot) handleShowOffDuty(cmdArgs string) {
 	if len(*offduty) == 0 {
 		messageText := "У вас нет нерабочих периодов"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -307,27 +307,27 @@ func (t *TgBot) handleShowOffDuty(cmdArgs string) {
 	}
 	messageText := msgText
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/deleteoffduty' command
-func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
+func (t *TgBot) handleDeleteOffDuty(cmdArgs string, update *tgbotapi.Update) {
 	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
-	offduty, err := t.dc.ShowOffDutyForMan(t.update.Message.From.UserName)
+	offduty, err := t.dc.ShowOffDutyForMan(update.Message.From.UserName)
 	if err != nil {
 		messageText := fmt.Sprintf("%v", err)
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -337,8 +337,8 @@ func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
 	if len(*offduty) == 0 {
 		messageText := "У вас нет нерабочих периодов"
 		if err := t.sendMessage(messageText,
-			t.update.Message.Chat.ID,
-			&t.update.Message.MessageID,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
@@ -355,9 +355,9 @@ func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
 
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
-		UserId:     t.update.Message.From.ID,
-		ChatId:     t.update.Message.Chat.ID,
-		MessageId:  t.update.Message.MessageID,
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
 		FromHandle: callbackHandleDeleteOffDuty,
 	}
 
@@ -368,17 +368,17 @@ func (t *TgBot) handleDeleteOffDuty(cmdArgs string) {
 
 	messageText := fmt.Sprintf("Выберите нерабочий период для удаления:")
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/showmyduties' command
-func (t *TgBot) handleShowMy(cmdArgs string) {
+func (t *TgBot) handleShowMy(cmdArgs string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
-	if !t.checkIsUserRegistered(t.update.Message.From.UserName) {
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 	// Check args for valid values
@@ -390,7 +390,7 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 				// Check if user command arg is supported
 				if cmdArgs == string(arg.name) {
 					// Run dedicated child argument function
-					arg.handleFunc(cmdArgs)
+					arg.handleFunc(cmdArgs, update)
 					isArgValid = true
 				}
 			}
@@ -401,8 +401,8 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 		if cmdArgs != "" {
 			messageText := fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -413,8 +413,8 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
 			if err := t.sendMessage(messageText,
-				t.update.Message.Chat.ID,
-				&t.update.Message.MessageID,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
 				numericKeyboard); err != nil {
 				log.Printf("unable to send message: %v", err)
 			}
@@ -423,11 +423,11 @@ func (t *TgBot) handleShowMy(cmdArgs string) {
 }
 
 // handle unknown command
-func (t *TgBot) handleNotFound() {
+func (t *TgBot) handleNotFound(update *tgbotapi.Update) {
 	messageText := "Команда не найдена"
 	if err := t.sendMessage(messageText,
-		t.update.Message.Chat.ID,
-		&t.update.Message.MessageID,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}

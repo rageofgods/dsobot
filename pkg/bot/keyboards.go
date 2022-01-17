@@ -199,7 +199,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 }
 
 // Generate final message for user after he is hit "ok" button at inline keyboard and delete keyboard with message
-func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, messageId int) {
+func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, messageId int, update *tgbotapi.Update) {
 	if err := t.sendMessage(messageText,
 		chatId,
 		&messageId,
@@ -207,8 +207,8 @@ func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, m
 		log.Printf("unable to send message: %v", err)
 	}
 	// Deleting access request message in admin group
-	del := tgbotapi.NewDeleteMessage(t.update.CallbackQuery.Message.Chat.ID,
-		t.update.CallbackQuery.Message.MessageID)
+	del := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID,
+		update.CallbackQuery.Message.MessageID)
 	_, err := t.bot.Request(del)
 	if err != nil {
 		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
