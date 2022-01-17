@@ -1,7 +1,6 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -124,95 +123,6 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 	}
 	return "", 0, CtxError("data.WhoWasOnDuty()",
 		fmt.Errorf("can't find previous month on-duty man"))
-}
-
-// SaveMenList Create events via API call
-func (t *CalData) SaveMenList(d ...*[]DutyMan) (*string, error) {
-	if len(d) != 0 {
-		if d[0] == nil {
-			return nil, CtxError("data.SaveMenList()", fmt.Errorf("no data for saving"))
-		}
-		t.dutyMen = d[0]
-	}
-	if t.dutyMen == nil {
-		return nil, CtxError("data.SaveMenList()", fmt.Errorf("no data for saving"))
-	}
-	jsonStr, err := json.Marshal(t.dutyMen)
-	if err != nil {
-		return nil, CtxError("data.SaveMenList()", err)
-	}
-
-	event := genEvent(SaveListName, string(jsonStr), CalOrange, SaveListDate, SaveListDate)
-
-	tn, err := time.Parse(DateShort, SaveListDate)
-	if err != nil {
-		return nil, CtxError("data.SaveMenList()", err)
-	}
-
-	events, err := t.dayEvents(&tn)
-	if err != nil {
-		return nil, CtxError("data.SaveMenList()", err)
-	}
-
-	if len(events.Items) == 0 { // If it's new save
-		event, err = t.cal.Events.Insert(t.calID, event).Do()
-		if err != nil {
-			return nil, CtxError("data.SaveMenList()", err)
-		}
-	} else { // if we're updating existing save
-		for _, item := range events.Items {
-			e, err := t.cal.Events.Get(t.calID, item.Id).Do()
-			if err != nil {
-				return nil, CtxError("data.SaveMenList()", err)
-			}
-			if e.Summary == SaveListName {
-				event, err = t.cal.Events.Update(t.calID, e.Id, event).Do()
-				if err != nil {
-					return nil, CtxError("data.SaveMenList()", err)
-				}
-			}
-		}
-	}
-
-	log.Println(event.HtmlLink)
-	return &event.HtmlLink, nil
-}
-
-// LoadMenList is loading previously saved (at Google Calendar) men duty data into DutyMan struct
-func (t *CalData) LoadMenList() (*[]DutyMan, error) {
-	var men []DutyMan
-	tn, err := time.Parse(DateShort, SaveListDate)
-	if err != nil {
-		return nil, CtxError("data.LoadMenList()", err)
-	}
-
-	events, err := t.dayEvents(&tn)
-	if err != nil {
-		return nil, CtxError("data.LoadMenList()", err)
-	}
-
-	if len(events.Items) == 0 {
-		return nil, CtxError("data.LoadMenList()", fmt.Errorf("data not found"))
-	}
-	for _, item := range events.Items {
-		e, err := t.cal.Events.Get(t.calID, item.Id).Do()
-		if err != nil {
-			return nil, CtxError("data.LoadMenList()", err)
-		}
-		if e.Summary == SaveListName {
-			err := json.Unmarshal([]byte(e.Description), &men)
-			if err != nil {
-				return nil, CtxError("data.LoadMenList()", err)
-			}
-			if men == nil {
-				return nil, CtxError("data.LoadMenList()", fmt.Errorf("can't load null data"))
-			}
-
-			t.dutyMen = &men
-			return &men, nil
-		}
-	}
-	return nil, CtxError("data.LoadMenList()", fmt.Errorf("data not found"))
 }
 
 // AddManOnDuty Add new man to duty list

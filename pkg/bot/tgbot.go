@@ -17,15 +17,17 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	tmpData      tmpData
+	settings     data.BotSettings
 }
 
-func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
+func NewTgBot(dc *data.CalData, settings data.BotSettings, token string, adminGroupId int64, debug bool) *TgBot {
 	return &TgBot{
 		dc:           dc,
 		token:        token,
 		msg:          new(tgbotapi.MessageConfig),
 		adminGroupId: adminGroupId,
 		debug:        debug,
+		settings:     settings,
 	}
 }
 
@@ -72,6 +74,9 @@ func (t *TgBot) StartBot(version string, build string) {
 			// Check if bot was added to some users group
 			if update.MyChatMember.NewChatMember.Status == "member" &&
 				update.MyChatMember.Chat.Type == "group" {
+				if err := t.botAddedToGroup(update.MyChatMember.Chat.Title, update.MyChatMember.Chat.ID); err != nil {
+					log.Printf("%v", err)
+				}
 				messageText := fmt.Sprintf("*Меня добавили в новую группу*:\n*ID*: `%d`\n*Title*: `%s`",
 					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
 				if err := t.sendMessage(messageText,
@@ -84,6 +89,9 @@ func (t *TgBot) StartBot(version string, build string) {
 			// Check if bot removed from some users group
 			if update.MyChatMember.NewChatMember.Status == "left" &&
 				update.MyChatMember.Chat.Type == "group" {
+				if err := t.botRemovedFromGroup(update.MyChatMember.Chat.ID); err != nil {
+					log.Printf("%v", err)
+				}
 				messageText := fmt.Sprintf("*Меня удалили из группы*:\n*ID*: `%d`\n*Title*: `%s`",
 					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
 				if err := t.sendMessage(messageText,

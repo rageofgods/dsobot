@@ -376,3 +376,26 @@ func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64, update *tgbotapi.Upda
 	}
 	return false
 }
+
+func (t *TgBot) botAddedToGroup(title string, id int64) error {
+	group := &data.JoinedGroup{Id: id, Title: title}
+	t.settings.JoinedGroups = append(t.settings.JoinedGroups, *group)
+	if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+		return fmt.Errorf("unable to save bot settings: %v", err)
+	}
+	return nil
+}
+
+func (t *TgBot) botRemovedFromGroup(id int64) error {
+	for i, v := range t.settings.JoinedGroups {
+		if v.Id == id {
+			// Remove founded group id from settings
+			t.settings.JoinedGroups = append(t.settings.JoinedGroups[:i], t.settings.JoinedGroups[i+1:]...)
+			if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+				return fmt.Errorf("unable to save bot settings: %v", err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("group id is not found in bot settings data")
+}

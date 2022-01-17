@@ -44,14 +44,20 @@ func main() {
 		panic(err)
 	}
 
-	// Load data
+	// Load DutyMen data
 	_, err = dc.LoadMenList()
 	if err != nil {
 		log.Printf("Unable to load saved data: %v", err)
 	}
 
+	// Load BotSettings data
+	botSettings, err := dc.LoadBotSettings()
+	if err != nil {
+		log.Printf("Unable to load saved data: %v", err)
+	}
+
 	// Start tgBot
-	tgBot := bot.NewTgBot(dc, botToken, id, true)
+	tgBot := bot.NewTgBot(dc, botSettings, botToken, id, true)
 	tgBot.StartBot(Version, Build)
 }
 
