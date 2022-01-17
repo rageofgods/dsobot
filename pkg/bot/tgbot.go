@@ -147,9 +147,9 @@ func (t *TgBot) StartBot(version string, build string) {
 			}
 
 			// If we got callback from not an original user - ignore it.
-			if update.CallbackQuery.From.ID != message.UserId {
-				continue
-			}
+			//if update.CallbackQuery.From.ID != message.UserId {
+			//	continue
+			//}
 
 			// Checking where callback come from and run specific function
 			switch message.FromHandle {
