@@ -17,15 +17,17 @@ type TgBot struct {
 	adminGroupId int64
 	debug        bool
 	tmpData      tmpData
+	settings     data.BotSettings
 }
 
-func NewTgBot(dc *data.CalData, token string, adminGroupId int64, debug bool) *TgBot {
+func NewTgBot(dc *data.CalData, settings data.BotSettings, token string, adminGroupId int64, debug bool) *TgBot {
 	return &TgBot{
 		dc:           dc,
 		token:        token,
 		msg:          new(tgbotapi.MessageConfig),
 		adminGroupId: adminGroupId,
 		debug:        debug,
+		settings:     settings,
 	}
 }
 
@@ -52,26 +54,35 @@ func (t *TgBot) StartBot(version string, build string) {
 	// Start polling Telegram for updates.
 	updates := t.bot.GetUpdatesChan(updateConfig)
 
-	// Send message to admin group about current running bot build version
-	messageText := fmt.Sprintf("*%s (@%s)* был запущен.\n_версия_: %q\n_билд_: %q",
-		t.bot.Self.FirstName,
-		t.bot.Self.UserName,
-		version,
-		build)
-	if err := t.sendMessage(messageText,
-		t.adminGroupId,
-		nil,
-		nil); err != nil {
-		log.Printf("unable to send message: %v", err)
-	}
+	// Check and announce current bot version
+	t.botCheckVersion(version, build)
 
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
 		// Process adding to new group
 		if update.MyChatMember != nil {
+			// Check if bot was added to some users group
 			if update.MyChatMember.NewChatMember.Status == "member" &&
 				update.MyChatMember.Chat.Type == "group" {
+				if err := t.botAddedToGroup(update.MyChatMember.Chat.Title, update.MyChatMember.Chat.ID); err != nil {
+					log.Printf("%v", err)
+				}
 				messageText := fmt.Sprintf("*Меня добавили в новую группу*:\n*ID*: `%d`\n*Title*: `%s`",
+					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			}
+			// Check if bot removed from some users group
+			if update.MyChatMember.NewChatMember.Status == "left" &&
+				update.MyChatMember.Chat.Type == "group" {
+				if err := t.botRemovedFromGroup(update.MyChatMember.Chat.ID); err != nil {
+					log.Printf("%v", err)
+				}
+				messageText := fmt.Sprintf("*Меня удалили из группы*:\n*ID*: `%d`\n*Title*: `%s`",
 					update.MyChatMember.Chat.ID, update.MyChatMember.Chat.Title)
 				if err := t.sendMessage(messageText,
 					t.adminGroupId,
@@ -252,6 +263,23 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleEditDuty:
 				if !isCallbackHandleEditDutyFired {
 					dec := burstDecorator(1, &isCallbackHandleEditDutyFired, t.callbackEditDuty)
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleAnnounce:
+				if !isCallbackHandleAnnounceFired {
+					dec := burstDecorator(1, &isCallbackHandleAnnounceFired, t.callbackAnnounce)
 					if err := dec(message.Answer,
 						message.ChatId,
 						message.UserId,

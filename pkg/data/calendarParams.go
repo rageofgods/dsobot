@@ -59,14 +59,17 @@ const (
 	CalPurple = "3"
 	// CalOrange orange color for calendar event
 	CalOrange = "6"
+	// CalTurquoise turquoise color for calendar event
+	CalTurquoise = "7"
 	// CalGray gray color for calendar event
 	CalGray = "8"
 
 	// SearchMaxResults Default value for search filter
 	SearchMaxResults = 200
 
-	// SaveListName Summary name of Calendar event with men json
-	SaveListName = "menlist.json"
+	// SaveNameForDutyMenData Summary name of Calendar event with men json
+	SaveNameForDutyMenData = "menlist.json"
+
 	// SaveListDate Default save date
 	SaveListDate = "2021-01-01"
 )

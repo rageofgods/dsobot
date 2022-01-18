@@ -846,3 +846,108 @@ func (t *TgBot) callbackRegisterHelper(answer string, chatId int64, userId int64
 
 	return nil
 }
+
+func (t *TgBot) callbackAnnounce(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
+	// If we just spawn inline keyboard let's load our temporary data
+	_, err := t.tmpAnnounceDataForUser(userId)
+	if err != nil {
+		// Get current men data
+		origData := t.settings.JoinedGroups
+		// Deep copy original data
+		d, err := deep.Copy(origData)
+		if err != nil {
+			return err
+		}
+		// Assign deep copied data to tmpAnnounceData
+		for _, group := range d.([]data.JoinedGroup) {
+			t.addTmpAnnounceDataForUser(userId, group)
+		}
+	}
+	switch answer {
+	case inlineKeyboardYes:
+		tmpAnnounceData, err := t.tmpAnnounceDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		// Save data
+		t.settings.JoinedGroups = tmpAnnounceData
+		if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+			return fmt.Errorf("не удалось сохранить список дежурных: %v", err)
+		}
+		messageText := "Список анонсов для групп успешно сохранен"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+		// Clear tmp data
+		t.clearTmpAnnounceDataForUser(userId)
+	case inlineKeyboardNo:
+		messageText := "Редактирование списка анонсов для групп отменено"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+		// Clear tmp data
+		t.clearTmpAnnounceDataForUser(userId)
+	default:
+		// Format: 'groupIndex-buttonIndex-Answer'
+		splitAnswer := strings.Split(answer, "-")
+		// Check only duty type button (separated by '-')
+		if len(splitAnswer) == 3 {
+			//groupIndex := splitAnswer[0] // Save group index
+			//gi, err := strconv.Atoi(groupIndex)
+			//if err != nil {
+			//	return err
+			//}
+
+			buttonIndex := splitAnswer[1] // Save button index
+			bi, err := strconv.Atoi(buttonIndex)
+			if err != nil {
+				return err
+			}
+
+			buttonState := splitAnswer[2] // Save button state
+
+			// Edit tmp Announce data
+			for i, v := range t.tmpData.tmpJoinedGroupData {
+				if v.userId == userId {
+					if buttonState == inlineKeyboardEditDutyYes {
+						t.tmpData.tmpJoinedGroupData[i].data[bi].Announce = false
+					} else {
+						t.tmpData.tmpJoinedGroupData[i].data[bi].Announce = true
+					}
+				}
+			}
+
+			// Create returned data (without data)
+			callbackData := &callbackMessage{
+				UserId:     userId,
+				ChatId:     chatId,
+				MessageId:  messageId,
+				FromHandle: callbackHandleAnnounce,
+			}
+			// Generate edited keyboard
+			tmpAnnounceData, err := t.tmpAnnounceDataForUser(userId)
+			if err != nil {
+				return err
+			}
+			rows, err := genAnnounceKeyboard(tmpAnnounceData, *callbackData)
+			if err != nil {
+				if err := t.sendMessage("Не удалось создать клавиатуру для отображения групп для анонса",
+					update.Message.Chat.ID,
+					&update.Message.MessageID,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+				log.Printf("unable to generate new inline keyboard: %v", err)
+				return err
+			}
+
+			// Create edited message (with correct keyboard)
+			changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup(rows...))
+
+			// Change keyboard
+			if _, err := t.bot.Request(changeMsg); err != nil {
+				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+			}
+		}
+	}
+	return nil
+}

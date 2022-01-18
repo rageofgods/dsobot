@@ -117,7 +117,7 @@ func (t *TgBot) handleShowMyDuty(arg string, update *tgbotapi.Update) {
 
 	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnDutyTag)
 	if err != nil {
-		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		messageText := fmt.Sprintf("Дежурства в текущем месяце не найдены")
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,
@@ -158,7 +158,7 @@ func (t *TgBot) handleShowMyValidation(arg string, update *tgbotapi.Update) {
 
 	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnValidationTag)
 	if err != nil {
-		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
+		messageText := fmt.Sprintf("Валидации в текущем месяце не найдены")
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,

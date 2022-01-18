@@ -133,7 +133,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 	rows = append(rows, row)
 	// Iterate over all duty men
 	for manIndex, man := range *dm {
-		jsonData, err := marshalCallbackDataForEditDuty(cm, manIndex, 0)
+		jsonData, err := marshalCallbackData(cm, manIndex, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 			for dutyIndex, d := range man.DutyType {
 				if dt == d.Type {
 					// Generate jsonData with current man's duty type state (false/true)
-					jsonData, err := marshalCallbackDataForEditDuty(cm, manIndex, dutyIndex, d.Enabled)
+					jsonData, err := marshalCallbackData(cm, manIndex, dutyIndex, d.Enabled)
 					if err != nil {
 						return nil, err
 					}
@@ -213,4 +213,75 @@ func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, m
 	if err != nil {
 		log.Printf("unable to delete message with off-duty inline keyboard: %v", err)
 	}
+}
+
+// Generate keyboard with announce data
+func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotapi.InlineKeyboardButton, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	// Generate columns names
+	var keyboardButtons []tgbotapi.InlineKeyboardButton
+	keyboardButtons = append(keyboardButtons,
+		tgbotapi.NewInlineKeyboardButtonData("ИМЯ ГРУППЫ", inlineKeyboardVoid))
+	keyboardButtons = append(keyboardButtons,
+		tgbotapi.NewInlineKeyboardButtonData("ВКЛ?", inlineKeyboardVoid))
+
+	row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
+	rows = append(rows, row)
+	// Iterate over all joined groups
+	for groupIndex, group := range jg {
+		jsonData, err := marshalCallbackData(cm, groupIndex, 0)
+		if err != nil {
+			return nil, err
+		}
+		// Add leftmost button to hold group title
+		var keyboardButtons []tgbotapi.InlineKeyboardButton
+		groupButtonCaption := group.Title
+
+		keyboardButtons = append(keyboardButtons,
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s",
+				groupButtonCaption),
+				string(jsonData)))
+
+		// Generate jsonData with current group's announce type state (false/true)
+		jsonData, err = marshalCallbackData(cm, groupIndex, groupIndex, group.Announce)
+		if err != nil {
+			return nil, err
+		}
+		// Generate correct buttons based on current announce type state
+		if group.Announce {
+			keyboardButtons = append(keyboardButtons,
+				tgbotapi.NewInlineKeyboardButtonData("✅", string(jsonData)))
+		} else {
+			keyboardButtons = append(keyboardButtons,
+				tgbotapi.NewInlineKeyboardButtonData("❌", string(jsonData)))
+		}
+
+		// Check if keyboard is generated correctly
+		if len(keyboardButtons) != 2 {
+			return nil, fmt.Errorf("unable to generate keyboard buttons for: *@%s*", group.Title)
+		}
+		row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
+		rows = append(rows, row)
+	}
+
+	// Add row with ok/cancel buttons
+	cmYes, cmNo := cm, cm
+	cmYes.Answer = inlineKeyboardYes
+	cmNo.Answer = inlineKeyboardNo
+	jsonDataYes, err := json.Marshal(cmYes)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	jsonDataNo, err := json.Marshal(cmNo)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	row = tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
+	rows = append(rows, row)
+
+	return rows, nil
 }

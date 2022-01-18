@@ -2,6 +2,7 @@ package data
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"google.golang.org/api/calendar/v3"
@@ -19,13 +20,29 @@ func (t *CalData) addEvent(event *calendar.Event) (*calendar.Event, error) {
 }
 
 // dayEvents Get events for provided day
-func (t *CalData) dayEvents(day *time.Time) (*calendar.Events, error) {
+func (t *CalData) dayEvents(day *time.Time, searchStrings ...string) (*calendar.Events, error) {
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
 		return nil, CtxError("data.dayEvents()", err)
 	}
 	stime := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, loc)
 	etime := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, loc)
+
+	// Search day events with provided patterns
+	if len(searchStrings) != 0 {
+		var ss string
+		for _, v := range searchStrings {
+			ss += v + " "
+		}
+		ss = strings.Trim(ss, " ")
+		e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
+			SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
+			TimeMax(etime.Format(time.RFC3339)).MaxResults(10).Q(ss).Do()
+		if err != nil {
+			return nil, CtxError("data.dayEvents()", err)
+		}
+		return e, nil
+	}
 
 	e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
 		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).

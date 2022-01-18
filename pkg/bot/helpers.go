@@ -208,10 +208,10 @@ func typesOfDuties(m *data.DutyMan) string {
 }
 
 // Return json marshaled object for callback message data
-func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
+func marshalCallbackData(cm callbackMessage, itemIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
 	// Generate callback data
-	// Format: 'manIndex-buttonIndex-Answer'
-	cm.Answer = strconv.Itoa(manIndex)                         // Save current man index to data
+	// Format: 'itemIndex-buttonIndex-Answer'
+	cm.Answer = strconv.Itoa(itemIndex)                        // Save current item index to data
 	cm.Answer += fmt.Sprintf("-%s", strconv.Itoa(buttonIndex)) // Save current button index to data
 	// If we have optional argument
 	if len(enabled) == 1 {
@@ -318,6 +318,46 @@ func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string, update *tgb
 	}
 }
 
+func (t *TgBot) tmpAnnounceDataForUser(userId int64) ([]data.JoinedGroup, error) {
+	for _, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpAnnounceDataForUser(userId int64, group data.JoinedGroup) {
+	var isGroupIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			t.tmpData.tmpJoinedGroupData[i].data = append(t.tmpData.tmpJoinedGroupData[i].data, group)
+			isGroupIdFound = true
+		}
+	}
+	if isGroupIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		var tmp []data.JoinedGroup
+		tmp = append(tmp, group)
+		tmpNewGroup := tmpJoinedGroupData{userId: userId, data: tmp}
+		t.tmpData.tmpJoinedGroupData = append(t.tmpData.tmpJoinedGroupData, tmpNewGroup)
+	}
+}
+
+func (t *TgBot) clearTmpAnnounceDataForUser(userId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			t.tmpData.tmpJoinedGroupData[i].data = nil
+		}
+	}
+}
+
 func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data.DutyMan, error) {
 	for _, v := range t.tmpData.tmpDutyManData {
 		if v.userId == userId {
@@ -375,4 +415,66 @@ func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64, update *tgbotapi.Upda
 		return true
 	}
 	return false
+}
+
+func (t *TgBot) botAddedToGroup(title string, id int64) error {
+	group := &data.JoinedGroup{Id: id, Title: title}
+	t.settings.JoinedGroups = append(t.settings.JoinedGroups, *group)
+	if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+		return fmt.Errorf("unable to save bot settings: %v", err)
+	}
+	return nil
+}
+
+func (t *TgBot) botRemovedFromGroup(id int64) error {
+	for i, v := range t.settings.JoinedGroups {
+		if v.Id == id {
+			// Remove founded group id from settings
+			t.settings.JoinedGroups = append(t.settings.JoinedGroups[:i], t.settings.JoinedGroups[i+1:]...)
+			if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+				return fmt.Errorf("unable to save bot settings: %v", err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("group id is not found in bot settings data")
+}
+
+func (t *TgBot) botCheckVersion(version string, build string) {
+	// Check is version was updated
+	if version == t.settings.Version {
+		// Send message to admin group about current running bot build version
+		messageText := fmt.Sprintf("⚠️*%s (@%s)* был внезапно перезапущен.\n\n"+
+			"*Возможный крэш?*\n\n_версия_: %q\n_билд_: %q",
+			t.bot.Self.FirstName,
+			t.bot.Self.UserName,
+			version,
+			build)
+		if err := t.sendMessage(messageText,
+			t.adminGroupId,
+			nil,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	} else {
+		// Set and save new version info
+		t.settings.Version = version
+		if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+			log.Printf("%v", err)
+		}
+
+		// Send message to admin group about current running bot build version
+		messageText := fmt.Sprintf("✅*%s (@%s)* был обновлен до новой версии.\n\n"+
+			"_новая версия_: %q\n_новый билд_: %q",
+			t.bot.Self.FirstName,
+			t.bot.Self.UserName,
+			version,
+			build)
+		if err := t.sendMessage(messageText,
+			t.adminGroupId,
+			nil,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	}
 }
