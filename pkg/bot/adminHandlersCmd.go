@@ -336,11 +336,54 @@ func (t *TgBot) adminHandleEditDutyType(cmdArgs string, update *tgbotapi.Update)
 	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(*rows...)
 
 	messageText := msgTextAdminHandleEditDuty
-	/*appendedText := "`| Имя дежурного |`"
-	for _, dt := range data.DutyNames {
-		appendedText += fmt.Sprintf("` %s |`", dt)
+
+	if err := t.sendMessage(messageText,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
 	}
-	messageText += appendedText*/
+}
+
+// handle '/announce' command
+func (t *TgBot) adminHandleAnnounce(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
+		FromHandle: callbackHandleAnnounce,
+	}
+
+	if len(t.settings.JoinedGroups) == 0 {
+		messageText := "Бот не добавлен ни в одну пользовательскую группу"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	rows, err := genAnnounceKeyboard(t.settings.JoinedGroups, *callbackData)
+	if err != nil {
+		if err := t.sendMessage("Не удалось создать клавиатуру для отображения списка групп добавленных чатов",
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		log.Printf("unable to generate new inline keyboard: %v", err)
+		return
+	}
+
+	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	messageText := msgTextAdminHandleAnnounce
+
 	if err := t.sendMessage(messageText,
 		update.Message.Chat.ID,
 		&update.Message.MessageID,

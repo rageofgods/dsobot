@@ -208,10 +208,10 @@ func typesOfDuties(m *data.DutyMan) string {
 }
 
 // Return json marshaled object for callback message data
-func marshalCallbackDataForEditDuty(cm callbackMessage, manIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
+func marshalCallbackData(cm callbackMessage, itemIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
 	// Generate callback data
-	// Format: 'manIndex-buttonIndex-Answer'
-	cm.Answer = strconv.Itoa(manIndex)                         // Save current man index to data
+	// Format: 'itemIndex-buttonIndex-Answer'
+	cm.Answer = strconv.Itoa(itemIndex)                        // Save current item index to data
 	cm.Answer += fmt.Sprintf("-%s", strconv.Itoa(buttonIndex)) // Save current button index to data
 	// If we have optional argument
 	if len(enabled) == 1 {
@@ -315,6 +315,46 @@ func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string, update *tgb
 		// If it's a fresh new data
 		tmpCustomName := tmpRegisterData{userId: update.Message.From.ID, data: name}
 		t.tmpData.tmpRegisterData = append(t.tmpData.tmpRegisterData, tmpCustomName)
+	}
+}
+
+func (t *TgBot) tmpAnnounceDataForUser(userId int64) ([]data.JoinedGroup, error) {
+	for _, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpAnnounceDataForUser(userId int64, group data.JoinedGroup) {
+	var isGroupIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			t.tmpData.tmpJoinedGroupData[i].data = append(t.tmpData.tmpJoinedGroupData[i].data, group)
+			isGroupIdFound = true
+		}
+	}
+	if isGroupIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		var tmp []data.JoinedGroup
+		tmp = append(tmp, group)
+		tmpNewGroup := tmpJoinedGroupData{userId: userId, data: tmp}
+		t.tmpData.tmpJoinedGroupData = append(t.tmpData.tmpJoinedGroupData, tmpNewGroup)
+	}
+}
+
+func (t *TgBot) clearTmpAnnounceDataForUser(userId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpJoinedGroupData {
+		if v.userId == userId {
+			t.tmpData.tmpJoinedGroupData[i].data = nil
+		}
 	}
 }
 

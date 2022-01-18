@@ -18,10 +18,17 @@ type tmpDutyManData struct {
 	data   []data.DutyMan
 }
 
+// Structure to hold temporary JoinedGroup (BotSettings) data before saving it
+type tmpJoinedGroupData struct {
+	userId int64
+	data   []data.JoinedGroup
+}
+
 // Structure (parent) for different types of tmp data
 type tmpData struct {
-	tmpRegisterData []tmpRegisterData
-	tmpDutyManData  []tmpDutyManData
+	tmpRegisterData    []tmpRegisterData
+	tmpDutyManData     []tmpDutyManData
+	tmpJoinedGroupData []tmpJoinedGroupData
 }
 
 /////////////////////////////////
@@ -145,6 +152,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdEditDutyType, args: nil},
 			description: "Отредактировать типы дежурств для всех дежурных",
 			handleFunc:  t.adminHandleEditDutyType},
+		{command: &cmd{name: botCmdAnnounce, args: nil},
+			description: "Включить или выключить анонс событий дежурства в для групповых чатов",
+			handleFunc:  t.adminHandleAnnounce},
 	}}
 }
 
@@ -167,6 +177,7 @@ const (
 	callbackHandleEnable         = "fhe"
 	callbackHandleDisable        = "fhd"
 	callbackHandleEditDuty       = "fhed"
+	callbackHandleAnnounce       = "fha"
 )
 
 // Bot available commands
@@ -186,6 +197,7 @@ const (
 	botCmdEnable        tCmd = "enable"
 	botCmdDisable       tCmd = "disable"
 	botCmdEditDutyType  tCmd = "editduty"
+	botCmdAnnounce      tCmd = "announce"
 )
 
 // Bot available args
@@ -235,4 +247,7 @@ const (
 	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста, отправьте " +
 		"ваши реальные Имя и Фамилию в ❗ОТВЕТЕ❗ на это сообщение.\n\n" +
 		"Например: 'Вася Пупкин' или 'Пупкин Василий'.\n\n"
+	msgTextAdminHandleAnnounce = "Укажите для каких групповых чатов необходимо включить анонс дежурств\n\n" +
+		"✅ - включает анонс в группу\n" +
+		"❌ - выключает анонс в группу\n\n"
 )

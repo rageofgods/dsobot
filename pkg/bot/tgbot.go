@@ -287,6 +287,23 @@ func (t *TgBot) StartBot(version string, build string) {
 						}
 					}
 				}
+			case callbackHandleAnnounce:
+				if !isCallbackHandleAnnounceFired {
+					dec := burstDecorator(1, &isCallbackHandleAnnounceFired, t.callbackAnnounce)
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
 			}
 		}
 	}
