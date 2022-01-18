@@ -439,3 +439,42 @@ func (t *TgBot) botRemovedFromGroup(id int64) error {
 	}
 	return fmt.Errorf("group id is not found in bot settings data")
 }
+
+func (t *TgBot) botCheckVersion(version string, build string) {
+	// Check is version was updated
+	if version == t.settings.Version {
+		// Send message to admin group about current running bot build version
+		messageText := fmt.Sprintf("*%s (@%s)* был внезапно перезапущен.\n\n"+
+			"*Возможный крэш?*\n\n_версия_: %q\n_билд_: %q",
+			t.bot.Self.FirstName,
+			t.bot.Self.UserName,
+			version,
+			build)
+		if err := t.sendMessage(messageText,
+			t.adminGroupId,
+			nil,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	} else {
+		// Set and save new version info
+		t.settings.Version = version
+		if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+			log.Printf("%v", err)
+		}
+
+		// Send message to admin group about current running bot build version
+		messageText := fmt.Sprintf("*%s (@%s)* был обновлен до новой версии.\n\n"+
+			"_новая версия_: %q\n_новый билд_: %q",
+			t.bot.Self.FirstName,
+			t.bot.Self.UserName,
+			version,
+			build)
+		if err := t.sendMessage(messageText,
+			t.adminGroupId,
+			nil,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	}
+}

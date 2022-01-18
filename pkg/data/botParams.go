@@ -3,6 +3,7 @@ package data
 // BotSettings Holds Telegram bot settings
 type BotSettings struct {
 	JoinedGroups []JoinedGroup `json:"joined_groups"`
+	Version      string        `json:"version"`
 }
 
 // JoinedGroup Hold data for group which bot was joined
