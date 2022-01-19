@@ -190,3 +190,15 @@ func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 	}
 	return nil
 }
+
+// IsNWD checks if provided time is in non-working period
+func (t *CalData) IsNWD(tn time.Time) (bool, error) {
+	nwd, _, err := t.checkDayTag(&tn, NonWorkingDay) // Check if current day is non-working day
+	if err != nil {
+		return false, CtxError("data.IsNWD()", err)
+	}
+	if nwd {
+		return true, nil
+	}
+	return false, nil
+}
