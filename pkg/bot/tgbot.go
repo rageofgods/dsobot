@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jasonlvhit/gocron"
 	"log"
 	str "strings"
 )
@@ -57,13 +58,20 @@ func (t *TgBot) StartBot(version string, build string) {
 	// Check and announce current bot version
 	t.botCheckVersion(version, build)
 
+	// Send announce message based on announce group status
+	s := gocron.NewScheduler()
+	if err := s.Every(1).Day().At("09:00:00").Do(t.announceDuty); err != nil {
+		log.Printf("can't send announce: %v", err)
+	}
+	s.Start()
+
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
 		// Process adding to new group
 		if update.MyChatMember != nil {
 			// Check if bot was added to some users group
 			if update.MyChatMember.NewChatMember.Status == "member" &&
-				update.MyChatMember.Chat.Type == "group" {
+				update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup" {
 				if err := t.botAddedToGroup(update.MyChatMember.Chat.Title, update.MyChatMember.Chat.ID); err != nil {
 					log.Printf("%v", err)
 				}
