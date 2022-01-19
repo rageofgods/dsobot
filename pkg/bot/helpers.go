@@ -542,12 +542,23 @@ func (t *TgBot) announceDuty() {
 					vm = v
 				}
 			}
-			message := fmt.Sprintf("Доброе утро!\n\n*Дежурный* на сегодня: %s *(@%s)*\n"+
-				"*Валидирующий* на сегодня: %s*(@%s)*\n\nОтличного дня!👍",
-				dm.CustomName,
-				dm.UserName,
-				vm.CustomName,
-				vm.UserName)
+			// Setup men names
+			var dMan string
+			var vMan string
+			if dm.TgID != 0 {
+				dMan = fmt.Sprintf("%s *@%s*", dm.CustomName, dm.UserName)
+			} else {
+				dMan = "*-*"
+			}
+			if vm.TgID != 0 {
+				vMan = fmt.Sprintf("%s *@%s*", vm.CustomName, vm.UserName)
+			} else {
+				vMan = "*-*"
+			}
+			message := fmt.Sprintf("Доброе утро!\n\n*Дежурный* на сегодня: %s\n"+
+				"*Валидирующий* на сегодня: %s\n\nОтличного дня!👍",
+				dMan,
+				vMan)
 			if err := t.sendMessage(message,
 				t.settings.JoinedGroups[i].Id,
 				nil,
