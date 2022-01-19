@@ -71,7 +71,7 @@ func (t *TgBot) StartBot(version string, build string) {
 		if update.MyChatMember != nil {
 			// Check if bot was added to some users group
 			if update.MyChatMember.NewChatMember.Status == "member" &&
-				update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup" {
+				(update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup") {
 				if err := t.botAddedToGroup(update.MyChatMember.Chat.Title, update.MyChatMember.Chat.ID); err != nil {
 					log.Printf("%v", err)
 				}
@@ -86,7 +86,7 @@ func (t *TgBot) StartBot(version string, build string) {
 			}
 			// Check if bot removed from some users group
 			if update.MyChatMember.NewChatMember.Status == "left" &&
-				update.MyChatMember.Chat.Type == "group" {
+				(update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup") {
 				if err := t.botRemovedFromGroup(update.MyChatMember.Chat.ID); err != nil {
 					log.Printf("%v", err)
 				}

@@ -503,10 +503,20 @@ func (t *TgBot) botCheckVersion(version string, build string) {
 
 // Send announce message to user group chat
 func (t *TgBot) announceDuty() {
-	// Get current duty data
-	dutyMen := t.dc.DutyMenData()
 	// Setup time now
 	tn := time.Now()
+	// Check if current day is non-working day
+	nwd, err := t.dc.IsNWD(tn)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	// Don't announce if non-working day
+	if nwd {
+		return
+	}
+
+	// Get current duty data
+	dutyMen := t.dc.DutyMenData()
 	// Define duty and validation man variables
 	var dm data.DutyMan
 	var vm data.DutyMan
