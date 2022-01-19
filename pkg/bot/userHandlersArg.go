@@ -31,6 +31,9 @@ func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
 
 	// Get on-duty data
 	man, err := t.dc.WhoIsOnDuty(&tn, data.OnDutyTag)
+	if err != nil {
+		log.Printf("%v", err)
+	}
 	// Get data for all men
 	dutyMen := t.dc.DutyMenData()
 	// Generate returned string

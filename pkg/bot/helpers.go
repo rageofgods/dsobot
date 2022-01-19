@@ -36,8 +36,9 @@ func (t *TgBot) getChatMember(userId int64, chatId int64) (*tgbotapi.ChatMember,
 }
 
 // Reply to user message
-func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard interface{}) error {
+func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard interface{}, pin ...bool) error {
 	msg := tgbotapi.NewMessage(chatId, message)
+
 	msg.ParseMode = "markdown"
 	if replyId != nil {
 		msg.ReplyToMessageID = *replyId
@@ -46,8 +47,23 @@ func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard
 		msg.ReplyMarkup = keyboard
 	}
 	// Reply to message
-	if _, err := t.bot.Send(msg); err != nil {
+	sentMessage, err := t.bot.Send(msg)
+	if err != nil {
 		return err
+	}
+	// Check if we want to sent message
+	if len(pin) == 1 {
+		if pin[0] {
+			pin := tgbotapi.PinChatMessageConfig{MessageID: sentMessage.MessageID, ChatID: chatId}
+			_, err = t.bot.Request(pin)
+			if err != nil {
+				message = fmt.Sprintf("Не удалось закрепить сообщение для chatID: %d\nОшибка: (%v)", chatId, err)
+				if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
+					log.Printf("%v", err)
+				}
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -418,6 +434,12 @@ func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64, update *tgbotapi.Upda
 }
 
 func (t *TgBot) botAddedToGroup(title string, id int64) error {
+	// Check if we already have group with this id
+	for _, v := range t.settings.JoinedGroups {
+		if v.Id == id {
+			return fmt.Errorf("this group id (%d) is already in the list", id)
+		}
+	}
 	group := &data.JoinedGroup{Id: id, Title: title}
 	t.settings.JoinedGroups = append(t.settings.JoinedGroups, *group)
 	if err := t.dc.SaveBotSettings(&t.settings); err != nil {
@@ -475,6 +497,54 @@ func (t *TgBot) botCheckVersion(version string, build string) {
 			nil,
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
+		}
+	}
+}
+
+// Send announce message to user group chat
+func (t *TgBot) announceDuty() {
+	// Get current duty data
+	dutyMen := t.dc.DutyMenData()
+	// Setup time now
+	tn := time.Now()
+	// Define duty and validation man variables
+	var dm data.DutyMan
+	var vm data.DutyMan
+	// iterate over all groups and announce if any
+	for i, v := range t.settings.JoinedGroups {
+		if v.Announce {
+			// Get on-duty data
+			dutyMan, err := t.dc.WhoIsOnDuty(&tn, data.OnDutyTag)
+			if err != nil {
+				log.Printf("%v", err)
+			}
+			for _, v := range *dutyMen {
+				if v.UserName == dutyMan {
+					dm = v
+				}
+			}
+			validationMan, err := t.dc.WhoIsOnDuty(&tn, data.OnValidationTag)
+			if err != nil {
+				log.Printf("%v", err)
+			}
+			for _, v := range *dutyMen {
+				if v.UserName == validationMan {
+					vm = v
+				}
+			}
+			message := fmt.Sprintf("Доброе утро!\n\n*Дежурный* на сегодня: %s *(@%s)*\n"+
+				"*Валидирующий* на сегодня: %s*(@%s)*\n\nОтличного дня!👍",
+				dm.CustomName,
+				dm.UserName,
+				vm.CustomName,
+				vm.UserName)
+			if err := t.sendMessage(message,
+				t.settings.JoinedGroups[i].Id,
+				nil,
+				nil,
+				true); err != nil {
+				log.Printf("%v", err)
+			}
 		}
 	}
 }
