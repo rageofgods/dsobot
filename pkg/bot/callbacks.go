@@ -288,7 +288,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 			}
 			list = "*Новый порядок дежурных:*\n"
 			for i, v := range tmpDutyData {
-				list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
+				list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.CustomName, v.UserName)
 			}
 			list += "\nСохранить?"
 
@@ -367,7 +367,7 @@ func (t *TgBot) callbackReindex(answer string, chatId int64, userId int64, messa
 			return err
 		}
 		for i, v := range tmpDutyData {
-			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.FullName, v.UserName)
+			list += fmt.Sprintf("*%d*: %s (*@%s*)\n", i+1, v.CustomName, v.UserName)
 		}
 
 		// Create edited message (with correct keyboard)
