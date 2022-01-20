@@ -36,19 +36,17 @@ func (t *TgBot) adminHandleList(cmdArgs string, update *tgbotapi.Update) {
 	for _, v := range *menData {
 		if v.Enabled {
 			indexActive++
-			listActive += fmt.Sprintf("*%d*: %s *@%s* (%s) [[%s]]\n",
+			listActive += fmt.Sprintf("*%d*: %s *(@%s)*\n`[%s]`\n",
 				indexActive,
 				v.CustomName,
 				v.UserName,
-				v.FullName,
 				typesOfDuties(&v))
 		} else {
 			indexPassive++
-			listPassive += fmt.Sprintf("*%d*: %s *@%s* (%s) [[%s]]\n",
+			listPassive += fmt.Sprintf("*%d*: %s *(@%s)*\n`[%s]`\n",
 				indexPassive,
 				v.CustomName,
 				v.UserName,
-				v.FullName,
 				typesOfDuties(&v))
 		}
 	}
@@ -136,7 +134,7 @@ func (t *TgBot) adminHandleShowOffDuty(cmdArgs string, update *tgbotapi.Update) 
 		}
 		isOffDutyFound = true
 
-		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.FullName, man.UserName)
+		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.CustomName, man.UserName)
 		for i, od := range *offduty {
 			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
 		}

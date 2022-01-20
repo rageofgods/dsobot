@@ -90,8 +90,8 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 		if len(jsonData) > 64 {
 			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
 		}
-		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (%s)",
-			i+1, v.FullName, v.UserName), string(jsonData)))
+		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (@%s)",
+			i+1, v.CustomName, v.UserName), string(jsonData)))
 		rows = append(rows, row)
 	}
 
@@ -141,9 +141,9 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		var keyboardButtons []tgbotapi.InlineKeyboardButton
 		var manButtonCaption string
 		if man.Enabled {
-			manButtonCaption = man.FullName
+			manButtonCaption = man.CustomName
 		} else {
-			manButtonCaption = fmt.Sprintf("❗️%s", man.FullName)
+			manButtonCaption = fmt.Sprintf("❗️%s", man.CustomName)
 		}
 		keyboardButtons = append(keyboardButtons,
 			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s",
@@ -171,7 +171,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		}
 		// Check if keyboard is generated correctly
 		if len(keyboardButtons) == 1 {
-			return nil, fmt.Errorf("unable to generate keyboard buttons for: *@%s*", man.FullName)
+			return nil, fmt.Errorf("unable to generate keyboard buttons for: *@%s*", man.CustomName)
 		}
 		row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
 		rows = append(rows, row)

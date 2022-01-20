@@ -106,7 +106,7 @@ func genHelpCmdText(commands []botCommand) string {
 			argType = " *<аргумент>*"
 		}
 		// Generate lit of commands
-		cmdList += fmt.Sprintf("*%d*: */%s*%s - %s\n%s",
+		cmdList += fmt.Sprintf("*%d*: */%s*%s - `%s`\n%s",
 			i+1,
 			cmd.command.name,
 			argType,
