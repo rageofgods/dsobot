@@ -1,19 +1,14 @@
 package data
 
 import (
-	"context"
 	"google.golang.org/api/calendar/v3"
-	"net/http"
 )
 
 // CalData struct for creating calendar events
 type CalData struct {
-	ctx     *context.Context
 	token   string
 	calID   string
 	cal     *calendar.Service
-	bToken  *[]byte
-	httpC   *http.Client
 	dutyMen *[]DutyMan
 }
 
