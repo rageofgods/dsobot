@@ -11,9 +11,7 @@ import (
 
 // NewCalData CalData constructor
 func NewCalData(token string, calID string) *CalData {
-	c := context.Background() // Init background context
 	return &CalData{
-		ctx:     &c,
 		token:   token,
 		calID:   calID,
 		cal:     new(calendar.Service),
@@ -39,13 +37,13 @@ func (t *CalData) httpClient() error {
 	if err != nil {
 		return CtxError("data.httpClient()", err)
 	}
-	t.httpC = config.Client(*t.ctx)
+	t.httpC = config.Client(context.Background())
 	return nil
 }
 
 // Init calendar service
 func (t *CalData) service() error {
-	srv, err := calendar.NewService(*t.ctx, option.WithHTTPClient(t.httpC))
+	srv, err := calendar.NewService(context.Background(), option.WithHTTPClient(t.httpC))
 	if err != nil {
 		return CtxError("data.service()", err)
 	}
