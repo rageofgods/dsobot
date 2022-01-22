@@ -32,6 +32,12 @@ type Duty struct {
 // When defining new types of duty don't forget to initialise them at AddManOnDuty() function
 //
 
+// Continuous days for duty periods
+const (
+	OnDutyContDays       = 2
+	OnValidationContDays = 1
+)
+
 // DutyTypes is a Variable which holds currently supported duty types
 var DutyTypes = [2]DutyType{OrdinaryDutyType, ValidationDutyType}
 var DutyNames = [2]string{OrdinaryDutyName, ValidationDutyName}

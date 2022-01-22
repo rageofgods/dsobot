@@ -220,11 +220,8 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 		}
 		return
 	}
-	firstName := update.Message.From.FirstName
-	lastName := update.Message.From.LastName
-	fullName := genUserFullName(firstName, lastName)
 
-	err = t.dc.CreateOffDutyEvents(fullName, timeRange[0], timeRange[1])
+	err = t.dc.CreateOffDutyEvents(update.Message.From.UserName, timeRange[0], timeRange[1])
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось добавить событие: %v", err)
 		if err := t.sendMessage(messageText,
@@ -257,17 +254,20 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 	}
 
 	// Send message to admins about added event
-	timeRageText := fmt.Sprintf("%s - %s",
+	timeRangeText := fmt.Sprintf("%s - %s",
 		timeRange[0].Format(botDataShort3),
 		timeRange[1].Format(botDataShort3))
 	messageText = fmt.Sprintf("Пользователь *@%s* добавил новый нерабочий период:\n%s",
-		update.Message.From.UserName, timeRageText)
+		update.Message.From.UserName, timeRangeText)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		nil,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
+
+	// Recreate calendar duty event from current date if added duty in landed at this month
+	t.updateOnDutyEvents(&timeRange[0], update, timeRangeText)
 }
 
 // handle '/showofduty' command

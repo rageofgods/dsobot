@@ -6,34 +6,57 @@ import (
 	"time"
 )
 
-// UpdateOnDutyEvents Recreate on-duty events
-func (t *CalData) UpdateOnDutyEvents(months int, contDays int, dutyTag CalTag) error {
+// UpdateOnDutyEvents Recreate on-duty events from start of the current month
+func (t *CalData) UpdateOnDutyEvents(contDays int, dutyTag CalTag) error {
 	if len(*t.dutyMen) == 0 {
 		return CtxError("data.UpdateOnDutyEvents()",
 			fmt.Errorf("men of duty list is nil"))
 	}
-	if err := t.DeleteDutyEvents(months, dutyTag); err != nil {
-		log.Printf("%v", err)
-	}
-
-	if err := t.CreateOnDutyEvents(months, contDays, dutyTag); err != nil {
+	// Get first day of current month
+	firstMonthDay, _, err := firstLastMonthDay(1)
+	if err != nil {
 		return CtxError("data.UpdateOnDutyEvents()", err)
 	}
+	// Delete events
+	if err := t.DeleteDutyEvents(firstMonthDay, dutyTag); err != nil {
+		log.Printf("%v", err)
+	}
+	// Create events starting from first month day
+	if err := t.CreateOnDutyEvents(firstMonthDay, contDays, dutyTag); err != nil {
+		return CtxError("data.UpdateOnDutyEvents()", err)
+	}
+	return nil
+}
 
+// UpdateOnDutyEventsFrom Recreate on-duty events from specific date
+func (t *CalData) UpdateOnDutyEventsFrom(startFrom *time.Time, contDays int, dutyTag CalTag) error {
+	if len(*t.dutyMen) == 0 {
+		return CtxError("data.UpdateOnDutyEventsFrom()",
+			fmt.Errorf("men of duty list is nil"))
+	}
+	// Delete events
+	if err := t.DeleteDutyEvents(startFrom, dutyTag); err != nil {
+		log.Printf("%v", err)
+	}
+	// Create events starting from first month day
+	if err := t.CreateOnDutyEvents(startFrom, contDays, dutyTag); err != nil {
+		return CtxError("data.UpdateOnDutyEvents()", err)
+	}
 	return nil
 }
 
 // CreateOnDutyEvents Iterate over men on duty and create events for them
-func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) error {
-	stime, _, err := firstLastMonthDay(months)
-	if err != nil {
-		return CtxError("data.CreateOnDutyEvents()", err)
+func (t *CalData) CreateOnDutyEvents(startFrom *time.Time, contDays int, dutyTag CalTag) error {
+	// Generate error is provided month is in feature\past
+	if startFrom.Month() != time.Now().Month() {
+		return CtxError("data.CreateOnDutyEvents()", fmt.Errorf("provided month is not present time: %v",
+			startFrom.Month()))
 	}
 
 	// Check if men on-duty is initialized
 	if t.dutyMen == nil {
 		return CtxError("data.CreateOnDutyEvents()",
-			fmt.Errorf("you need to load on-duty men list first"))
+			fmt.Errorf("need to load on-duty men list first"))
 	}
 
 	// Creating slice with sorted men on-duty
@@ -45,13 +68,18 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 	// Generate slice with valid menOnDuty count iteration (following length of duty days)
 	tempMen := genContListMenOnDuty(menOnDuty, contDays)
 
-	// Go back to previous month
-	prevTime := stime.AddDate(0, 0, -1)
+	// Go back to previous day
+	prevTime := startFrom.AddDate(0, 0, -1)
 	// Get correct index for duty order based on previous month duties
-	menCount := t.genIndexForDutyList(prevTime, dutyTag, contDays, &tempMen)
+	menCount := t.genIndexForDutyList(&prevTime, dutyTag, contDays, &tempMen)
 
-	//menCount := 0
-	for d := *stime; d.Before(stime.AddDate(0, months, 0)); d = d.AddDate(0, 0, 1) {
+	_, lastMonthDay, err := firstLastMonthDay(1)
+	if err != nil {
+		return CtxError("data.CreateOnDutyEvents()", err)
+	}
+
+	// Start to generate men events
+	for d := *startFrom; d.Before(*lastMonthDay); d = d.AddDate(0, 0, 1) {
 		if menCount == len(tempMen) { // Let's start from the beginning if we reached out the end of list
 			menCount = 0
 		}
@@ -114,14 +142,14 @@ func (t *CalData) CreateOnDutyEvents(months int, contDays int, dutyTag CalTag) e
 }
 
 // DeleteDutyEvents Delete events by months range
-func (t *CalData) DeleteDutyEvents(months int, dutyTag CalTag) error {
-	stime, etime, err := firstLastMonthDay(months)
+func (t *CalData) DeleteDutyEvents(startFrom *time.Time, dutyTag CalTag) error {
+	_, etime, err := firstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.DeleteDutyEvents()", err)
 	}
 
 	events, err := t.cal.Events.List(t.calID).ShowDeleted(false).
-		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
+		SingleEvents(true).TimeMin(startFrom.Format(time.RFC3339)).
 		TimeMax(etime.Format(time.RFC3339)).MaxResults(SearchMaxResults).Do()
 	if err != nil {
 		return CtxError("data.DeleteDutyEvents()", err)

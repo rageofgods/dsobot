@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"github.com/rageofgods/isdayoff"
 	"log"
+	"time"
 )
 
 // CreateNwdEvents Create non-working events
-func (t *CalData) CreateNwdEvents(months int) error {
+func (t *CalData) CreateNwdEvents(startFrom *time.Time) error {
 	dayOff := isdayoff.New()
 	countryCode := isdayoff.CountryCodeRussia
 	pre := false
 	covid := false
 
-	stime, etime, err := firstLastMonthDay(months)
+	_, etime, err := firstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.CreateNwdEvents()", err)
 	}
-	dayOffStartDay := stime.Format(DateShortIsDayOff)
+	dayOffStartDay := startFrom.Format(DateShortIsDayOff)
 	dayOffEndDay := etime.Format(DateShortIsDayOff)
 
 	day, err := dayOff.GetByRange(isdayoff.ParamsRange{
@@ -38,7 +39,7 @@ func (t *CalData) CreateNwdEvents(months int) error {
 	}
 
 	i := 0
-	for d := *stime; d.Before(stime.AddDate(0, months, 0)); d = d.AddDate(0, 0, 1) {
+	for d := *startFrom; d.Before(startFrom.AddDate(0, 1, 0)); d = d.AddDate(0, 0, 1) {
 		// Skip all working days
 		if day[i] == isdayoff.DayTypeWorking {
 			i++
@@ -58,11 +59,17 @@ func (t *CalData) CreateNwdEvents(months int) error {
 }
 
 // UpdateNwdEvents Recreate nwd events
-func (t *CalData) UpdateNwdEvents(months int) error {
-	if err := t.DeleteDutyEvents(months, NonWorkingDay); err != nil {
+func (t *CalData) UpdateNwdEvents() error {
+	// Get first day of current month
+	firstMonthDay, _, err := firstLastMonthDay(1)
+	if err != nil {
+		return CtxError("data.UpdateOnDutyEvents()", err)
+	}
+
+	if err := t.DeleteDutyEvents(firstMonthDay, NonWorkingDay); err != nil {
 		log.Printf("%v", err)
 	}
-	if err := t.CreateNwdEvents(months); err != nil {
+	if err := t.CreateNwdEvents(firstMonthDay); err != nil {
 		return CtxError("data.UpdateNwdEvents()", err)
 	}
 
