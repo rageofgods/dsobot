@@ -11,41 +11,36 @@ import (
 
 // NewCalData CalData constructor
 func NewCalData(token string, calID string) *CalData {
-	c := context.Background() // Init background context
 	return &CalData{
-		ctx:     &c,
 		token:   token,
 		calID:   calID,
 		cal:     new(calendar.Service),
-		bToken:  new([]byte),
-		httpC:   new(http.Client),
 		dutyMen: new([]DutyMan),
 	}
 }
 
 // Read CalData file
-func (t *CalData) readToken() error {
+func (t *CalData) readToken() (*[]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(t.token)
 	if err != nil {
-		return CtxError("data.readToken()", err)
+		return nil, CtxError("data.readToken()", err)
 	}
-	t.bToken = &data
-	return nil
+	return &data, nil
 }
 
 // Init HTTP client
-func (t *CalData) httpClient() error {
-	config, err := google.JWTConfigFromJSON(*t.bToken, calendar.CalendarScope)
+func (t *CalData) httpClient(b *[]byte) (*http.Client, error) {
+	config, err := google.JWTConfigFromJSON(*b, calendar.CalendarScope)
 	if err != nil {
-		return CtxError("data.httpClient()", err)
+		return nil, CtxError("data.httpClient()", err)
 	}
-	t.httpC = config.Client(*t.ctx)
-	return nil
+	httpC := config.Client(context.Background())
+	return httpC, nil
 }
 
 // Init calendar service
-func (t *CalData) service() error {
-	srv, err := calendar.NewService(*t.ctx, option.WithHTTPClient(t.httpC))
+func (t *CalData) service(httpC *http.Client) error {
+	srv, err := calendar.NewService(context.Background(), option.WithHTTPClient(httpC))
 	if err != nil {
 		return CtxError("data.service()", err)
 	}
@@ -55,13 +50,15 @@ func (t *CalData) service() error {
 
 // InitService Init service
 func (t *CalData) InitService() error {
-	if err := t.readToken(); err != nil {
+	b, err := t.readToken()
+	if err != nil {
 		return CtxError("data.InitService()", err)
 	}
-	if err := t.httpClient(); err != nil {
+	httpC, err := t.httpClient(b)
+	if err != nil {
 		return CtxError("data.InitService()", err)
 	}
-	if err := t.service(); err != nil {
+	if err := t.service(httpC); err != nil {
 		return CtxError("data.InitService()", err)
 	}
 	return nil

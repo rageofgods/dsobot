@@ -83,11 +83,9 @@ func (t *CalData) ManDutiesList(tgId string, dutyTag CalTag) (*[]time.Time, erro
 }
 
 // WhoWasOnDuty Returns man name who was the last on duty in the previous month with the number of days done.
-// TODO add ability to check last duty-man from specific day (if someone is leaves team in the middle of the month)
-func (t *CalData) WhoWasOnDuty(lastYear int,
-	lastMonth time.Month, dutyTag CalTag) (name string, daysDone int, err error) {
+func (t *CalData) WhoWasOnDuty(lastMonthDay *time.Time, dutyTag CalTag) (name string, daysDone int, err error) {
 	// Get first and last date of provided month
-	firstMonthDay, lastMonthDay, err := firstLastMonthDay(1, lastYear, int(lastMonth))
+	firstMonthDay, _, err := firstLastMonthDay(1, lastMonthDay.Year(), int(lastMonthDay.Month()))
 	if err != nil {
 		return "", 0, CtxError("data.WhoWasOnDuty()", err)
 	}
@@ -102,7 +100,7 @@ func (t *CalData) WhoWasOnDuty(lastYear int,
 		if nwd { // If day is non-working when go to the next past day
 			continue
 		}
-		if foundPrevMan == "" { // If we starts from the beginning
+		if foundPrevMan == "" { // If we start from the beginning
 			man, err := t.WhoIsOnDuty(&d, dutyTag)
 			if err != nil {
 				return "", 0, CtxError("data.WhoWasOnDuty()", err)
@@ -237,10 +235,10 @@ func (t *CalData) DutyMenData(enabled ...bool) *[]DutyMan {
 }
 
 // Return correct index for duty flow
-func (t *CalData) genIndexForDutyList(prevTime time.Time,
+func (t *CalData) genIndexForDutyList(prevTime *time.Time,
 	dutyTag CalTag, contDays int, tempMen *[]string) int {
 	var menCount int
-	man, manPrevDutyCount, err := t.WhoWasOnDuty(prevTime.Year(), prevTime.Month(), dutyTag)
+	man, manPrevDutyCount, err := t.WhoWasOnDuty(prevTime, dutyTag)
 	index, err := indexOfCurrentOnDutyMan(contDays, *tempMen, man, manPrevDutyCount)
 	if err != nil {
 		menCount = 0

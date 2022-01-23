@@ -36,5 +36,4 @@ func firstLastMonthDay(monthsCount int, startYearMonth ...int) (firstDay *time.T
 	etime := stime.AddDate(0, monthsCount, 0).Add(time.Nanosecond * -1)
 
 	return &stime, &etime, nil
-
 }

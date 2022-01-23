@@ -162,6 +162,10 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 }
 
 func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
+	loc, err := time.LoadLocation(data.TimeZone)
+	if err != nil {
+		return err
+	}
 	// Get requested user info
 	u, err := t.getChatMember(userId, chatId)
 	if err != nil {
@@ -170,12 +174,6 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 
 	// Create human-readable variables
 	uTgID := u.User.UserName
-
-	uFirstName := u.User.FirstName
-	uLastName := u.User.LastName
-
-	// Generate correct username
-	uFullName := genUserFullName(uFirstName, uLastName)
 
 	// Get slice with off-duty data
 	offduty, err := t.dc.ShowOffDutyForMan(uTgID)
@@ -186,17 +184,17 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	}
 
 	// Converting date string to time.Time
-	stime, err := time.Parse(data.DateShortSaveData, (*offduty)[a].OffDutyStart)
+	stime, err := time.ParseInLocation(data.DateShortSaveData, (*offduty)[a].OffDutyStart, loc)
 	if err != nil {
 		return fmt.Errorf("ошибка конвертации даты начала нерабочего периода: %v", err)
 	}
-	etime, err := time.Parse(data.DateShortSaveData, (*offduty)[a].OffDutyEnd)
+	etime, err := time.ParseInLocation(data.DateShortSaveData, (*offduty)[a].OffDutyEnd, loc)
 	if err != nil {
 		return fmt.Errorf("ошибка конвертации даты конца нерабочего периода: %v", err)
 	}
 
 	// Delete calendar events
-	err = t.dc.DeleteOffDutyEvents(uFullName, stime, etime)
+	err = t.dc.DeleteOffDutyEvents(uTgID, stime, etime)
 	if err != nil {
 		return fmt.Errorf("ошибка удаления события нерабочего периода: %v", err)
 	}
@@ -224,17 +222,20 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	}
 
 	// Send message to admins about deleted event
-	timeRageText := fmt.Sprintf("%s - %s",
+	timeRangeText := fmt.Sprintf("%s - %s",
 		stime.Format(botDataShort3),
 		etime.Format(botDataShort3))
 	messageText = fmt.Sprintf("Пользователь *@%s* удалил нерабочий период:\n%s",
-		update.CallbackQuery.From.UserName, timeRageText)
+		update.CallbackQuery.From.UserName, timeRangeText)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		nil,
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
+
+	// Recreate calendar duty events from current date if deleted duty was landed at this month
+	t.updateOnDutyEvents(&stime, update, timeRangeText)
 
 	return nil
 }

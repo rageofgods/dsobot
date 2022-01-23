@@ -216,12 +216,6 @@ const (
 	botDataShort3 = "02/01/2006"
 )
 
-// Continuous days for duty periods
-const (
-	onDutyContDays       = 2
-	onValidationContDays = 1
-)
-
 // Structure for saving callback data (json is shortened to be able to accommodate to 64b Telegram data limit)
 type callbackMessage struct {
 	Answer     string `json:"a"`

@@ -25,7 +25,7 @@ func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 		log.Printf("unable to send message: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(1, onDutyContDays, data.OnDutyTag)
+	err := t.dc.UpdateOnDutyEvents(data.OnDutyContDays, data.OnDutyTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
@@ -57,7 +57,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update
 		log.Printf("unable to send message: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(1, onValidationContDays, data.OnValidationTag)
+	err := t.dc.UpdateOnDutyEvents(data.OnValidationContDays, data.OnValidationTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
@@ -89,7 +89,7 @@ func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string, update *tgbotapi.Upd
 		log.Printf("unable to send message: %v", err)
 	}
 
-	err := t.dc.UpdateNwdEvents(1)
+	err := t.dc.UpdateNwdEvents()
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText = fmt.Sprintf("Не удалось выполнить запрос: %s", err)
