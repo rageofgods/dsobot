@@ -221,6 +221,11 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 		return
 	}
 
+	// Check if provided off-duty period is overlap with existing off-duty periods
+	if t.isOffDutyDatesOverlapWithCurrent(timeRange[0], timeRange[1], update) {
+		return
+	}
+
 	err = t.dc.CreateOffDutyEvents(update.Message.From.UserName, timeRange[0], timeRange[1])
 	if err != nil {
 		messageText := fmt.Sprintf("Не удалось добавить событие: %v", err)

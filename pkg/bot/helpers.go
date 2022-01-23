@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -158,7 +159,10 @@ func marshalCallbackData(cm callbackMessage, itemIndex int, buttonIndex int, ena
 func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, update *tgbotapi.Update, timeRangeText string) {
 	// Recreate calendar duty event from current date if added duty in landed at this month
 	if startFrom.Month() == time.Now().Month() {
+		var wg = sync.WaitGroup{}
+		wg.Add(2)
 		go func() {
+			defer wg.Done()
 			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data.OnDutyContDays, data.OnDutyTag); err != nil {
 				log.Printf("unable to update duty events: %v", err)
 				messageText := fmt.Sprintf("Не удалось пересоздать события дежурства при "+
@@ -173,6 +177,7 @@ func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, update *tgbotapi.Update
 			}
 		}()
 		go func() {
+			defer wg.Done()
 			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data.OnValidationContDays, data.OnValidationTag); err != nil {
 				log.Printf("unable to update duty events: %v", err)
 				messageText := fmt.Sprintf("Не удалось пересоздать события валидации при "+
@@ -186,5 +191,109 @@ func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, update *tgbotapi.Update
 				}
 			}
 		}()
+		wg.Wait()
 	}
+}
+
+// Check if we have date in the command argument
+func parseDateString(str string) (time.Time, error) {
+	loc, err := time.LoadLocation(data.TimeZone)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	tn := time.Time{}
+	tn, err = time.ParseInLocation(botDataShort1, str, loc)
+	if err != nil {
+		tn, err = time.ParseInLocation(botDataShort2, str, loc)
+		if err != nil {
+			tn, err = time.ParseInLocation(botDataShort3, str, loc)
+			if err != nil {
+				return tn, fmt.Errorf("Не удалось произвести парсинг даты: %v\n\n"+
+					"Доступны следующие форматы:\n"+
+					"*%q*\n"+
+					"*%q*\n"+
+					"*%q*\n", err, botDataShort1, botDataShort2, botDataShort3)
+			}
+		}
+	}
+	return tn, nil
+}
+
+// Check if provided off-duty period is don't overlap with existing periods
+func (t *TgBot) isOffDutyDatesOverlapWithCurrent(startDate time.Time, endDate time.Time, update *tgbotapi.Update) bool {
+	// Get current MenData
+	dutyMen := t.dc.DutyMenData()
+	//Iterate over all men
+	for _, man := range *dutyMen {
+		// Find current man
+		if man.TgID == update.Message.From.ID {
+			// Iterate over all available duties
+			for _, offDuty := range man.OffDuty {
+				// Convert string data to time object and check for parsing errors
+				startOffDuty, err := parseDateString(offDuty.OffDutyStart)
+				if err != nil {
+					messageText := fmt.Sprintf("%v", err)
+					if err := t.sendMessage(messageText,
+						update.Message.Chat.ID,
+						&update.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
+					}
+					return true
+				}
+				// Convert string data to time object and check for parsing errors
+				endOffDuty, err := parseDateString(offDuty.OffDutyEnd)
+				if err != nil {
+					messageText := fmt.Sprintf("%v", err)
+					if err := t.sendMessage(messageText,
+						update.Message.Chat.ID,
+						&update.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
+					}
+					return true
+				}
+
+				// If new added start duty is in scope for old ones
+				if (startDate.After(startOffDuty) || startDate.Equal(startOffDuty)) &&
+					(startDate.Before(endOffDuty) || startDate.Equal(endOffDuty)) {
+					messageText := fmt.Sprintf("Начало (%s) добавляемого нерабочего периода не должно "+
+						"пересекаться с уже существующими нерабочими периодами.\n\nПересечение с периодом: %s-%s",
+						startDate, offDuty.OffDutyStart, offDuty.OffDutyEnd)
+					if err := t.sendMessage(messageText,
+						update.Message.Chat.ID,
+						&update.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
+					}
+					return true
+				} else if (endDate.After(startOffDuty) || endDate.Equal(startOffDuty)) &&
+					(endDate.Before(endOffDuty) || endDate.Equal(endOffDuty)) {
+					messageText := fmt.Sprintf("Конец (%s) добавляемого нерабочего периода не должен "+
+						"пересекаться с уже существующими нерабочими периодами.\n\nПересечение с периодом: %s-%s",
+						endDate, offDuty.OffDutyStart, offDuty.OffDutyEnd)
+					if err := t.sendMessage(messageText,
+						update.Message.Chat.ID,
+						&update.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
+					}
+					return true
+				} else if startDate.Before(startOffDuty) && endDate.After(endOffDuty) {
+					messageText := fmt.Sprintf("Период времени нового нерабочего периода не должен "+
+						"пересекаться с уже существующими нерабочими периодами.\n\nПересечение с периодом: %s-%s",
+						offDuty.OffDutyStart, offDuty.OffDutyEnd)
+					if err := t.sendMessage(messageText,
+						update.Message.Chat.ID,
+						&update.Message.MessageID,
+						nil); err != nil {
+						log.Printf("unable to send message: %v", err)
+					}
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

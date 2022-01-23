@@ -177,7 +177,8 @@ func (t *CalData) CreateOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 		return CtxError("data.CreateOffDutyEvents()", err)
 	}
 	stime := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, loc)
-	etime := time.Date(toDate.Year(), toDate.Month(), toDate.Day(), 23, 59, 59, 0, loc)
+	// Append 24 hours to end dated because Google API is considering END date as exclusive
+	etime := time.Date(toDate.Year(), toDate.Month(), toDate.Add(time.Hour*24).Day(), 0, 0, 0, 0, loc)
 
 	event := genEvent(manOffDuty, string(OffDutyTag), CalOrange, stime.Format(DateShort), etime.Format(DateShort))
 
