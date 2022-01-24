@@ -85,7 +85,7 @@ func (t *CalData) ManDutiesList(tgId string, dutyTag CalTag) (*[]time.Time, erro
 // WhoWasOnDuty Returns man name who was the last on duty in the previous month with the number of days done.
 func (t *CalData) WhoWasOnDuty(lastMonthDay *time.Time, dutyTag CalTag) (name string, daysDone int, err error) {
 	// Get first and last date of provided month
-	firstMonthDay, _, err := firstLastMonthDay(1, lastMonthDay.Year(), int(lastMonthDay.Month()))
+	firstMonthDay, _, err := FirstLastMonthDay(1, lastMonthDay.Year(), int(lastMonthDay.Month()))
 	if err != nil {
 		return "", 0, CtxError("data.WhoWasOnDuty()", err)
 	}

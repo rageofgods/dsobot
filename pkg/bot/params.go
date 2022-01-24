@@ -3,6 +3,7 @@ package bot
 import (
 	"dso_bot/pkg/data"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"time"
 )
 
 /////////////////////////////////
@@ -24,11 +25,17 @@ type tmpJoinedGroupData struct {
 	data   []data.JoinedGroup
 }
 
+type tmpOffDutyData struct {
+	userId int64
+	data   []time.Time
+}
+
 // Structure (parent) for different types of tmp data
 type tmpData struct {
 	tmpRegisterData    []tmpRegisterData
 	tmpDutyManData     []tmpDutyManData
 	tmpJoinedGroupData []tmpJoinedGroupData
+	tmpOffDutyData     []tmpOffDutyData
 }
 
 /////////////////////////////////
@@ -98,10 +105,7 @@ func (t *TgBot) UserBotCommands() *botCommands {
 				description: "Показать валидации в этом месяце"}}},
 			description: "Показать список дежурств в текущем месяце для определенного типа дежурств",
 			handleFunc:  t.handleShowMy},
-		{command: &cmd{name: botCmdAddOffDuty, args: &[]arg{
-			{name: botCmdArgOffDuty,
-				handleFunc:  nil,
-				description: "Период _От-До_ (через дефис)"}}},
+		{command: &cmd{name: botCmdAddOffDuty, args: nil},
 			description: "Добавить нерабочий период (отпуск/болезнь/etc)",
 			handleFunc:  t.handleAddOffDuty},
 		{command: &cmd{name: botCmdShowOffDuty, args: nil},
@@ -166,6 +170,10 @@ const (
 	inlineKeyboardYes = "99"
 	inlineKeyboardNo  = "98"
 
+	inlineKeyboardNext = "97"
+	inlineKeyboardPrev = "96"
+	inlineKeyboardDate = "95"
+
 	inlineKeyboardEditDutyYes = "1"
 	inlineKeyboardEditDutyNo  = "0"
 
@@ -178,6 +186,7 @@ const (
 	callbackHandleDisable        = "fhd"
 	callbackHandleEditDuty       = "fhed"
 	callbackHandleAnnounce       = "fha"
+	callbackHandleAddOffDuty     = "fhaod"
 )
 
 // Bot available commands
@@ -206,7 +215,6 @@ const (
 	botCmdArgDuty          tArg = "duty"
 	botCmdArgValidation    tArg = "validation"
 	botCmdArgNonWorkingDay tArg = "nwd"
-	botCmdArgOffDuty       tArg = "DDMMYYYY-DDMMYYYY"
 )
 
 // User provided data format for bot commands
@@ -214,6 +222,7 @@ const (
 	botDataShort1 = "02012006"
 	botDataShort2 = "02.01.2006"
 	botDataShort3 = "02/01/2006"
+	botDataShort4 = "020106"
 )
 
 // Structure for saving callback data (json is shortened to be able to accommodate to 64b Telegram data limit)
@@ -246,4 +255,9 @@ const (
 		"❌ - выключает анонс в группу\n\n" +
 		"⚠️Внимание, для того, чтобы бот мог закреплять сообщения в нужном чате " +
 		"ему необходимо выдать права администратора на закрепление сообщений в соответствующем чате"
+	msgTextUserHandleAddOffDuty1 = "📅 Для того, чтобы добавить новый нерабочий период " +
+		"выберите дату его начала.\n"
+	msgTextUserHandleAddOffDuty2     = "📅 Теперь выберите дату завершения нерабочего периода (включительно)\n"
+	msgTextUserHandleAddOffDutyStart = "Начало нерабочего периода:"
+	msgTextUserHandleAddOffDutyEnd   = "Конец нерабочего периода:"
 )

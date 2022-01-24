@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
@@ -284,4 +285,106 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 	rows = append(rows, row)
 
 	return rows, nil
+}
+
+// Generate keyboard with calendar data
+func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	// Generate header with next/prev buttons
+	var buttonsHeader []tgbotapi.InlineKeyboardButton
+	// Generate answer with 'buttonType-currentDate'
+	cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardPrev, date.Format(botDataShort4))
+	jsonDataPrev, err := json.Marshal(cm)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData("⬅️", string(jsonDataPrev)))
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s %d",
+		locMonth(date.Month()), date.Year()),
+		inlineKeyboardVoid))
+	// Generate answer with 'buttonType-currentDate'
+	cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardNext, date.Format(botDataShort4))
+	jsonDataNext, err := json.Marshal(cm)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData("➡️", string(jsonDataNext)))
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(buttonsHeader...))
+	// Generate header with types of the day
+	var dayTypesHeader []tgbotapi.InlineKeyboardButton
+	dayTypes := [7]struct {
+		weekday time.Weekday
+		dayName string
+	}{
+		{weekday: time.Monday, dayName: "П"},
+		{weekday: time.Tuesday, dayName: "В"},
+		{weekday: time.Wednesday, dayName: "С"},
+		{weekday: time.Thursday, dayName: "Ч"},
+		{weekday: time.Friday, dayName: "П"},
+		{weekday: time.Saturday, dayName: "С"},
+		{weekday: time.Sunday, dayName: "В"},
+	}
+	for _, dt := range dayTypes {
+		dayTypesHeader = append(dayTypesHeader, tgbotapi.NewInlineKeyboardButtonData(dt.dayName, inlineKeyboardVoid))
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(dayTypesHeader...))
+	// Generate rows with calendar data
+	firstDay, lastDay, err := data.FirstLastMonthDay(1, date.Year(), int(date.Month()))
+	if err != nil {
+		return nil, err
+	}
+	// Iterate over days and weekday to fill up calendar buttons data
+	for d := *firstDay; d.Before(*lastDay); {
+		var calendarDays []tgbotapi.InlineKeyboardButton
+		// Define empty weak check (if all weekdays in the past)
+		dd := d
+		for _, dt := range dayTypes {
+			// Generate calendar buttons data
+			if d.Weekday() == dt.weekday && d.Before(*lastDay) && d.After(time.Now().Add(time.Hour*-24)) {
+				cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardDate, d.Format(botDataShort4)) // Append current data at short format as an answer
+				jsonData, err := json.Marshal(cm)
+				if err != nil {
+					log.Println(err)
+					return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+				}
+				calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
+					string(jsonData)))
+				d = d.AddDate(0, 0, 1)
+			} else {
+				// Add stub button if we out of scope
+				calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
+			}
+		}
+		// Add new buttons rows (whole new week)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(calendarDays...))
+		// If whole week is in the past increment days count
+		if dd == d {
+			d = d.AddDate(0, 0, 6)
+		}
+	}
+
+	// Add row with ok/cancel buttons
+	cmYes, cmNo := cm, cm
+	cmYes.Answer = inlineKeyboardYes
+	cmNo.Answer = inlineKeyboardNo
+	jsonDataYes, err := json.Marshal(cmYes)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	jsonDataNo, err := json.Marshal(cmNo)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово", string(jsonDataYes)),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", string(jsonDataNo)))
+	rows = append(rows, row)
+
+	inlineMarkupKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	return &inlineMarkupKeyboard, nil
 }

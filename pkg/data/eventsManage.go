@@ -55,7 +55,7 @@ func (t *CalData) dayEvents(day *time.Time, searchStrings ...string) (*calendar.
 
 // monthEventsFor Get specified events for current month
 func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events, error) {
-	firstMonthDay, lastMonthDay, err := firstLastMonthDay(1)
+	firstMonthDay, lastMonthDay, err := FirstLastMonthDay(1)
 	if err != nil {
 		return nil, CtxError("data.monthEventsFor()", err)
 	}
