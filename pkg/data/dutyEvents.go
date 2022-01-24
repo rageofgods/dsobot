@@ -13,7 +13,7 @@ func (t *CalData) UpdateOnDutyEvents(contDays int, dutyTag CalTag) error {
 			fmt.Errorf("men of duty list is nil"))
 	}
 	// Get first day of current month
-	firstMonthDay, _, err := firstLastMonthDay(1)
+	firstMonthDay, _, err := FirstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.UpdateOnDutyEvents()", err)
 	}
@@ -73,7 +73,7 @@ func (t *CalData) CreateOnDutyEvents(startFrom *time.Time, contDays int, dutyTag
 	// Get correct index for duty order based on previous month duties
 	menCount := t.genIndexForDutyList(&prevTime, dutyTag, contDays, &tempMen)
 
-	_, lastMonthDay, err := firstLastMonthDay(1)
+	_, lastMonthDay, err := FirstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.CreateOnDutyEvents()", err)
 	}
@@ -143,7 +143,7 @@ func (t *CalData) CreateOnDutyEvents(startFrom *time.Time, contDays int, dutyTag
 
 // DeleteDutyEvents Delete events by months range
 func (t *CalData) DeleteDutyEvents(startFrom *time.Time, dutyTag CalTag) error {
-	_, etime, err := firstLastMonthDay(1)
+	_, etime, err := FirstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.DeleteDutyEvents()", err)
 	}

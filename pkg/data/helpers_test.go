@@ -26,16 +26,16 @@ func Test_firstLastMonthDay(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFirstDay, gotLastDay, err := firstLastMonthDay(tt.args.months)
+			gotFirstDay, gotLastDay, err := FirstLastMonthDay(tt.args.months)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("firstLastMonthDay() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("FirstLastMonthDay() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotFirstDay.Format(DateShort) != tt.wantFirstDay.Format(DateShort) {
-				t.Errorf("firstLastMonthDay() gotFirstDay = %v, want %v", gotFirstDay, tt.wantFirstDay)
+				t.Errorf("FirstLastMonthDay() gotFirstDay = %v, want %v", gotFirstDay, tt.wantFirstDay)
 			}
 			if gotLastDay.Format(DateShort) != tt.wantLastDay.Format(DateShort) {
-				t.Errorf("firstLastMonthDay() gotLastDay = %v, want %v", gotLastDay, tt.wantLastDay)
+				t.Errorf("FirstLastMonthDay() gotLastDay = %v, want %v", gotLastDay, tt.wantLastDay)
 			}
 		})
 	}

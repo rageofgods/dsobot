@@ -14,7 +14,7 @@ func (t *CalData) CreateNwdEvents(startFrom *time.Time) error {
 	pre := false
 	covid := false
 
-	_, etime, err := firstLastMonthDay(1)
+	_, etime, err := FirstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.CreateNwdEvents()", err)
 	}
@@ -61,7 +61,7 @@ func (t *CalData) CreateNwdEvents(startFrom *time.Time) error {
 // UpdateNwdEvents Recreate nwd events
 func (t *CalData) UpdateNwdEvents() error {
 	// Get first day of current month
-	firstMonthDay, _, err := firstLastMonthDay(1)
+	firstMonthDay, _, err := FirstLastMonthDay(1)
 	if err != nil {
 		return CtxError("data.UpdateOnDutyEvents()", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"time"
 )
 
 func (t *TgBot) tmpRegisterDataForUser(userId int64) (string, error) {
@@ -131,4 +132,47 @@ func (t *TgBot) checkTmpDutyMenDataIsEditing(userId int64, update *tgbotapi.Upda
 		return true
 	}
 	return false
+}
+
+func (t *TgBot) tmpOffDutyDataForUser(userId int64) ([]time.Time, error) {
+	for _, v := range t.tmpData.tmpOffDutyData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) addTmpOffDutyDataForUser(userId int64, date time.Time) {
+	var isDateIdFound bool
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpOffDutyData {
+		if v.userId == userId {
+			// Check if we have correct length of current offDuty data (max = 2)
+			if len(t.tmpData.tmpOffDutyData[i].data) == 1 {
+				t.tmpData.tmpOffDutyData[i].data = append(t.tmpData.tmpOffDutyData[i].data, date)
+				isDateIdFound = true
+			}
+		}
+	}
+	if isDateIdFound {
+		return
+	} else {
+		// If it's a fresh new data
+		var tmp []time.Time
+		tmp = append(tmp, date)
+		tmpNewGroup := tmpOffDutyData{userId: userId, data: tmp}
+		t.tmpData.tmpOffDutyData = append(t.tmpData.tmpOffDutyData, tmpNewGroup)
+	}
+}
+
+func (t *TgBot) clearTmpOffDutyDataForUser(userId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpOffDutyData {
+		if v.userId == userId {
+			t.tmpData.tmpOffDutyData[i].data = nil
+		}
+	}
 }

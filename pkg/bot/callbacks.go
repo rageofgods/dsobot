@@ -235,7 +235,7 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	}
 
 	// Recreate calendar duty events from current date if deleted duty was landed at this month
-	t.updateOnDutyEvents(&stime, update, timeRangeText)
+	t.updateOnDutyEvents(&stime, update.CallbackQuery.From.UserName, timeRangeText)
 
 	return nil
 }
@@ -891,12 +891,6 @@ func (t *TgBot) callbackAnnounce(answer string, chatId int64, userId int64, mess
 		splitAnswer := strings.Split(answer, "-")
 		// Check only duty type button (separated by '-')
 		if len(splitAnswer) == 3 {
-			//groupIndex := splitAnswer[0] // Save group index
-			//gi, err := strconv.Atoi(groupIndex)
-			//if err != nil {
-			//	return err
-			//}
-
 			buttonIndex := splitAnswer[1] // Save button index
 			bi, err := strconv.Atoi(buttonIndex)
 			if err != nil {
@@ -946,6 +940,234 @@ func (t *TgBot) callbackAnnounce(answer string, chatId int64, userId int64, mess
 
 			// Change keyboard
 			if _, err := t.bot.Request(changeMsg); err != nil {
+				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
+	// Split answer for two string following - 'buttonType-currentDate'
+	parsedAnswer := strings.Split(answer, "-")
+	var answerButtonType, answerCurrentDate string
+	if len(parsedAnswer) == 2 {
+		answerButtonType = parsedAnswer[0]
+		answerCurrentDate = parsedAnswer[1]
+	} else if len(parsedAnswer) == 1 {
+		answerButtonType = parsedAnswer[0]
+	} else {
+		return fmt.Errorf("returned callback data has wrong format")
+	}
+
+	switch answerButtonType {
+	case inlineKeyboardYes:
+		// Get saved user data
+		dates, err := t.tmpOffDutyDataForUser(userId)
+		// Check if we have enough data to add new offDuty period
+		if err != nil || len(dates) != 2 {
+			messageText := "⚠️ Недостаточно данных для сохранения.\nПожалуйста выберите начало и конец нерабочего периода"
+			// Send final message and remove inline keyboard
+			if err := t.sendMessage(messageText, chatId, &messageId, nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+			return nil
+		} else {
+			// Check if dates is in future
+			for _, v := range dates {
+				if v.Before(time.Now().Add(time.Hour * -24)) {
+					messageText := fmt.Sprintf("⚠️ Указанные даты не должны находится в прошлом: %v",
+						v.Format(botDataShort3))
+					// Send final message and remove inline keyboard
+					t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+					// Clear tmp data
+					t.clearTmpOffDutyDataForUser(userId)
+					return nil
+				}
+				// Check if dates is on valid order (first must be older than second)
+				if dates[1].Before(dates[0]) {
+					messageText := fmt.Sprintf("⚠️ Дата %v должна быть старше, чем %v",
+						dates[1].Format(botDataShort3),
+						dates[0].Format(botDataShort3))
+					// Send final message and remove inline keyboard
+					t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+					// Clear tmp data
+					t.clearTmpOffDutyDataForUser(userId)
+					return nil
+				}
+			}
+
+			// Check if provided off-duty period is overlap with existing off-duty periods
+			if _, err := t.isOffDutyDatesOverlapWithCurrent(dates[0], dates[1], chatId, userId, messageId); err != nil {
+				// Send final message and remove inline keyboard
+				t.delInlineKeyboardWithMessage(err.Error(), chatId, messageId, update)
+				// Clear tmp data
+				t.clearTmpOffDutyDataForUser(userId)
+				return nil
+			}
+
+			err = t.dc.CreateOffDutyEvents(update.CallbackQuery.From.UserName, dates[0], dates[1])
+			if err != nil {
+				messageText := fmt.Sprintf("Не удалось добавить событие: %v", err)
+				if err := t.sendMessage(messageText,
+					chatId,
+					&messageId,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+				return fmt.Errorf("%v", err)
+			}
+			// Save off-duty data
+			t.dc.AddOffDutyToMan(update.CallbackQuery.From.UserName, dates[0], dates[1])
+			_, err = t.dc.SaveMenList()
+			if err != nil {
+				messageText := fmt.Sprintf("Не удалось сохранить событие: %v", err)
+				if err := t.sendMessage(messageText,
+					chatId,
+					&messageId,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+				return fmt.Errorf("%v", err)
+			}
+			messageText := "Событие добавлено успешно"
+			// Send final message and remove inline keyboard
+			t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+
+			// Send message to admins about added event
+			timeRangeText := fmt.Sprintf("%s - %s",
+				dates[0].Format(botDataShort3),
+				dates[1].Format(botDataShort3))
+			messageText = fmt.Sprintf("Пользователь *@%s* добавил новый нерабочий период:\n%s",
+				update.CallbackQuery.From.UserName, timeRangeText)
+			if err := t.sendMessage(messageText,
+				t.adminGroupId,
+				nil,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+
+			// Recreate calendar duty event from current date if added duty in landed at this month
+			t.updateOnDutyEvents(&dates[0], update.CallbackQuery.From.UserName, timeRangeText)
+
+			// Clear tmp data
+			t.clearTmpOffDutyDataForUser(userId)
+		}
+	case inlineKeyboardNo:
+		messageText := "Действие отменено"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardNext:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleAddOffDuty,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, 1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+		}
+	case inlineKeyboardPrev:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleAddOffDuty,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, -1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+		}
+	case inlineKeyboardDate:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		parsedAnswerCurrentDate, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Check if user adding off-duty start period date (first stage)
+		if strings.Contains(update.CallbackQuery.Message.Text, "чтобы добавить") {
+			// Save current date at tmpData
+			t.addTmpOffDutyDataForUser(userId, parsedAnswerCurrentDate)
+
+			textMessage := fmt.Sprintf(msgTextUserHandleAddOffDuty2+"\n*%s* %s",
+				msgTextUserHandleAddOffDutyStart,
+				parsedAnswerCurrentDate.Format(botDataShort3))
+			// Create edited message (with correct keyboard)
+			changeMsg := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, textMessage, *update.CallbackQuery.Message.ReplyMarkup)
+			changeMsg.ParseMode = "markdown"
+
+			// Change keyboard
+			if _, err := t.bot.Request(changeMsg); err != nil {
+				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
+			}
+		} else {
+			parsedAnswerCurrentDate, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+			if err != nil {
+				return err
+			}
+			// Save current date at tmpData
+			t.addTmpOffDutyDataForUser(userId, parsedAnswerCurrentDate)
+			// Get current tmpData
+			dates, err := t.tmpOffDutyDataForUser(userId)
+			if err != nil {
+				return err
+			}
+			textMessage := fmt.Sprintf("📅 Проверьте ваши данные перед сохранением нового нерабочего периода:"+
+				"\n\n*%s* %s\n*%s* %s\n\nСохранить?",
+				msgTextUserHandleAddOffDutyStart,
+				dates[0].Format(botDataShort3),
+				msgTextUserHandleAddOffDutyEnd,
+				dates[1].Format(botDataShort3))
+			// Get last row of current keyboard (with yes/no buttons)
+			yesNoKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+				update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard[len(
+					update.CallbackQuery.Message.ReplyMarkup.InlineKeyboard)-1])
+
+			// Generate new keyboard with final message
+			editedMessage := tgbotapi.NewEditMessageTextAndMarkup(update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID, textMessage, yesNoKeyboard)
+			editedMessage.ParseMode = "markdown"
+			// Change original message
+			if _, err := t.bot.Request(editedMessage); err != nil {
 				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 			}
 		}

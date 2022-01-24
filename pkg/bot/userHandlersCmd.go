@@ -5,6 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strings"
+	"time"
 )
 
 // handle '/start' command
@@ -204,75 +205,32 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
 
 // handle '/addoffduty' command
 func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
+	cmdArgs = "" // Ignore cmdArgs
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
 	}
 
-	timeRange, err := checkArgIsOffDutyRange(cmdArgs)
-	if err != nil {
-		messageText := fmt.Sprintf("%v", err)
-		if err := t.sendMessage(messageText,
-			update.Message.Chat.ID,
-			&update.Message.MessageID,
-			nil); err != nil {
-			log.Printf("unable to send message: %v", err)
-		}
-		return
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
+		FromHandle: callbackHandleAddOffDuty,
 	}
 
-	// Check if provided off-duty period is overlap with existing off-duty periods
-	if t.isOffDutyDatesOverlapWithCurrent(timeRange[0], timeRange[1], update) {
-		return
+	numericKeyboard, err := genInlineCalendarKeyboard(time.Now(), *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
-	err = t.dc.CreateOffDutyEvents(update.Message.From.UserName, timeRange[0], timeRange[1])
-	if err != nil {
-		messageText := fmt.Sprintf("Не удалось добавить событие: %v", err)
-		if err := t.sendMessage(messageText,
-			update.Message.Chat.ID,
-			&update.Message.MessageID,
-			nil); err != nil {
-			log.Printf("unable to send message: %v", err)
-		}
-		return
-	}
-	// Save off-duty data
-	t.dc.AddOffDutyToMan(update.Message.From.UserName, timeRange[0], timeRange[1])
-	_, err = t.dc.SaveMenList()
-	if err != nil {
-		messageText := fmt.Sprintf("Не удалось сохранить событие: %v", err)
-		if err := t.sendMessage(messageText,
-			update.Message.Chat.ID,
-			&update.Message.MessageID,
-			nil); err != nil {
-			log.Printf("unable to send message: %v", err)
-		}
-		return
-	}
-	messageText := "Событие добавлено успешно"
+	messageText := fmt.Sprintf(msgTextUserHandleAddOffDuty1)
 	if err := t.sendMessage(messageText,
 		update.Message.Chat.ID,
 		&update.Message.MessageID,
-		nil); err != nil {
+		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
-
-	// Send message to admins about added event
-	timeRangeText := fmt.Sprintf("%s - %s",
-		timeRange[0].Format(botDataShort3),
-		timeRange[1].Format(botDataShort3))
-	messageText = fmt.Sprintf("Пользователь *@%s* добавил новый нерабочий период:\n%s",
-		update.Message.From.UserName, timeRangeText)
-	if err := t.sendMessage(messageText,
-		t.adminGroupId,
-		nil,
-		nil); err != nil {
-		log.Printf("unable to send message: %v", err)
-	}
-
-	// Recreate calendar duty event from current date if added duty in landed at this month
-	t.updateOnDutyEvents(&timeRange[0], update, timeRangeText)
 }
 
 // handle '/showofduty' command

@@ -19,13 +19,13 @@ func equalLists(searchList []string, searchInList []string) bool {
 	return false
 }
 
-// Return first and last date for provided months period.
+// FirstLastMonthDay Return first and last date for provided months period.
 // startYearMonth is optional. Starts from current Now() month if not provided.
-func firstLastMonthDay(monthsCount int, startYearMonth ...int) (firstDay *time.Time, lastDay *time.Time, err error) {
+func FirstLastMonthDay(monthsCount int, startYearMonth ...int) (firstDay *time.Time, lastDay *time.Time, err error) {
 	tn := time.Now()
 	loc, err := time.LoadLocation(TimeZone)
 	if err != nil {
-		return nil, nil, CtxError("data.firstLastMonthDay()", err)
+		return nil, nil, CtxError("data.FirstLastMonthDay()", err)
 	}
 	// If startYearMonth not provided let init it from time.Now()
 	if len(startYearMonth) == 0 {
