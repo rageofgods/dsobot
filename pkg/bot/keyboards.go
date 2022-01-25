@@ -319,31 +319,30 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 	// Iterate over days and weekday to fill up calendar buttons data
 	for d := *firstDay; d.Before(*lastDay); {
 		var calendarDays []tgbotapi.InlineKeyboardButton
-		// Define empty weak check (if all weekdays in the past)
-		dd := d
 		for _, dt := range dayTypes {
 			// Generate calendar buttons data
-			if d.Weekday() == dt.weekday && d.Before(*lastDay) && d.After(time.Now().Add(time.Hour*-24)) {
-				cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardDate, d.Format(botDataShort4)) // Append current data at short format as an answer
-				jsonData, err := marshalCallbackData(cm)
-				if err != nil {
-					log.Println(err)
-					return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+			if d.Weekday() == dt.weekday {
+				if d.Before(*lastDay) && d.After(time.Now().Add(time.Hour*-24)) {
+					cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardDate, d.Format(botDataShort4)) // Append current data at short format as an answer
+					jsonData, err := marshalCallbackData(cm)
+					if err != nil {
+						log.Println(err)
+						return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+					}
+					calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
+						string(jsonData)))
+					d = d.AddDate(0, 0, 1)
+				} else {
+					calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
+					d = d.AddDate(0, 0, 1)
 				}
-				calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
-					string(jsonData)))
-				d = d.AddDate(0, 0, 1)
 			} else {
-				// Add stub button if we out of scope
+				// Add stub button if current weekday is earlier when first day of month
 				calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
 			}
 		}
 		// Add new buttons rows (whole new week)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(calendarDays...))
-		// If whole week is in the past increment days count
-		if dd == d {
-			d = d.AddDate(0, 0, 6)
-		}
 	}
 
 	// Add row with ok/cancel buttons
