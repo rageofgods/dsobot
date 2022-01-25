@@ -62,6 +62,7 @@ func main() {
 	tgBot.StartBot(Version, Build)
 }
 
+// Read environment variables
 func readEnv(envName string) string {
 	env := os.Getenv(envName)
 	if env == "" {
