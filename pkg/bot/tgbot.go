@@ -31,6 +31,8 @@ func NewTgBot(dc *data.CalData, settings data.BotSettings, token string, adminGr
 	}
 }
 
+//
+
 func (t *TgBot) StartBot(version string, build string) {
 	var err error
 	t.bot, err = tgbotapi.NewBotAPI(t.token)
