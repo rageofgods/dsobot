@@ -177,6 +177,9 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 
 	// Get slice with off-duty data
 	offduty, err := t.dc.ShowOffDutyForMan(uTgID)
+	if err != nil {
+		return err
+	}
 	// Converting answer to integer value
 	a, err := strconv.Atoi(answer)
 	if err != nil {

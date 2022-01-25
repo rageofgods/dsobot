@@ -45,7 +45,7 @@ func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		messageText := fmt.Sprintf("Дежурства не найдены.")
+		messageText := "Дежурства не найдены."
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,
@@ -96,7 +96,7 @@ func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
 
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
-		messageText := fmt.Sprintf("Валидации не найдены.")
+		messageText := "Валидации не найдены."
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,
@@ -116,11 +116,11 @@ func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
 
 // Handle 'duty' user arg for 'showmy' command
 func (t *TgBot) handleShowMyDuty(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
 
 	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnDutyTag)
 	if err != nil {
-		messageText := fmt.Sprintf("Дежурства в текущем месяце не найдены")
+		messageText := "Дежурства в текущем месяце не найдены"
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,
@@ -157,11 +157,11 @@ func (t *TgBot) handleShowMyDuty(arg string, update *tgbotapi.Update) {
 
 // Handle 'duty' user arg for 'showmy' command
 func (t *TgBot) handleShowMyValidation(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
 
 	dates, err := t.dc.ManDutiesList(update.Message.From.UserName, data.OnValidationTag)
 	if err != nil {
-		messageText := fmt.Sprintf("Валидации в текущем месяце не найдены")
+		messageText := "Валидации в текущем месяце не найдены"
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
 			&update.Message.MessageID,

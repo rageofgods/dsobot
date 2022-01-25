@@ -10,7 +10,7 @@ import (
 
 // handle '/start' command
 func (t *TgBot) handleStart(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -33,7 +33,7 @@ func (t *TgBot) handleStart(cmdArgs string, update *tgbotapi.Update) {
 
 // handle '/help' command
 func (t *TgBot) handleHelp(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -55,7 +55,7 @@ func (t *TgBot) handleHelp(cmdArgs string, update *tgbotapi.Update) {
 
 // Register new user as DSO team member
 func (t *TgBot) handleRegister(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already registered
 	if t.dc.IsInDutyList(update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
@@ -95,12 +95,10 @@ func (t *TgBot) handleRegister(cmdArgs string, update *tgbotapi.Update) {
 		nil); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
-
-	return
 }
 
 func (t *TgBot) handleUnregister(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -127,7 +125,7 @@ func (t *TgBot) handleUnregister(cmdArgs string, update *tgbotapi.Update) {
 		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
-	messageText := fmt.Sprintf("Вы уверены, что хотите выйти?")
+	messageText := "Вы уверены, что хотите выйти?"
 	if err := t.sendMessage(messageText,
 		update.Message.Chat.ID,
 		&update.Message.MessageID,
@@ -205,7 +203,7 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
 
 // handle '/addoffduty' command
 func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -224,7 +222,7 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
-	messageText := fmt.Sprintf(msgTextUserHandleAddOffDuty1)
+	messageText := msgTextUserHandleAddOffDuty1
 	if err := t.sendMessage(messageText,
 		update.Message.Chat.ID,
 		&update.Message.MessageID,
@@ -235,7 +233,7 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 
 // handle '/showofduty' command
 func (t *TgBot) handleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -279,7 +277,7 @@ func (t *TgBot) handleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
 
 // handle '/deleteoffduty' command
 func (t *TgBot) handleDeleteOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	cmdArgs = "" // Ignore cmdArgs
+	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -329,7 +327,7 @@ func (t *TgBot) handleDeleteOffDuty(cmdArgs string, update *tgbotapi.Update) {
 		log.Printf("unable to generate new inline keyboard: %v", err)
 	}
 
-	messageText := fmt.Sprintf("Выберите нерабочий период для удаления:")
+	messageText := "Выберите нерабочий период для удаления:"
 	if err := t.sendMessage(messageText,
 		update.Message.Chat.ID,
 		&update.Message.MessageID,

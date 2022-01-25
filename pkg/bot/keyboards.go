@@ -112,7 +112,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		tgbotapi.NewInlineKeyboardButtonData("ИМЯ", inlineKeyboardVoid))
 	for _, dt := range data.DutyNames {
 		keyboardButtons = append(keyboardButtons,
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", strings.ToUpper(dt)), inlineKeyboardVoid))
+			tgbotapi.NewInlineKeyboardButtonData(strings.ToUpper(dt), inlineKeyboardVoid))
 	}
 	row := tgbotapi.NewInlineKeyboardRow(keyboardButtons...)
 	rows = append(rows, row)
@@ -131,9 +131,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 			manButtonCaption = fmt.Sprintf("❗️%s", man.CustomName)
 		}
 		keyboardButtons = append(keyboardButtons,
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s",
-				manButtonCaption),
-				string(jsonData)))
+			tgbotapi.NewInlineKeyboardButtonData(manButtonCaption, string(jsonData)))
 		// Iterate over currently supported duty types
 		for _, dt := range data.DutyTypes {
 			for dutyIndex, d := range man.DutyType {
@@ -224,9 +222,7 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 		groupButtonCaption := group.Title
 
 		keyboardButtons = append(keyboardButtons,
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s",
-				groupButtonCaption),
-				string(jsonData)))
+			tgbotapi.NewInlineKeyboardButtonData(groupButtonCaption, string(jsonData)))
 
 		// Generate jsonData with current group's announce type state (false/true)
 		jsonData, err = marshalCallbackDataWithIndex(cm, groupIndex, groupIndex, group.Announce)

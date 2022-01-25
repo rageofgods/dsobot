@@ -12,11 +12,8 @@ func equalLists(searchList []string, searchInList []string) bool {
 			}
 		}
 	}
-	// If count is equal len
-	if i == len(searchInList) {
-		return true
-	}
-	return false
+	// If count is equal len then return true
+	return i == len(searchInList)
 }
 
 // FirstLastMonthDay Return first and last date for provided months period.

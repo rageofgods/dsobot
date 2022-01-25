@@ -62,7 +62,7 @@ func genHelpCmdText(commands []botCommand) string {
 	for i, cmd := range commands {
 		var argList string
 		if cmd.command.args != nil {
-			argList = fmt.Sprintf("*Возможные значения аргумента:*\n")
+			argList = "*Возможные значения аргумента:*\n"
 			for index, arg := range *cmd.command.args {
 				argList += fmt.Sprintf("  *%s*: *%s* %q\n",
 					string(rune('a'-1+index+1)), // Convert number 1,2,3,etc. to char accordingly a,b,c,etc.
@@ -234,8 +234,7 @@ func parseDateString(str string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	tn := time.Time{}
-	tn, err = time.ParseInLocation(botDataShort1, str, loc)
+	tn, err := time.ParseInLocation(botDataShort1, str, loc)
 	if err != nil {
 		tn, err = time.ParseInLocation(botDataShort2, str, loc)
 		if err != nil {
