@@ -326,14 +326,13 @@ func marshalCallbackData(data callbackMessage) ([]byte, error) {
 func (t *TgBot) gracefulWatcher() {
 	c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	// Get current number of goroutines to be able to catch additional spawns
-	currentGoroutines := runtime.NumGoroutine()
 	go func() {
+		curGo := runtime.NumGoroutine()
 		// Will block until catch signal
 		sig := <-c
 
 		for {
-			if runtime.NumGoroutine() == currentGoroutines+1 {
+			if runtime.NumGoroutine() <= curGo {
 				fmt.Printf("caught sig: %s", sig.String())
 				messageText := fmt.Sprintf("⚠️ *%s (@%s)* штатно завершает свою работу.\nСигнал выхода: *%q*",
 					t.bot.Self.FirstName,
@@ -349,7 +348,7 @@ func (t *TgBot) gracefulWatcher() {
 				log.Printf("Exiting now...")
 				os.Exit(0)
 			} else {
-				log.Printf("Current count is: %v, target number is: %v", runtime.NumGoroutine(), currentGoroutines)
+				log.Printf("Current count is: %v, target number is: %v", runtime.NumGoroutine(), curGo)
 				log.Println("Preparing graceful shutdown. Please be patient...")
 			}
 			time.Sleep(time.Millisecond * 500)
