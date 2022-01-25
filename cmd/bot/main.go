@@ -17,6 +17,7 @@ var (
 )
 
 func main() {
+	//
 	// Show version info
 	log.Printf("Version: %s, Build: %s", Version, Build)
 
