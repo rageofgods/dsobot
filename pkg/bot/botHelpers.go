@@ -39,7 +39,7 @@ func (t *TgBot) botCheckVersion(version string, build string) {
 	// Check is version was updated
 	if version == t.settings.Version {
 		// Send message to admin group about current running bot build version
-		messageText := fmt.Sprintf("⚠️*%s (@%s)* был внезапно перезапущен.\n\n"+
+		messageText := fmt.Sprintf("⚠️ *%s (@%s)* был перезапущен без обновления версии.\n\n"+
 			"*Возможный крэш?*\n\n_версия_: %q\n_билд_: %q",
 			t.bot.Self.FirstName,
 			t.bot.Self.UserName,
@@ -59,7 +59,7 @@ func (t *TgBot) botCheckVersion(version string, build string) {
 		}
 
 		// Send message to admin group about current running bot build version
-		messageText := fmt.Sprintf("✅*%s (@%s)* был обновлен до новой версии.\n\n"+
+		messageText := fmt.Sprintf("✅ *%s (@%s)* был обновлен до новой версии.\n\n"+
 			"_новая версия_: %q\n_новый билд_: %q",
 			t.bot.Self.FirstName,
 			t.bot.Self.UserName,

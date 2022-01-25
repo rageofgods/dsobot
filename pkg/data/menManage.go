@@ -239,6 +239,9 @@ func (t *CalData) genIndexForDutyList(prevTime *time.Time,
 	dutyTag CalTag, contDays int, tempMen *[]string) int {
 	var menCount int
 	man, manPrevDutyCount, err := t.WhoWasOnDuty(prevTime, dutyTag)
+	if err != nil {
+		log.Printf("%v", err)
+	}
 	index, err := indexOfCurrentOnDutyMan(contDays, *tempMen, man, manPrevDutyCount)
 	if err != nil {
 		menCount = 0
@@ -262,7 +265,7 @@ func checkOffDutyManInList(man string, offDutyList *[]string) bool {
 func genListMenOnDuty(m []DutyMan, dutyTag CalTag) ([]string, error) {
 	var retStr []string
 
-	if m == nil || len(m) == 0 {
+	if len(m) == 0 {
 		return nil, CtxError("data.genListMenOnDuty()",
 			fmt.Errorf("unable to load men list, please load it first"))
 	}

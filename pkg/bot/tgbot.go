@@ -74,6 +74,9 @@ func (t *TgBot) StartBot(version string, build string) {
 		log.Printf("%v", err)
 	}
 
+	// Catch graceful exit signals
+	t.gracefulWatcher()
+
 	// Let's go through each update that we're getting from Telegram.
 	for update := range updates {
 		// Process adding to new group

@@ -17,6 +17,7 @@ var (
 )
 
 func main() {
+	//
 	// Show version info
 	log.Printf("Version: %s, Build: %s", Version, Build)
 
@@ -61,6 +62,7 @@ func main() {
 	tgBot.StartBot(Version, Build)
 }
 
+// Read environment variables
 func readEnv(envName string) string {
 	env := os.Getenv(envName)
 	if env == "" {

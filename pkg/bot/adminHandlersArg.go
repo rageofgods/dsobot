@@ -9,14 +9,15 @@ import (
 
 // Handle 'all' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutAll(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
+
 	go t.adminHandleRolloutDuty("", update)
 	go t.adminHandleRolloutValidation("", update)
 }
 
 // Handle 'duty' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.OrdinaryDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
@@ -48,7 +49,7 @@ func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 
 // Handle 'validation' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.ValidationDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
@@ -80,7 +81,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update
 
 // Handle 'nwd' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string, update *tgbotapi.Update) {
-	arg = "" // Ignore cmdArgs
+	log.Println(arg) // Ignore arg here
 	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.NonWorkingDaySum)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,

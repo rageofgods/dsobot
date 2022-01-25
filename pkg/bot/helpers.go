@@ -6,9 +6,13 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"os"
+	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -62,7 +66,7 @@ func genHelpCmdText(commands []botCommand) string {
 	for i, cmd := range commands {
 		var argList string
 		if cmd.command.args != nil {
-			argList = fmt.Sprintf("*Возможные значения аргумента:*\n")
+			argList = "*Возможные значения аргумента:*\n"
 			for index, arg := range *cmd.command.args {
 				argList += fmt.Sprintf("  *%s*: *%s* %q\n",
 					string(rune('a'-1+index+1)), // Convert number 1,2,3,etc. to char accordingly a,b,c,etc.
@@ -234,8 +238,7 @@ func parseDateString(str string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	tn := time.Time{}
-	tn, err = time.ParseInLocation(botDataShort1, str, loc)
+	tn, err := time.ParseInLocation(botDataShort1, str, loc)
 	if err != nil {
 		tn, err = time.ParseInLocation(botDataShort2, str, loc)
 		if err != nil {
@@ -317,4 +320,38 @@ func marshalCallbackData(data callbackMessage) ([]byte, error) {
 		return nil, fmt.Errorf("callback data size is greater than 64b: %v", len(jsonData))
 	}
 	return jsonData, nil
+}
+
+// Spawn dedicated goroutine to handle graceful shutdown process
+func (t *TgBot) gracefulWatcher() {
+	c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		curGo := runtime.NumGoroutine()
+		// Will block until catch signal
+		sig := <-c
+
+		for {
+			if runtime.NumGoroutine() <= curGo {
+				fmt.Printf("caught sig: %s", sig.String())
+				messageText := fmt.Sprintf("⚠️ *%s (@%s)* штатно завершает свою работу.\nСигнал выхода: *%q*",
+					t.bot.Self.FirstName,
+					t.bot.Self.UserName,
+					sig.String())
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+
+				log.Printf("Exiting now...")
+				os.Exit(0)
+			} else {
+				log.Printf("Current count is: %v, target number is: %v", runtime.NumGoroutine(), curGo)
+				log.Println("Preparing graceful shutdown. Please be patient...")
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
 }
