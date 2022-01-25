@@ -6,9 +6,13 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"os"
+	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -316,4 +320,38 @@ func marshalCallbackData(data callbackMessage) ([]byte, error) {
 		return nil, fmt.Errorf("callback data size is greater than 64b: %v", len(jsonData))
 	}
 	return jsonData, nil
+}
+
+// Spawn dedicated goroutine to handle graceful shutdown process
+func (t *TgBot) gracefulWatcher() {
+	c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	// Get current number of goroutines to be able to catch additional spawns
+	currentGoroutines := runtime.NumGoroutine()
+	go func() {
+		// Will block until catch signal
+		sig := <-c
+
+		for {
+			if runtime.NumGoroutine() == currentGoroutines+1 {
+				fmt.Printf("caught sig: %s", sig.String())
+				messageText := fmt.Sprintf("⚠️ *%s (@%s)* штатно завершает свою работу.\nСигнал выхода: *%q*",
+					t.bot.Self.FirstName,
+					t.bot.Self.UserName,
+					sig.String())
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+
+				log.Printf("Exiting now...")
+				os.Exit(0)
+			} else {
+				log.Println("Preparing graceful shutdown. Please be patient...")
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
 }
