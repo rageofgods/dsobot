@@ -349,6 +349,7 @@ func (t *TgBot) gracefulWatcher() {
 				log.Printf("Exiting now...")
 				os.Exit(0)
 			} else {
+				log.Printf("Current count is: %v, target number is: %v", runtime.NumGoroutine(), currentGoroutines)
 				log.Println("Preparing graceful shutdown. Please be patient...")
 			}
 			time.Sleep(time.Millisecond * 500)
