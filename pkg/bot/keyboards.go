@@ -2,7 +2,6 @@ package bot
 
 import (
 	"dso_bot/pkg/data"
-	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -13,20 +12,13 @@ import (
 
 func genInlineYesNoKeyboardWithData(yes *callbackMessage, no *callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
 	// Generate jsons for data
-	jsonYes, err := json.Marshal(yes)
+	jsonYes, err := marshalCallbackData(*yes)
 	if err != nil {
 		log.Println(err)
 	}
-	jsonNo, err := json.Marshal(no)
+	jsonNo, err := marshalCallbackData(*no)
 	if err != nil {
 		log.Println(err)
-	}
-
-	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-	if len(jsonNo) > 64 {
-		return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonNo))
-	} else if len(jsonYes) > 64 {
-		return nil, fmt.Errorf("jsonYes size is greater then 64b: %v", len(jsonNo))
 	}
 
 	// Create numeric inline keyboard
@@ -44,14 +36,10 @@ func genInlineOffDutyKeyboardWithData(offDutyList []string, cm callbackMessage) 
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for i, v := range offDutyList {
 		cm.Answer = strconv.Itoa(i) // Save current index to data
-		jsonData, err := json.Marshal(cm)
+		jsonData, err := marshalCallbackData(cm)
 		if err != nil {
 			log.Println(err)
 			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-		}
-		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-		if len(jsonData) > 64 {
-			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
 		}
 		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(v, string(jsonData)))
 		rows = append(rows, row)
@@ -82,14 +70,10 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for i, v := range *dm {
 		cm.Answer = strconv.Itoa(i) // Save current index to data
-		jsonData, err := json.Marshal(cm)
+		jsonData, err := marshalCallbackData(cm)
 		if err != nil {
 			log.Println(err)
 			return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
-		}
-		// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
-		if len(jsonData) > 64 {
-			return nil, fmt.Errorf("jsonNo size is greater then 64b: %v", len(jsonData))
 		}
 		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (@%s)",
 			i+1, v.CustomName, v.UserName), string(jsonData)))
@@ -100,12 +84,12 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 	cmYes, cmNo := cm, cm
 	cmYes.Answer = inlineKeyboardYes
 	cmNo.Answer = inlineKeyboardNo
-	jsonDataYes, err := json.Marshal(cmYes)
+	jsonDataYes, err := marshalCallbackData(cmYes)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 	}
-	jsonDataNo, err := json.Marshal(cmNo)
+	jsonDataNo, err := marshalCallbackData(cmNo)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -134,7 +118,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 	rows = append(rows, row)
 	// Iterate over all duty men
 	for manIndex, man := range *dm {
-		jsonData, err := marshalCallbackData(cm, manIndex, 0)
+		jsonData, err := marshalCallbackDataWithIndex(cm, manIndex, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +139,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 			for dutyIndex, d := range man.DutyType {
 				if dt == d.Type {
 					// Generate jsonData with current man's duty type state (false/true)
-					jsonData, err := marshalCallbackData(cm, manIndex, dutyIndex, d.Enabled)
+					jsonData, err := marshalCallbackDataWithIndex(cm, manIndex, dutyIndex, d.Enabled)
 					if err != nil {
 						return nil, err
 					}
@@ -182,12 +166,12 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 	cmYes, cmNo := cm, cm
 	cmYes.Answer = inlineKeyboardYes
 	cmNo.Answer = inlineKeyboardNo
-	jsonDataYes, err := json.Marshal(cmYes)
+	jsonDataYes, err := marshalCallbackData(cmYes)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 	}
-	jsonDataNo, err := json.Marshal(cmNo)
+	jsonDataNo, err := marshalCallbackData(cmNo)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -231,7 +215,7 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 	rows = append(rows, row)
 	// Iterate over all joined groups
 	for groupIndex, group := range jg {
-		jsonData, err := marshalCallbackData(cm, groupIndex, 0)
+		jsonData, err := marshalCallbackDataWithIndex(cm, groupIndex, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +229,7 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 				string(jsonData)))
 
 		// Generate jsonData with current group's announce type state (false/true)
-		jsonData, err = marshalCallbackData(cm, groupIndex, groupIndex, group.Announce)
+		jsonData, err = marshalCallbackDataWithIndex(cm, groupIndex, groupIndex, group.Announce)
 		if err != nil {
 			return nil, err
 		}
@@ -270,12 +254,12 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 	cmYes, cmNo := cm, cm
 	cmYes.Answer = inlineKeyboardYes
 	cmNo.Answer = inlineKeyboardNo
-	jsonDataYes, err := json.Marshal(cmYes)
+	jsonDataYes, err := marshalCallbackData(cmYes)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 	}
-	jsonDataNo, err := json.Marshal(cmNo)
+	jsonDataNo, err := marshalCallbackData(cmNo)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -295,7 +279,7 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 	var buttonsHeader []tgbotapi.InlineKeyboardButton
 	// Generate answer with 'buttonType-currentDate'
 	cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardPrev, date.Format(botDataShort4))
-	jsonDataPrev, err := json.Marshal(cm)
+	jsonDataPrev, err := marshalCallbackData(cm)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -306,7 +290,7 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 		inlineKeyboardVoid))
 	// Generate answer with 'buttonType-currentDate'
 	cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardNext, date.Format(botDataShort4))
-	jsonDataNext, err := json.Marshal(cm)
+	jsonDataNext, err := marshalCallbackData(cm)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -345,7 +329,7 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 			// Generate calendar buttons data
 			if d.Weekday() == dt.weekday && d.Before(*lastDay) && d.After(time.Now().Add(time.Hour*-24)) {
 				cm.Answer = fmt.Sprintf("%s-%s", inlineKeyboardDate, d.Format(botDataShort4)) // Append current data at short format as an answer
-				jsonData, err := json.Marshal(cm)
+				jsonData, err := marshalCallbackData(cm)
 				if err != nil {
 					log.Println(err)
 					return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
@@ -370,12 +354,12 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 	cmYes, cmNo := cm, cm
 	cmYes.Answer = inlineKeyboardYes
 	cmNo.Answer = inlineKeyboardNo
-	jsonDataYes, err := json.Marshal(cmYes)
+	jsonDataYes, err := marshalCallbackData(cmYes)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 	}
-	jsonDataNo, err := json.Marshal(cmNo)
+	jsonDataNo, err := marshalCallbackData(cmNo)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)

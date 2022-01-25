@@ -158,7 +158,7 @@ func typesOfDuties(m *data.DutyMan) string {
 }
 
 // Return json marshaled object for callback message data
-func marshalCallbackData(cm callbackMessage, itemIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
+func marshalCallbackDataWithIndex(cm callbackMessage, itemIndex int, buttonIndex int, enabled ...bool) ([]byte, error) {
 	// Generate callback data
 	// Format: 'itemIndex-buttonIndex-Answer'
 	cm.Answer = strconv.Itoa(itemIndex)                        // Save current item index to data
@@ -304,4 +304,17 @@ func (t *TgBot) isOffDutyDatesOverlapWithCurrent(startDate time.Time, endDate ti
 		}
 	}
 	return false, nil
+}
+
+func marshalCallbackData(data callbackMessage) ([]byte, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
+	}
+	// Maximum data size allowed by Telegram is 64b https://github.com/yagop/node-telegram-bot-api/issues/706
+	if len(jsonData) > 64 {
+		return nil, fmt.Errorf("callback data size is greater than 64b: %v", len(jsonData))
+	}
+	return jsonData, nil
 }

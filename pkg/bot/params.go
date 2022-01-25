@@ -177,16 +177,16 @@ const (
 	inlineKeyboardEditDutyYes = "1"
 	inlineKeyboardEditDutyNo  = "0"
 
-	callbackHandleRegister       = "fhr"
-	callbackHandleRegisterHelper = "fhrh"
-	callbackHandleUnregister     = "fhu"
-	callbackHandleDeleteOffDuty  = "fhdod"
-	callbackHandleReindex        = "fhre"
-	callbackHandleEnable         = "fhe"
-	callbackHandleDisable        = "fhd"
-	callbackHandleEditDuty       = "fhed"
-	callbackHandleAnnounce       = "fha"
-	callbackHandleAddOffDuty     = "fhaod"
+	callbackHandleRegister       = "a"
+	callbackHandleRegisterHelper = "b"
+	callbackHandleUnregister     = "c"
+	callbackHandleDeleteOffDuty  = "d"
+	callbackHandleReindex        = "e"
+	callbackHandleEnable         = "f"
+	callbackHandleDisable        = "g"
+	callbackHandleEditDuty       = "h"
+	callbackHandleAnnounce       = "i"
+	callbackHandleAddOffDuty     = "j"
 )
 
 // Bot available commands
