@@ -209,6 +209,17 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 		return
 	}
 
+	if _, err := t.tmpOffDutyDataForUser(update.Message.From.ID); err == nil {
+		messageText := "Вы уже работаете с данными нерабочего периода"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
 		UserId:     update.Message.From.ID,

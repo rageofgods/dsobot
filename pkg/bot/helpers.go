@@ -323,6 +323,7 @@ func marshalCallbackData(data callbackMessage) ([]byte, error) {
 }
 
 // Spawn dedicated goroutine to handle graceful shutdown process
+// TODO refactor this code to support contexts statuses
 func (t *TgBot) gracefulWatcher() {
 	c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
