@@ -97,7 +97,8 @@ func (t *TgBot) StartBot(version string, build string) {
 				}
 			}
 			// Check if bot removed from some users group
-			if update.MyChatMember.NewChatMember.Status == "left" &&
+			if (update.MyChatMember.NewChatMember.Status == "left" ||
+				update.MyChatMember.NewChatMember.Status == "kicked") &&
 				(update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup") {
 				if err := t.botRemovedFromGroup(update.MyChatMember.Chat.ID); err != nil {
 					log.Printf("%v", err)
