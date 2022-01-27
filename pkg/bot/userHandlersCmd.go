@@ -4,7 +4,6 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -135,7 +134,7 @@ func (t *TgBot) handleUnregister(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // Parent function for handling args commands
-func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
+func (t *TgBot) handleWhoIsOnDuty(cmdArgs string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -144,33 +143,13 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
 	bc := t.UserBotCommands()
 	var isArgValid bool
 	for _, cmd := range bc.commands {
-		if cmd.command.args != nil && cmd.command.name == botCmdWhoIsOn {
+		if cmd.command.args != nil && cmd.command.name == botCmdWhoIsOnDuty {
 			for _, arg := range *cmd.command.args {
-				s := strings.Split(cmdArgs, " ")
-				// Check if we have two arguments (type first, date second)
-				if len(s) == 2 {
-					if s[0] == string(arg.name) {
-						// Check args for correct date format
-						if _, err := checkArgHasDate(cmdArgs); err != nil {
-							messageText := fmt.Sprintf("%v", err)
-							if err := t.sendMessage(messageText,
-								update.Message.Chat.ID,
-								&update.Message.MessageID,
-								nil); err != nil {
-								log.Printf("unable to send message: %v", err)
-							}
-							return
-						}
-						// Run dedicated child argument function
-						arg.handleFunc(cmdArgs, update)
-						isArgValid = true
-					}
-				} else if len(s) == 1 {
-					if s[0] == string(arg.name) {
-						// Run dedicated child argument function
-						arg.handleFunc(cmdArgs, update)
-						isArgValid = true
-					}
+				// Check if user command arg is supported
+				if cmdArgs == string(arg.name) {
+					// Run dedicated child argument function
+					arg.handleFunc(cmdArgs, update)
+					isArgValid = true
 				}
 			}
 		}
@@ -187,7 +166,54 @@ func (t *TgBot) handleWhoIsOn(cmdArgs string, update *tgbotapi.Update) {
 			}
 		} else {
 			// Show keyboard with available args
-			rows := genArgsKeyboard(bc, botCmdWhoIsOn)
+			rows := genArgsKeyboard(bc, botCmdWhoIsOnDuty)
+			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
+			numericKeyboard.Selective = true
+			messageText := "Необходимо указать аргумент"
+			if err := t.sendMessage(messageText,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
+				numericKeyboard); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+		}
+	}
+}
+
+// Parent function for handling args commands
+func (t *TgBot) handleWhoIsOnValidation(cmdArgs string, update *tgbotapi.Update) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
+
+	bc := t.UserBotCommands()
+	var isArgValid bool
+	for _, cmd := range bc.commands {
+		if cmd.command.args != nil && cmd.command.name == botCmdWhoIsOnValidation {
+			for _, arg := range *cmd.command.args {
+				// Check if user command arg is supported
+				if cmdArgs == string(arg.name) {
+					// Run dedicated child argument function
+					arg.handleFunc(cmdArgs, update)
+					isArgValid = true
+				}
+			}
+		}
+	}
+	// If provided argument is missing or invalid show error to user
+	if !isArgValid {
+		if cmdArgs != "" {
+			messageText := fmt.Sprintf("Неверный аргумент - %q", cmdArgs)
+			if err := t.sendMessage(messageText,
+				update.Message.Chat.ID,
+				&update.Message.MessageID,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+		} else {
+			// Show keyboard with available args
+			rows := genArgsKeyboard(bc, botCmdWhoIsOnValidation)
 			var numericKeyboard = tgbotapi.NewOneTimeReplyKeyboard(rows...)
 			numericKeyboard.Selective = true
 			messageText := "Необходимо указать аргумент"
@@ -206,6 +232,17 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 	log.Println(cmdArgs) // Ignore arg here
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
+
+	if _, err := t.tmpOffDutyDataForUser(update.Message.From.ID); err == nil {
+		messageText := "Вы уже работаете с данными нерабочего периода"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
 	}
 

@@ -85,17 +85,27 @@ func (t *TgBot) UserBotCommands() *botCommands {
 		{command: &cmd{name: botCmdUnregister, args: nil},
 			description: "Выйти из системы",
 			handleFunc:  t.handleUnregister},
-		{command: &cmd{name: botCmdWhoIsOn, args: &[]arg{
-			{name: botCmdArgDuty,
-				handleFunc: t.handleWhoIsOnDuty,
-				description: "Показать дежурного на сегодня. _Возможно указание конкретной даты " +
-					"через пробел после аргумента_"},
-			{name: botCmdArgValidation,
-				handleFunc: t.handleWhoIsOnValidation,
-				description: "Показать валидирующего на сегодня. _Возможно указание конкретной даты " +
-					"через пробел после аргумента_"}}},
-			description: "Показать дежурного для определенного типа дежурств",
-			handleFunc:  t.handleWhoIsOn},
+		{command: &cmd{name: botCmdWhoIsOnDuty, args: &[]arg{
+			{name: botCmdArgDutyToday,
+				handleFunc:  t.handleWhoIsOnDutyToday,
+				description: "Показать дежурного на сегодня."},
+			{name: botCmdArgDutyAtDate,
+				handleFunc:  t.handleWhoIsOnDutyAtDate,
+				description: "Показать дежурного на определенную дату",
+			}}},
+			description: "Показать дежурного на сегодня или определенную дату",
+			handleFunc:  t.handleWhoIsOnDuty},
+		{command: &cmd{name: botCmdWhoIsOnValidation, args: &[]arg{
+			{name: botCmdArgDutyToday,
+				handleFunc:  t.handleWhoIsOnValidationToday,
+				description: "Показать валидирующего на сегодня.",
+			},
+			{name: botCmdArgDutyAtDate,
+				handleFunc:  t.handleWhoIsOnValidationAtDate,
+				description: "Показать валидирующего на определенную дату",
+			}}},
+			description: "Показать валидирующего на сегодня или определенную дату",
+			handleFunc:  t.handleWhoIsOnValidation},
 		{command: &cmd{name: botCmdShowMy, args: &[]arg{
 			{name: botCmdArgDuty,
 				handleFunc:  t.handleShowMyDuty,
@@ -177,41 +187,46 @@ const (
 	inlineKeyboardEditDutyYes = "1"
 	inlineKeyboardEditDutyNo  = "0"
 
-	callbackHandleRegister       = "a"
-	callbackHandleRegisterHelper = "b"
-	callbackHandleUnregister     = "c"
-	callbackHandleDeleteOffDuty  = "d"
-	callbackHandleReindex        = "e"
-	callbackHandleEnable         = "f"
-	callbackHandleDisable        = "g"
-	callbackHandleEditDuty       = "h"
-	callbackHandleAnnounce       = "i"
-	callbackHandleAddOffDuty     = "j"
+	callbackHandleRegister                = "a"
+	callbackHandleRegisterHelper          = "b"
+	callbackHandleUnregister              = "c"
+	callbackHandleDeleteOffDuty           = "d"
+	callbackHandleReindex                 = "e"
+	callbackHandleEnable                  = "f"
+	callbackHandleDisable                 = "g"
+	callbackHandleEditDuty                = "h"
+	callbackHandleAnnounce                = "i"
+	callbackHandleAddOffDuty              = "j"
+	callbackHandleWhoIsOnDutyAtDate       = "k"
+	callbackHandleWhoIsOnValidationAtDate = "l"
 )
 
 // Bot available commands
 const (
-	botCmdStart         tCmd = "start"
-	botCmdRegister      tCmd = "register"
-	botCmdUnregister    tCmd = "unregister"
-	botCmdWhoIsOn       tCmd = "whoison"
-	botCmdShowMy        tCmd = "showmy"
-	botCmdAddOffDuty    tCmd = "addoffduty"
-	botCmdShowOffDuty   tCmd = "showoffduty"
-	botCmdDeleteOffDuty tCmd = "deleteoffduty"
-	botCmdHelp          tCmd = "help"
-	botCmdList          tCmd = "list"
-	botCmdRollout       tCmd = "rollout"
-	botCmdReindex       tCmd = "reindex"
-	botCmdEnable        tCmd = "enable"
-	botCmdDisable       tCmd = "disable"
-	botCmdEditDutyType  tCmd = "editduty"
-	botCmdAnnounce      tCmd = "announce"
+	botCmdStart             tCmd = "start"
+	botCmdRegister          tCmd = "register"
+	botCmdUnregister        tCmd = "unregister"
+	botCmdWhoIsOnDuty       tCmd = "whoison_duty"
+	botCmdWhoIsOnValidation tCmd = "whoison_validation"
+	botCmdShowMy            tCmd = "showmy"
+	botCmdAddOffDuty        tCmd = "addoffduty"
+	botCmdShowOffDuty       tCmd = "showoffduty"
+	botCmdDeleteOffDuty     tCmd = "deleteoffduty"
+	botCmdHelp              tCmd = "help"
+	botCmdList              tCmd = "list"
+	botCmdRollout           tCmd = "rollout"
+	botCmdReindex           tCmd = "reindex"
+	botCmdEnable            tCmd = "enable"
+	botCmdDisable           tCmd = "disable"
+	botCmdEditDutyType      tCmd = "editduty"
+	botCmdAnnounce          tCmd = "announce"
 )
 
 // Bot available args
 const (
 	botCmdArgAll           tArg = "all"
+	botCmdArgDutyToday     tArg = "today"
+	botCmdArgDutyAtDate    tArg = "date"
 	botCmdArgDuty          tArg = "duty"
 	botCmdArgValidation    tArg = "validation"
 	botCmdArgNonWorkingDay tArg = "nwd"
@@ -257,7 +272,9 @@ const (
 		"ему необходимо выдать права администратора на закрепление сообщений в соответствующем чате"
 	msgTextUserHandleAddOffDuty1 = "📅 Для того, чтобы добавить новый нерабочий период " +
 		"выберите дату его начала.\n"
-	msgTextUserHandleAddOffDuty2     = "📅 Теперь выберите дату завершения нерабочего периода (включительно)\n"
-	msgTextUserHandleAddOffDutyStart = "Начало нерабочего периода:"
-	msgTextUserHandleAddOffDutyEnd   = "Конец нерабочего периода:"
+	msgTextUserHandleAddOffDuty2             = "📅 Теперь выберите дату завершения нерабочего периода (включительно)\n"
+	msgTextUserHandleAddOffDutyStart         = "Начало нерабочего периода:"
+	msgTextUserHandleAddOffDutyEnd           = "Конец нерабочего периода:"
+	msgTextUserHandleWhoIsOnDutyAtDate       = "📅 Выберите дату для которой необходимо отобразить дежурного"
+	msgTextUserHandleWhoIsOnValidationAtDate = "📅 Выберите дату для которой необходимо отобразить валидирующего"
 )

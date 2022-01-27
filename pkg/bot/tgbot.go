@@ -97,7 +97,8 @@ func (t *TgBot) StartBot(version string, build string) {
 				}
 			}
 			// Check if bot removed from some users group
-			if update.MyChatMember.NewChatMember.Status == "left" &&
+			if (update.MyChatMember.NewChatMember.Status == "left" ||
+				update.MyChatMember.NewChatMember.Status == "kicked") &&
 				(update.MyChatMember.Chat.Type == "group" || update.MyChatMember.Chat.Type == "supergroup") {
 				if err := t.botRemovedFromGroup(update.MyChatMember.Chat.ID); err != nil {
 					log.Printf("%v", err)
@@ -317,6 +318,42 @@ func (t *TgBot) StartBot(version string, build string) {
 			case callbackHandleAddOffDuty:
 				if !isCallbackHandleAddOffDutyFired {
 					dec := burstDecorator(1, &isCallbackHandleAddOffDutyFired, t.callbackAddOffDuty)
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleWhoIsOnDutyAtDate:
+				if !isCallbackHandleWhoIsOnDutyAtDateFired {
+					dec := burstDecorator(1, &isCallbackHandleWhoIsOnDutyAtDateFired,
+						t.callbackWhoIsOnDutyAtDate)
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleWhoIsOnValidationAtDate:
+				if !isCallbackHandleWhoIsOnValidationAtDateFired {
+					dec := burstDecorator(1, &isCallbackHandleWhoIsOnValidationAtDateFired,
+						t.callbackWhoIsOnValidationAtDate)
 					if err := dec(message.Answer,
 						message.ChatId,
 						message.UserId,

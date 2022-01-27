@@ -7,16 +7,18 @@ import (
 
 // Define callback burst control variables
 var (
-	isCallbackHandleRegisterFired       bool
-	isCallbackHandleRegisterHelperFired bool
-	isCallbackHandleUnregisterFired     bool
-	isCallbackHandleDeleteOffDutyFired  bool
-	isCallbackHandleReindexFired        bool
-	isCallbackHandleEnableFired         bool
-	isCallbackHandleDisableFired        bool
-	isCallbackHandleEditDutyFired       bool
-	isCallbackHandleAnnounceFired       bool
-	isCallbackHandleAddOffDutyFired     bool
+	isCallbackHandleRegisterFired                bool
+	isCallbackHandleRegisterHelperFired          bool
+	isCallbackHandleUnregisterFired              bool
+	isCallbackHandleDeleteOffDutyFired           bool
+	isCallbackHandleReindexFired                 bool
+	isCallbackHandleEnableFired                  bool
+	isCallbackHandleDisableFired                 bool
+	isCallbackHandleEditDutyFired                bool
+	isCallbackHandleAnnounceFired                bool
+	isCallbackHandleAddOffDutyFired              bool
+	isCallbackHandleWhoIsOnDutyAtDateFired       bool
+	isCallbackHandleWhoIsOnValidationAtDateFired bool
 )
 
 // Define function type for decorator
