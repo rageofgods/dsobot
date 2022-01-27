@@ -5,44 +5,16 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"strings"
 	"time"
 )
 
-// Handle 'duty' user arg for 'whoison' command
-func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
+// Handle 'duty' user arg for 'whoison_duty' command
+func (t *TgBot) handleWhoIsOnDutyToday(arg string, update *tgbotapi.Update) {
+	log.Println(arg) // Ignore arg here
 	// Set current day for request by default
 	tn := time.Now()
-	// Check if we have two arguments
-	if len(strings.Split(arg, " ")) == 2 {
-		var err error
-		tn, err = checkArgHasDate(arg)
-		if err != nil {
-			messageText := fmt.Sprintf("%v", err)
-			if err := t.sendMessage(messageText,
-				update.Message.Chat.ID,
-				&update.Message.MessageID,
-				nil); err != nil {
-				log.Printf("unable to send message: %v", err)
-			}
-			return
-		}
-	}
-
 	// Get on-duty data
 	man, err := t.dc.WhoIsOnDuty(&tn, data.OnDutyTag)
-	if err != nil {
-		log.Printf("%v", err)
-	}
-	// Get data for all men
-	dutyMen := t.dc.DutyMenData()
-	// Generate returned string
-	for _, v := range *dutyMen {
-		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
-		}
-	}
-
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := "Дежурства не найдены."
@@ -53,6 +25,14 @@ func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
+		// Get data for all men
+		dutyMen := t.dc.DutyMenData()
+		// Generate returned string
+		for _, v := range *dutyMen {
+			if v.UserName == man {
+				man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
+			}
+		}
 		messageText := fmt.Sprintf("Дежурный: %s", man)
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
@@ -63,37 +43,54 @@ func (t *TgBot) handleWhoIsOnDuty(arg string, update *tgbotapi.Update) {
 	}
 }
 
-// Handle 'duty' user arg for 'whoison' command
-func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
+// Handle 'duty' user arg for 'whoison_duty date' command
+func (t *TgBot) handleWhoIsOnDutyAtDate(arg string, update *tgbotapi.Update) {
+	log.Println(arg) // Ignore arg here
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
+
+	if _, err := t.tmpOffDutyDataForUser(update.Message.From.ID); err == nil {
+		messageText := "Вы уже работаете с данными нерабочего периода"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
+		FromHandle: callbackHandleWhoIsOnDutyAtDate,
+	}
+
+	numericKeyboard, err := genInlineCalendarKeyboard(time.Now(), *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := msgTextUserHandleWhoIsOnDutyAtDate
+	if err := t.sendMessage(messageText,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}
+
+// Handle 'duty' user arg for 'whoison_validation' command
+func (t *TgBot) handleWhoIsOnValidationToday(arg string, update *tgbotapi.Update) {
+	log.Println(arg) // Ignore arg here
 	// Set current day for request by default
 	tn := time.Now()
-	// Check if we have two arguments
-	if len(strings.Split(arg, " ")) == 2 {
-		var err error
-		tn, err = checkArgHasDate(arg)
-		if err != nil {
-			messageText := fmt.Sprintf("%v", err)
-			if err := t.sendMessage(messageText,
-				update.Message.Chat.ID,
-				&update.Message.MessageID,
-				nil); err != nil {
-				log.Printf("unable to send message: %v", err)
-			}
-			return
-		}
-	}
-
 	// Get on-duty data
 	man, err := t.dc.WhoIsOnDuty(&tn, data.OnValidationTag)
-	// Get data for all men
-	dutyMen := t.dc.DutyMenData()
-	// Generate returned string
-	for _, v := range *dutyMen {
-		if v.UserName == man {
-			man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
-		}
-	}
-
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := "Валидации не найдены."
@@ -104,6 +101,14 @@ func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
+		// Get data for all men
+		dutyMen := t.dc.DutyMenData()
+		// Generate returned string
+		for _, v := range *dutyMen {
+			if v.UserName == man {
+				man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
+			}
+		}
 		messageText := fmt.Sprintf("Валидирующий: %s", man)
 		if err := t.sendMessage(messageText,
 			update.Message.Chat.ID,
@@ -111,6 +116,47 @@ func (t *TgBot) handleWhoIsOnValidation(arg string, update *tgbotapi.Update) {
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
+	}
+}
+
+// Handle 'duty' user arg for 'whoison_validation date' command
+func (t *TgBot) handleWhoIsOnValidationAtDate(arg string, update *tgbotapi.Update) {
+	log.Println(arg) // Ignore arg here
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
+
+	if _, err := t.tmpOffDutyDataForUser(update.Message.From.ID); err == nil {
+		messageText := "Вы уже работаете с данными нерабочего периода"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
+		FromHandle: callbackHandleWhoIsOnValidationAtDate,
+	}
+
+	numericKeyboard, err := genInlineCalendarKeyboard(time.Now(), *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := msgTextUserHandleWhoIsOnValidationAtDate
+	if err := t.sendMessage(messageText,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
 	}
 }
 

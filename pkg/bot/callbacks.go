@@ -1177,3 +1177,305 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 	}
 	return nil
 }
+
+func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
+	chatId int64,
+	userId int64,
+	messageId int,
+	update *tgbotapi.Update) error {
+	// Split answer for two string following - 'buttonType-currentDate'
+	parsedAnswer := strings.Split(answer, "-")
+	var answerButtonType, answerCurrentDate string
+	if len(parsedAnswer) == 2 {
+		answerButtonType = parsedAnswer[0]
+		answerCurrentDate = parsedAnswer[1]
+	} else if len(parsedAnswer) == 1 {
+		answerButtonType = parsedAnswer[0]
+	} else {
+		return fmt.Errorf("returned callback data has wrong format")
+	}
+
+	switch answerButtonType {
+	case inlineKeyboardYes:
+		// Get current tmpData
+		date, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			messageText := "⚠️ Пожалуйста выберите дату дежурства, чтобы продолжить"
+			if err := t.sendMessage(messageText,
+				chatId,
+				&messageId,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+		}
+		if len(date) == 1 {
+			// Get on-duty data
+			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnDutyTag)
+			if err != nil {
+				log.Printf("error in event creating: %v", err)
+				messageText := "Дежурства не найдены."
+				// Send final message and remove inline keyboard
+				t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+			} else {
+				// Get data for all men
+				dutyMen := t.dc.DutyMenData()
+				// Generate returned string
+				for _, v := range *dutyMen {
+					if v.UserName == man {
+						man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
+					}
+				}
+				messageText := fmt.Sprintf("Дежурный: %s", man)
+				// Send final message and remove inline keyboard
+				t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+			}
+			// Clear tmp data
+			t.clearTmpOffDutyDataForUser(userId)
+		}
+	case inlineKeyboardNo:
+		messageText := "Действие отменено"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardNext:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnDutyAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, 1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
+		}
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardPrev:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnDutyAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, -1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
+		}
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardDate:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Save current date at tmpData
+		t.addTmpOffDutyDataForUser(userId, pt)
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnDutyAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt, *callbackData, pt.Day())
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
+		}
+	}
+	return nil
+}
+
+func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
+	chatId int64,
+	userId int64,
+	messageId int,
+	update *tgbotapi.Update) error {
+	// Split answer for two string following - 'buttonType-currentDate'
+	parsedAnswer := strings.Split(answer, "-")
+	var answerButtonType, answerCurrentDate string
+	if len(parsedAnswer) == 2 {
+		answerButtonType = parsedAnswer[0]
+		answerCurrentDate = parsedAnswer[1]
+	} else if len(parsedAnswer) == 1 {
+		answerButtonType = parsedAnswer[0]
+	} else {
+		return fmt.Errorf("returned callback data has wrong format")
+	}
+
+	switch answerButtonType {
+	case inlineKeyboardYes:
+		// Get current tmpData
+		date, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			messageText := "⚠️ Пожалуйста выберите дату валидации, чтобы продолжить"
+			if err := t.sendMessage(messageText,
+				chatId,
+				&messageId,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+		}
+		if len(date) == 1 {
+			// Get on-duty data
+			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnDutyTag)
+			if err != nil {
+				log.Printf("error in event creating: %v", err)
+				messageText := "Валидации не найдены."
+				// Send final message and remove inline keyboard
+				t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+			} else {
+				// Get data for all men
+				dutyMen := t.dc.DutyMenData()
+				// Generate returned string
+				for _, v := range *dutyMen {
+					if v.UserName == man {
+						man = fmt.Sprintf("%s (*@%s*)", v.CustomName, v.UserName)
+					}
+				}
+				messageText := fmt.Sprintf("Валидирующий: %s", man)
+				// Send final message and remove inline keyboard
+				t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+			}
+			// Clear tmp data
+			t.clearTmpOffDutyDataForUser(userId)
+		}
+	case inlineKeyboardNo:
+		messageText := "Действие отменено"
+		// Send final message and remove inline keyboard
+		t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardNext:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnValidationAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, 1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
+		}
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardPrev:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnValidationAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt.AddDate(0, -1, 0), *callbackData)
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
+		}
+		// Clear tmp data
+		t.clearTmpOffDutyDataForUser(userId)
+	case inlineKeyboardDate:
+		loc, err := time.LoadLocation(data.TimeZone)
+		if err != nil {
+			return err
+		}
+		pt, err := time.ParseInLocation(botDataShort4, answerCurrentDate, loc)
+		if err != nil {
+			return err
+		}
+		// Save current date at tmpData
+		t.addTmpOffDutyDataForUser(userId, pt)
+		// Create returned data (without data)
+		callbackData := &callbackMessage{
+			UserId:     userId,
+			ChatId:     chatId,
+			MessageId:  messageId,
+			FromHandle: callbackHandleWhoIsOnValidationAtDate,
+		}
+		inlineKeyboard, err := genInlineCalendarKeyboard(pt, *callbackData, pt.Day())
+		if err != nil {
+			return err
+		}
+		// Create edited message (with correct keyboard)
+		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
+			update.CallbackQuery.Message.MessageID, *inlineKeyboard)
+		// Change keyboard
+		if _, err := t.bot.Request(changeMsg); err != nil {
+			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
+		}
+	}
+	return nil
+}

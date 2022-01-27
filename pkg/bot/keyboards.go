@@ -268,7 +268,9 @@ func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotap
 }
 
 // Generate keyboard with calendar data
-func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+func genInlineCalendarKeyboard(date time.Time,
+	cm callbackMessage,
+	selectedDay ...int) (*tgbotapi.InlineKeyboardMarkup, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
 	// Generate header with next/prev buttons
@@ -329,16 +331,26 @@ func genInlineCalendarKeyboard(date time.Time, cm callbackMessage) (*tgbotapi.In
 						log.Println(err)
 						return nil, fmt.Errorf("unable to marshall json to persist data: %v", err)
 					}
-					calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
-						string(jsonData)))
+					// If we have selected day - highlight it
+					if len(selectedDay) == 1 && selectedDay[0] == d.Day() {
+						calendarDays = append(calendarDays,
+							tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("⸨%s⸩", strconv.Itoa(d.Day())),
+								string(jsonData)))
+					} else {
+						calendarDays = append(calendarDays,
+							tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
+								string(jsonData)))
+					}
 					d = d.AddDate(0, 0, 1)
 				} else {
-					calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
+					calendarDays = append(calendarDays,
+						tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
 					d = d.AddDate(0, 0, 1)
 				}
 			} else {
 				// Add stub button if current weekday is earlier when first day of month
-				calendarDays = append(calendarDays, tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
+				calendarDays = append(calendarDays,
+					tgbotapi.NewInlineKeyboardButtonData("✖️", inlineKeyboardVoid))
 			}
 		}
 		// Add new buttons rows (whole new week)
