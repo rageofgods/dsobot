@@ -1265,8 +1265,6 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
 		}
-		// Clear tmp data
-		t.clearTmpOffDutyDataForUser(userId)
 	case inlineKeyboardPrev:
 		loc, err := time.LoadLocation(data.TimeZone)
 		if err != nil {
@@ -1294,9 +1292,10 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
 		}
+	case inlineKeyboardDate:
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
-	case inlineKeyboardDate:
+
 		loc, err := time.LoadLocation(data.TimeZone)
 		if err != nil {
 			return err
@@ -1416,8 +1415,6 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
 		}
-		// Clear tmp data
-		t.clearTmpOffDutyDataForUser(userId)
 	case inlineKeyboardPrev:
 		loc, err := time.LoadLocation(data.TimeZone)
 		if err != nil {
@@ -1445,9 +1442,10 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 		if _, err := t.bot.Request(changeMsg); err != nil {
 			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
 		}
+	case inlineKeyboardDate:
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
-	case inlineKeyboardDate:
+
 		loc, err := time.LoadLocation(data.TimeZone)
 		if err != nil {
 			return err
