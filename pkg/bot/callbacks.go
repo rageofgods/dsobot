@@ -1339,15 +1339,41 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 			MessageId:  messageId,
 			FromHandle: callbackHandleWhoIsOnDutyAtDate,
 		}
-		// Get Next month
+		// Get saved user data
+		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		// if we already have fromDate data
+		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
+		//Get next month
 		nm, err := nextMonth(pt)
 		if err != nil {
 			return err
 		}
-		// Generate inline keyboard
-		inlineKeyboard, err := genInlineCalendarKeyboard(nm, *callbackData)
-		if err != nil {
-			return err
+		// Generate keyboard with selected date
+		if len(dates) == 1 {
+			// Select date only if in correct month
+			if dates[0].Month() == nm.Month() {
+				inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+					*callbackData,
+					dates[0].Day())
+				if err != nil {
+					return err
+				}
+			} else {
+				inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+					*callbackData)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+				*callbackData)
+			if err != nil {
+				return err
+			}
 		}
 		// Create edited message (with correct keyboard)
 		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
@@ -1372,15 +1398,41 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 			MessageId:  messageId,
 			FromHandle: callbackHandleWhoIsOnDutyAtDate,
 		}
-		// Get previous month
+		// Get saved user data
+		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		// if we already have fromDate data
+		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
+		//Get previous month
 		pm, err := prevMonth(pt)
 		if err != nil {
 			return err
 		}
-		// Generate inline keyboard
-		inlineKeyboard, err := genInlineCalendarKeyboard(pm, *callbackData)
-		if err != nil {
-			return err
+		// Generate keyboard with selected date
+		if len(dates) == 1 {
+			// Select date only if in correct month
+			if dates[0].Month() == pm.Month() {
+				inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+					*callbackData,
+					dates[0].Day())
+				if err != nil {
+					return err
+				}
+			} else {
+				inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+					*callbackData)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+				*callbackData)
+			if err != nil {
+				return err
+			}
 		}
 		// Create edited message (with correct keyboard)
 		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
@@ -1501,15 +1553,41 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 			MessageId:  messageId,
 			FromHandle: callbackHandleWhoIsOnValidationAtDate,
 		}
-		// Get Next month
+		// Get saved user data
+		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		// if we already have fromDate data
+		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
+		//Get next month
 		nm, err := nextMonth(pt)
 		if err != nil {
 			return err
 		}
-		// Generate inline keyboard
-		inlineKeyboard, err := genInlineCalendarKeyboard(nm, *callbackData)
-		if err != nil {
-			return err
+		// Generate keyboard with selected date
+		if len(dates) == 1 {
+			// Select date only if in correct month
+			if dates[0].Month() == nm.Month() {
+				inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+					*callbackData,
+					dates[0].Day())
+				if err != nil {
+					return err
+				}
+			} else {
+				inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+					*callbackData)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			inlineKeyboard, err = genInlineCalendarKeyboard(nm,
+				*callbackData)
+			if err != nil {
+				return err
+			}
 		}
 		// Create edited message (with correct keyboard)
 		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
@@ -1534,15 +1612,41 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 			MessageId:  messageId,
 			FromHandle: callbackHandleWhoIsOnValidationAtDate,
 		}
-		// Get previous month
+		// Get saved user data
+		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
+		// if we already have fromDate data
+		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
+		//Get previous month
 		pm, err := prevMonth(pt)
 		if err != nil {
 			return err
 		}
-		// Generate inline keyboard
-		inlineKeyboard, err := genInlineCalendarKeyboard(pm, *callbackData)
-		if err != nil {
-			return err
+		// Generate keyboard with selected date
+		if len(dates) == 1 {
+			// Select date only if in correct month
+			if dates[0].Month() == pm.Month() {
+				inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+					*callbackData,
+					dates[0].Day())
+				if err != nil {
+					return err
+				}
+			} else {
+				inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+					*callbackData)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			inlineKeyboard, err = genInlineCalendarKeyboard(pm,
+				*callbackData)
+			if err != nil {
+				return err
+			}
 		}
 		// Create edited message (with correct keyboard)
 		changeMsg := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID,
