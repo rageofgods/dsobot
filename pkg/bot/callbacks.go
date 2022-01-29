@@ -1080,6 +1080,9 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 		}
 		// Get saved user data
 		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get next month
@@ -1136,6 +1139,9 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 		}
 		// Get saved user data
 		dates, err := t.tmpOffDutyDataForUser(userId)
+		if err != nil {
+			return err
+		}
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get previous month
