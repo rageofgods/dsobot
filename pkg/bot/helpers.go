@@ -356,3 +356,28 @@ func (t *TgBot) gracefulWatcher() {
 		}
 	}()
 }
+
+// This function generate correct next month next to avoid wired behaviour with Go date normalization
+func nextMonth(t time.Time) (time.Time, error) {
+	_, lastMonthDay, err := data.FirstLastMonthDay(1, t.Year(), int(t.Month()))
+	if err != nil {
+		return time.Time{}, err
+	}
+	// Get zone offset to be able to truncate correctly
+	_, offset := t.Zone()
+	return lastMonthDay.AddDate(0,
+		0,
+		1).Truncate(time.Hour * 24).Add(time.Second * -time.Duration(offset)), nil
+}
+
+// This function generate correct previous month next to avoid wired behaviour with Go date normalization
+func prevMonth(t time.Time) (time.Time, error) {
+	firstMonthDay, _, err := data.FirstLastMonthDay(1, t.Year(), int(t.Month()))
+	if err != nil {
+		return time.Time{}, err
+	}
+	fmt.Println(*firstMonthDay)
+	return firstMonthDay.AddDate(0,
+		0,
+		-1).Truncate(time.Second * 1), nil
+}
