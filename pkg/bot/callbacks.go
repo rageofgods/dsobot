@@ -1079,10 +1079,8 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 			FromHandle: callbackHandleAddOffDuty,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get next month
@@ -1138,10 +1136,8 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 			FromHandle: callbackHandleAddOffDuty,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get previous month
@@ -1340,10 +1336,8 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 			FromHandle: callbackHandleWhoIsOnDutyAtDate,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get next month
@@ -1399,10 +1393,8 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string,
 			FromHandle: callbackHandleWhoIsOnDutyAtDate,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get previous month
@@ -1554,10 +1546,8 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 			FromHandle: callbackHandleWhoIsOnValidationAtDate,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get next month
@@ -1613,10 +1603,8 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 			FromHandle: callbackHandleWhoIsOnValidationAtDate,
 		}
 		// Get saved user data
-		dates, err := t.tmpOffDutyDataForUser(userId)
-		if err != nil {
-			return err
-		}
+		dates, _ := t.tmpOffDutyDataForUser(userId)
+
 		// if we already have fromDate data
 		var inlineKeyboard *tgbotapi.InlineKeyboardMarkup
 		//Get previous month
