@@ -1,3 +1,6 @@
+################
+# Build GO app #
+################
 FROM golang:1.17-buster as builder
 
 WORKDIR /app
@@ -12,7 +15,16 @@ RUN ./tests.sh
 
 RUN make docker_build
 
-FROM debian:buster-slim
+#########################
+# Get certs and TZ data #
+#########################
+FROM alpine:3.15.0 as certer
+RUN apk update && apk add ca-certificates tzdata
+
+################################################
+# Use scratch image to reduce final image size #
+################################################
+FROM scratch
 
 ENV TZ="Europe/Moscow"
 ARG cal_token
@@ -24,9 +36,8 @@ ENV CAL_URL=$cal_url
 ENV BOT_TOKEN=$bot_token
 ENV BOT_ADMIN_GROUP_ID=$bot_admin_group_id
 
-RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+COPY --from=certer /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=certer /usr/share/zoneinfo /usr/share/zoneinfo/
 
 COPY --from=builder /app/botapp /app/botapp
 
