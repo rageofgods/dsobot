@@ -472,7 +472,7 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 
 	// Upload file to Telegram and sand message to user
 	photoFileBytes := tgbotapi.FileBytes{
-		Name:  fmt.Sprintf("%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
+		Name:  fmt.Sprintf("duties-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
 		Bytes: buf.Bytes(),
 	}
 	if _, err := t.bot.Send(tgbotapi.NewDocument(t.adminGroupId, photoFileBytes)); err != nil {

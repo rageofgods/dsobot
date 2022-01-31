@@ -67,7 +67,7 @@ func NwdEventsForCurMonth() ([]int, error) {
 
 	stime, etime, err := FirstLastMonthDay(1)
 	if err != nil {
-		return nil, CtxError("data.NwdEventsForMonth()", err)
+		return nil, CtxError("data.NwdEventsForCurMonth()", err)
 	}
 	dayOffStartDay := stime.Format(DateShortIsDayOff)
 	dayOffEndDay := etime.Format(DateShortIsDayOff)
@@ -81,6 +81,9 @@ func NwdEventsForCurMonth() ([]int, error) {
 			Covid:       &covid,
 		},
 	})
+	if err != nil {
+		return nil, CtxError("data.NwdEventsForCurMonth()", err)
+	}
 
 	var nwdDays []int
 	for i := 0; i < etime.Day(); i++ {
