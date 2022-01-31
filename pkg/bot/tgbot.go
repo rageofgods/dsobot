@@ -66,11 +66,11 @@ func (t *TgBot) StartBot(version string, build string) {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-duty days
-	if err := t.scheduleCreateOnDuty("00:00:02"); err != nil {
+	if err := t.scheduleCreateOnDuty("00:00:03"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-validation days
-	if err := t.scheduleCreateOnValidation("00:00:02"); err != nil {
+	if err := t.scheduleCreateOnValidation("00:00:03"); err != nil {
 		log.Printf("%v", err)
 	}
 

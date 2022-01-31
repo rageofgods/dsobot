@@ -112,7 +112,7 @@ func (t *TgBot) updateOnDuty() {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
-		messageText := "События нерабочих дней успешно созданы"
+		messageText := "События дежурств успешно созданы"
 		if err := t.sendMessage(messageText,
 			t.adminGroupId,
 			nil,
@@ -135,7 +135,7 @@ func (t *TgBot) updateOnValidation() {
 			log.Printf("unable to send message: %v", err)
 		}
 	} else {
-		messageText := "События нерабочих дней успешно созданы"
+		messageText := "События валидаций успешно созданы"
 		if err := t.sendMessage(messageText,
 			t.adminGroupId,
 			nil,
