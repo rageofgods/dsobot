@@ -70,7 +70,8 @@ func (t *CalData) ManDutiesList(tgId string, dutyTag CalTag) (*[]time.Time, erro
 		if err != nil {
 			return nil, CtxError("data.ManDutiesList()", err)
 		}
-		edate, err := time.Parse(DateShort, event.End.Date)
+		// edate is event.Start here because of wired google calendar event returning data
+		edate, err := time.Parse(DateShort, event.Start.Date)
 		if err != nil {
 			return nil, CtxError("data.ManDutiesList()", err)
 		}

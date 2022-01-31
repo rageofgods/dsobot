@@ -14,7 +14,7 @@ func (t *CalData) CreateNwdEvents(startFrom *time.Time) error {
 	pre := false
 	covid := false
 
-	_, etime, err := FirstLastMonthDay(1)
+	_, etime, err := FirstLastMonthDay(1, startFrom.Year(), int(startFrom.Month()))
 	if err != nil {
 		return CtxError("data.CreateNwdEvents()", err)
 	}
@@ -56,6 +56,39 @@ func (t *CalData) CreateNwdEvents(startFrom *time.Time) error {
 	}
 
 	return nil
+}
+
+// NwdEventsForCurMonth returns slice of days (int) with non-working period for current month
+func NwdEventsForCurMonth() ([]int, error) {
+	dayOff := isdayoff.New()
+	countryCode := isdayoff.CountryCodeRussia
+	pre := false
+	covid := false
+
+	stime, etime, err := FirstLastMonthDay(1)
+	if err != nil {
+		return nil, CtxError("data.NwdEventsForMonth()", err)
+	}
+	dayOffStartDay := stime.Format(DateShortIsDayOff)
+	dayOffEndDay := etime.Format(DateShortIsDayOff)
+
+	days, err := dayOff.GetByRange(isdayoff.ParamsRange{
+		StartDate: &dayOffStartDay,
+		EndDate:   &dayOffEndDay,
+		Params: isdayoff.Params{
+			CountryCode: &countryCode,
+			Pre:         &pre,
+			Covid:       &covid,
+		},
+	})
+
+	var nwdDays []int
+	for i := 0; i < etime.Day(); i++ {
+		if days[i] == isdayoff.DayTypeNonWorking {
+			nwdDays = append(nwdDays, i+1)
+		}
+	}
+	return nwdDays, nil
 }
 
 // UpdateNwdEvents Recreate nwd events

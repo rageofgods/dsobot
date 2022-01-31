@@ -169,6 +169,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdAnnounce, args: nil},
 			description: "Включить или выключить анонс событий дежурства в для групповых чатов",
 			handleFunc:  t.adminHandleAnnounce},
+		{command: &cmd{name: botCmdShowMonthDuty, args: nil},
+			description: "Создать 'csv' файл с общей таблицей дежурств на текущий месяц",
+			handleFunc:  t.adminHandleShowMonthDuty},
 	}}
 }
 
@@ -220,6 +223,7 @@ const (
 	botCmdDisable           tCmd = "disable"
 	botCmdEditDutyType      tCmd = "editduty"
 	botCmdAnnounce          tCmd = "announce"
+	botCmdShowMonthDuty     tCmd = "duties_csv"
 )
 
 // Bot available args

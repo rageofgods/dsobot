@@ -60,10 +60,11 @@ func (t *CalData) monthEventsFor(tgId string, dutyTag CalTag) (*calendar.Events,
 		return nil, CtxError("data.monthEventsFor()", err)
 	}
 
-	// Get events with tgId && dutyTag
+	// Get events with tgId && dutyTag (Add 1 day to TimeMax because it's exclusive in google calendar
 	e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
 		SingleEvents(true).TimeMin(firstMonthDay.Format(time.RFC3339)).
-		TimeMax(lastMonthDay.Format(time.RFC3339)).MaxResults(100).Q(string(dutyTag) + " " + tgId).Do()
+		TimeMax(lastMonthDay.AddDate(0, 0, 1).Format(time.RFC3339)).
+		MaxResults(100).Q(string(dutyTag) + " " + tgId).Do()
 	if err != nil {
 		return nil, CtxError("data.monthEventsFor()", err)
 	}
