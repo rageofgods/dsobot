@@ -1501,7 +1501,7 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string,
 		}
 		if len(date) == 1 {
 			// Get on-duty data
-			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnDutyTag)
+			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnValidationTag)
 			if err != nil {
 				log.Printf("error in event creating: %v", err)
 				messageText := "Валидации не найдены."
