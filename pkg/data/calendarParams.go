@@ -58,6 +58,8 @@ const (
 	CalTurquoise = "7"
 	// CalGray gray color for calendar event
 	CalGray = "8"
+	// CalGreen green color for calendar event
+	CalGreen = "2"
 
 	// SearchMaxResults Default value for search filter
 	SearchMaxResults = 200

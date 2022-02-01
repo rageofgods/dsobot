@@ -394,7 +394,7 @@ func (t *TgBot) adminHandleAnnounce(cmdArgs string, update *tgbotapi.Update) {
 	}
 }
 
-// handle '/show_month' command
+// handle '/duties_csv' command
 func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update) {
 	log.Println(cmdArgs) // Ignore arg here
 
@@ -473,6 +473,92 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 	// Upload file to Telegram and sand message to user
 	photoFileBytes := tgbotapi.FileBytes{
 		Name:  fmt.Sprintf("Duties-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
+		Bytes: buf.Bytes(),
+	}
+	if _, err := t.bot.Send(tgbotapi.NewDocument(t.adminGroupId, photoFileBytes)); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}
+
+// handle '/validation_csv' command
+func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.Update) {
+	log.Println(cmdArgs) // Ignore arg here
+
+	_, lastMonthDay, err := data.FirstLastMonthDay(1)
+	if err != nil {
+		messageText := err.Error()
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	}
+
+	// Generate header based on days count for current month
+	header := []string{"Имя"}
+	for i := 1; i <= lastMonthDay.Day(); i++ {
+		header = append(header, strconv.Itoa(i))
+	}
+
+	var menData [][]string
+	menData = append(menData, header)
+	nwdDays, err := data.NwdEventsForCurMonth()
+	if err != nil {
+		log.Printf("unable to get non-working day data: %v", err)
+		return
+	}
+	for _, man := range *t.dc.DutyMenData(true) {
+		// Get man month duty dates
+		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnValidationTag)
+		if err != nil {
+			continue
+		}
+
+		manData := []string{man.CustomName}
+		for i := 1; i <= lastMonthDay.Day(); i++ {
+			var dayString string
+			// Iterate over all man duty dates for current month
+			for _, dd := range *dutyDates {
+				// If man duty date is equal with current month day - add it to data slice
+				if dd.Day() == i {
+					// Mark duty day
+					dayString = "\U0001F7E9"
+					break
+				} else {
+					for _, n := range nwdDays {
+						if n == i {
+							// Mark nwd day
+							dayString = "\U0001F7EB"
+							break
+						} else {
+							// Mark free of duty day
+							dayString = "⬜"
+						}
+					}
+				}
+			}
+			manData = append(manData, dayString)
+		}
+		menData = append(menData, manData)
+	}
+
+	// Create buffer, generate csv
+	buf := new(bytes.Buffer)
+	w := csv.NewWriter(buf)
+	if err := w.WriteAll(menData); err != nil {
+		messageText := fmt.Sprintf("Не удалось сгенерировать файл с отчетом дежурств: %v", err)
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+	}
+
+	// Upload file to Telegram and sand message to user
+	photoFileBytes := tgbotapi.FileBytes{
+		Name:  fmt.Sprintf("Validations-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
 		Bytes: buf.Bytes(),
 	}
 	if _, err := t.bot.Send(tgbotapi.NewDocument(t.adminGroupId, photoFileBytes)); err != nil {

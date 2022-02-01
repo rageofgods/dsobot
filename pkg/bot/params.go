@@ -172,6 +172,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdShowMonthDuty, args: nil},
 			description: "Создать 'csv' файл с общей таблицей дежурств на текущий месяц",
 			handleFunc:  t.adminHandleShowMonthDuty},
+		{command: &cmd{name: botCmdShowMonthValidation, args: nil},
+			description: "Создать 'csv' файл с общей таблицей валидаций на текущий месяц",
+			handleFunc:  t.adminHandleShowMonthValidation},
 	}}
 }
 
@@ -206,24 +209,25 @@ const (
 
 // Bot available commands
 const (
-	botCmdStart             tCmd = "start"
-	botCmdRegister          tCmd = "register"
-	botCmdUnregister        tCmd = "unregister"
-	botCmdWhoIsOnDuty       tCmd = "whoison_duty"
-	botCmdWhoIsOnValidation tCmd = "whoison_validation"
-	botCmdShowMy            tCmd = "showmy"
-	botCmdAddOffDuty        tCmd = "addoffduty"
-	botCmdShowOffDuty       tCmd = "showoffduty"
-	botCmdDeleteOffDuty     tCmd = "deleteoffduty"
-	botCmdHelp              tCmd = "help"
-	botCmdList              tCmd = "list"
-	botCmdRollout           tCmd = "rollout"
-	botCmdReindex           tCmd = "reindex"
-	botCmdEnable            tCmd = "enable"
-	botCmdDisable           tCmd = "disable"
-	botCmdEditDutyType      tCmd = "editduty"
-	botCmdAnnounce          tCmd = "announce"
-	botCmdShowMonthDuty     tCmd = "duties_csv"
+	botCmdStart               tCmd = "start"
+	botCmdRegister            tCmd = "register"
+	botCmdUnregister          tCmd = "unregister"
+	botCmdWhoIsOnDuty         tCmd = "whoison_duty"
+	botCmdWhoIsOnValidation   tCmd = "whoison_validation"
+	botCmdShowMy              tCmd = "showmy"
+	botCmdAddOffDuty          tCmd = "addoffduty"
+	botCmdShowOffDuty         tCmd = "showoffduty"
+	botCmdDeleteOffDuty       tCmd = "deleteoffduty"
+	botCmdHelp                tCmd = "help"
+	botCmdList                tCmd = "list"
+	botCmdRollout             tCmd = "rollout"
+	botCmdReindex             tCmd = "reindex"
+	botCmdEnable              tCmd = "enable"
+	botCmdDisable             tCmd = "disable"
+	botCmdEditDutyType        tCmd = "editduty"
+	botCmdAnnounce            tCmd = "announce"
+	botCmdShowMonthDuty       tCmd = "duties_csv"
+	botCmdShowMonthValidation tCmd = "validation_csv"
 )
 
 // Bot available args
