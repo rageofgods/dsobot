@@ -57,20 +57,8 @@ func (t *TgBot) StartBot(version string, build string) {
 	// Check and announce current bot version
 	t.botCheckVersion(version, build)
 
-	// Schedule per-day (expect non-working days) announcements for group channels
-	if err := t.scheduleAnnounce("09:00:00"); err != nil {
-		log.Printf("%v", err)
-	}
-	// Schedule per-month event creation for non-working days
-	if err := t.scheduleCreateNWD("00:00:01"); err != nil {
-		log.Printf("%v", err)
-	}
-	// Schedule per-month event creation for on-duty days
-	if err := t.scheduleCreateOnDuty("00:00:03"); err != nil {
-		log.Printf("%v", err)
-	}
-	// Schedule per-month event creation for on-validation days
-	if err := t.scheduleCreateOnValidation("00:00:03"); err != nil {
+	// Schedule recurring helpers
+	if err := t.scheduleAllHelpers(); err != nil {
 		log.Printf("%v", err)
 	}
 

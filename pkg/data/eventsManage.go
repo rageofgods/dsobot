@@ -37,7 +37,7 @@ func (t *CalData) dayEvents(day *time.Time, searchStrings ...string) (*calendar.
 		ss = strings.Trim(ss, " ")
 		e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
 			SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
-			TimeMax(etime.Format(time.RFC3339)).MaxResults(10).Q(ss).Do()
+			TimeMax(etime.Format(time.RFC3339)).MaxResults(50).Q(ss).Do()
 		if err != nil {
 			return nil, CtxError("data.dayEvents()", err)
 		}
@@ -46,7 +46,7 @@ func (t *CalData) dayEvents(day *time.Time, searchStrings ...string) (*calendar.
 
 	e, err := t.cal.Events.List(t.calID).ShowDeleted(false).
 		SingleEvents(true).TimeMin(stime.Format(time.RFC3339)).
-		TimeMax(etime.Format(time.RFC3339)).MaxResults(10).Do()
+		TimeMax(etime.Format(time.RFC3339)).MaxResults(50).Do()
 	if err != nil {
 		return nil, CtxError("data.dayEvents()", err)
 	}
