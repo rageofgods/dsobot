@@ -347,8 +347,8 @@ func (t *TgBot) adminHandleEditDutyType(cmdArgs string, update *tgbotapi.Update)
 	}
 }
 
-// handle '/announce' command
-func (t *TgBot) adminHandleAnnounce(cmdArgs string, update *tgbotapi.Update) {
+// handle '/edit_announce' command
+func (t *TgBot) adminHandleEditAnnounce(cmdArgs string, update *tgbotapi.Update) {
 	log.Println(cmdArgs) // Ignore arg here
 
 	// Create returned data (without data)
@@ -392,6 +392,13 @@ func (t *TgBot) adminHandleAnnounce(cmdArgs string, update *tgbotapi.Update) {
 		numericKeyboard); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
+}
+
+// handle '/send_announce' command
+func (t *TgBot) adminHandleSendAnnounce(cmdArgs string, update *tgbotapi.Update) {
+	log.Println(cmdArgs) // Ignore arg here
+	log.Println(update.UpdateID)
+	t.announceDuty()
 }
 
 // handle '/duties_csv' command
