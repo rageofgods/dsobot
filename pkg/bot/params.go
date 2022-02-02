@@ -166,9 +166,12 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdEditDutyType, args: nil},
 			description: "Отредактировать типы дежурств для всех дежурных",
 			handleFunc:  t.adminHandleEditDutyType},
-		{command: &cmd{name: botCmdAnnounce, args: nil},
+		{command: &cmd{name: botCmdEditAnnounce, args: nil},
 			description: "Включить или выключить анонс событий дежурства в для групповых чатов",
-			handleFunc:  t.adminHandleAnnounce},
+			handleFunc:  t.adminHandleEditAnnounce},
+		{command: &cmd{name: botCmdSendAnnounce, args: nil},
+			description: "Отправить анонс событий дежурства в для групповых чатов",
+			handleFunc:  t.adminHandleSendAnnounce},
 		{command: &cmd{name: botCmdShowMonthDuty, args: nil},
 			description: "Создать 'csv' файл с общей таблицей дежурств на текущий месяц",
 			handleFunc:  t.adminHandleShowMonthDuty},
@@ -225,7 +228,8 @@ const (
 	botCmdEnable              tCmd = "enable"
 	botCmdDisable             tCmd = "disable"
 	botCmdEditDutyType        tCmd = "editduty"
-	botCmdAnnounce            tCmd = "announce"
+	botCmdEditAnnounce        tCmd = "edit_announce"
+	botCmdSendAnnounce        tCmd = "send_announce"
 	botCmdShowMonthDuty       tCmd = "duties_csv"
 	botCmdShowMonthValidation tCmd = "validation_csv"
 )
