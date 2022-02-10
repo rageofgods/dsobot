@@ -433,8 +433,15 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 		// Get man month duty dates
 		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnDutyTag)
 		if err != nil {
-			// if Current man don't have off-dates we can skip him, because he doesn't have duties at this month also
-			if len(man.OffDuty) == 0 {
+			// if Current man don't have off-duties we can skip him, because he doesn't have duties at this month also
+			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
+				lastMonthDay.Month(),
+				lastMonthDay.Year())
+			if err != nil {
+				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
+				continue
+			}
+			if !isManHaveOffDutyForThisMonth {
 				continue
 			}
 		}
