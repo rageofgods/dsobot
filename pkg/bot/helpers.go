@@ -381,3 +381,48 @@ func prevMonth(t time.Time) (time.Time, error) {
 		0,
 		-1).Truncate(time.Second * 1), nil
 }
+
+// Check if provided day for month is in off-duty range
+func isDayInOffDutyRange(offDuty *data.OffDutyData, day int, month time.Month, year int) (bool, error) {
+	loc, err := time.LoadLocation(data.TimeZone)
+	if err != nil {
+		return false, err
+	}
+
+	targetDate := time.Date(year, month, day, 0, 0, 0, 0, loc)
+	startOffDutyDate, err := time.ParseInLocation(botDataShort3, offDuty.OffDutyStart, loc)
+	if err != nil {
+		return false, err
+	}
+	endOffDutyDate, err := time.ParseInLocation(botDataShort3, offDuty.OffDutyEnd, loc)
+	if err != nil {
+		return false, err
+	}
+
+	if (targetDate.After(startOffDutyDate) || targetDate.Equal(startOffDutyDate)) &&
+		(targetDate.Before(endOffDutyDate) || targetDate.Equal(endOffDutyDate)) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// Check if provided month is in off-duty range array
+func isMonthInOffDutyData(offDutyData []data.OffDutyData, month time.Month, year int) (bool, error) {
+	firstMonthDay, lastMonthDay, err := data.FirstLastMonthDay(1, year, int(month))
+	if err != nil {
+		return false, err
+	}
+	for _, v := range offDutyData {
+		for d := *firstMonthDay; d.Before(*lastMonthDay); d = d.AddDate(0, 0, 1) {
+			isDayOff, err := isDayInOffDutyRange(&v, d.Day(), month, year)
+			if err != nil {
+				return false, err
+			}
+			if isDayOff {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}

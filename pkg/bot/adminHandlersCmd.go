@@ -433,32 +433,63 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 		// Get man month duty dates
 		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnDutyTag)
 		if err != nil {
-			continue
+			// if Current man don't have off-duties we can skip him, because he doesn't have duties at this month also
+			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
+				lastMonthDay.Month(),
+				lastMonthDay.Year())
+			if err != nil {
+				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
+				continue
+			}
+			if !isManHaveOffDutyForThisMonth {
+				continue
+			}
 		}
 
 		manData := []string{man.CustomName}
 		for i := 1; i <= lastMonthDay.Day(); i++ {
 			var dayString string
 			// Iterate over all man duty dates for current month
-			for _, dd := range *dutyDates {
-				// If man duty date is equal with current month day - add it to data slice
-				if dd.Day() == i {
-					// Mark duty day
-					dayString = "\U0001F7E9"
-					break
-				} else {
-					for _, n := range nwdDays {
-						if n == i {
-							// Mark nwd day
-							dayString = "\U0001F7EB"
-							break
-						} else {
-							// Mark free of duty day
-							dayString = "⬜"
-						}
+			if dutyDates != nil {
+				for _, dd := range *dutyDates {
+					// If man duty date is equal with current month day - add it to data slice
+					if dd.Day() == i {
+						// Mark duty day
+						dayString = "\U0001F7E9"
+						break
 					}
 				}
 			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, n := range nwdDays {
+					if n == i {
+						// Mark nwd day
+						dayString = "\U0001F7EB"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, v := range man.OffDuty {
+					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
+					if err != nil {
+						continue
+					}
+					if isDayOffDuty {
+						// Mark off-duty day
+						dayString = "\U0001F7E7"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				// Mark free of duty day
+				dayString = "⬜"
+			}
+
 			manData = append(manData, dayString)
 		}
 		menData = append(menData, manData)
@@ -519,32 +550,63 @@ func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.
 		// Get man month duty dates
 		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnValidationTag)
 		if err != nil {
-			continue
+			// if Current man don't have off-dates we can skip him, because he doesn't have duties at this month also
+			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
+				lastMonthDay.Month(),
+				lastMonthDay.Year())
+			if err != nil {
+				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
+				continue
+			}
+			if !isManHaveOffDutyForThisMonth {
+				continue
+			}
 		}
 
 		manData := []string{man.CustomName}
 		for i := 1; i <= lastMonthDay.Day(); i++ {
 			var dayString string
 			// Iterate over all man duty dates for current month
-			for _, dd := range *dutyDates {
-				// If man duty date is equal with current month day - add it to data slice
-				if dd.Day() == i {
-					// Mark duty day
-					dayString = "\U0001F7E9"
-					break
-				} else {
-					for _, n := range nwdDays {
-						if n == i {
-							// Mark nwd day
-							dayString = "\U0001F7EB"
-							break
-						} else {
-							// Mark free of duty day
-							dayString = "⬜"
-						}
+			if dutyDates != nil {
+				for _, dd := range *dutyDates {
+					// If man duty date is equal with current month day - add it to data slice
+					if dd.Day() == i {
+						// Mark duty day
+						dayString = "\U0001F7E9"
+						break
 					}
 				}
 			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, n := range nwdDays {
+					if n == i {
+						// Mark nwd day
+						dayString = "\U0001F7EB"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, v := range man.OffDuty {
+					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
+					if err != nil {
+						continue
+					}
+					if isDayOffDuty {
+						// Mark off-duty day
+						dayString = "\U0001F7E7"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				// Mark free of duty day
+				dayString = "⬜"
+			}
+
 			manData = append(manData, dayString)
 		}
 		menData = append(menData, manData)
