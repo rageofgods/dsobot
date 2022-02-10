@@ -406,3 +406,23 @@ func isDayInOffDutyRange(offDuty *data.OffDutyData, day int, month time.Month, y
 
 	return false, nil
 }
+
+// Check if provided month is in off-duty range array
+func isMonthInOffDutyData(offDutyData []data.OffDutyData, month time.Month, year int) (bool, error) {
+	firstMonthDay, lastMonthDay, err := data.FirstLastMonthDay(1, year, int(month))
+	if err != nil {
+		return false, err
+	}
+	for _, v := range offDutyData {
+		for d := *firstMonthDay; d.Before(*lastMonthDay); d = d.AddDate(0, 0, 1) {
+			isDayOff, err := isDayInOffDutyRange(&v, d.Day(), month, year)
+			if err != nil {
+				return false, err
+			}
+			if isDayOff {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}

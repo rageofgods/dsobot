@@ -151,3 +151,39 @@ func Test_isDayInOffDutyRange(t *testing.T) {
 		})
 	}
 }
+
+func Test_isMonthInOffDutyData(t *testing.T) {
+	data1 := []data.OffDutyData{
+		{OffDutyStart: "02/01/2021", OffDutyEnd: "10/01/2021"},
+		{OffDutyStart: "02/01/2022", OffDutyEnd: "10/01/2022"},
+		{OffDutyStart: "10/02/2022", OffDutyEnd: "10/02/2022"},
+	}
+
+	type args struct {
+		offDutyData []data.OffDutyData
+		month       time.Month
+		year        int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{name: "First test", args: args{offDutyData: data1, month: time.January, year: 2022}, want: true, wantErr: false},
+		{name: "Second test", args: args{offDutyData: data1, month: time.February, year: 2022}, want: true, wantErr: false},
+		{name: "Third test", args: args{offDutyData: data1, month: time.May, year: 2022}, want: false, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isMonthInOffDutyData(tt.args.offDutyData, tt.args.month, tt.args.year)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("isMonthInOffDutyData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("isMonthInOffDutyData() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
