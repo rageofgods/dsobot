@@ -12,7 +12,7 @@ type DutyMan struct {
 	DutyType   []Duty        `json:"duty-type"`
 }
 
-// OffDutyData holds off-duty data save
+// OffDutyData holds off-duty data save in '02/01/2006' format
 type OffDutyData struct {
 	OffDutyStart string `json:"off-d-s"`
 	OffDutyEnd   string `json:"off-d-e"`

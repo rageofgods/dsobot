@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"dso_bot/pkg/data"
 	"reflect"
 	"testing"
 	"time"
@@ -108,6 +109,44 @@ func Test_prevMonth(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("prevMonth() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isDayInOffDutyRange(t *testing.T) {
+	od1 := &data.OffDutyData{OffDutyStart: "02/01/2022", OffDutyEnd: "10/01/2022"}
+	od2 := &data.OffDutyData{OffDutyStart: "10/02/2022", OffDutyEnd: "10/02/2022"}
+
+	type args struct {
+		offDuty *data.OffDutyData
+		day     int
+		month   time.Month
+		year    int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{name: "First day test", args: args{offDuty: od1, day: 1, month: 1, year: 2022}, want: false, wantErr: false},
+		{name: "Second day test", args: args{offDuty: od1, day: 2, month: 1, year: 2022}, want: true, wantErr: false},
+		{name: "Third day test", args: args{offDuty: od1, day: 10, month: 1, year: 2022}, want: true, wantErr: false},
+		{name: "Fourth day test", args: args{offDuty: od1, day: 11, month: 1, year: 2022}, want: false, wantErr: false},
+		{name: "Fifth day test", args: args{offDuty: od2, day: 9, month: 2, year: 2022}, want: false, wantErr: false},
+		{name: "Sixth day test", args: args{offDuty: od2, day: 10, month: 2, year: 2022}, want: true, wantErr: false},
+		{name: "Seventh day test", args: args{offDuty: od2, day: 11, month: 2, year: 2022}, want: false, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isDayInOffDutyRange(tt.args.offDuty, tt.args.day, tt.args.month, tt.args.year)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("isDayInOffDutyRange() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("isDayInOffDutyRange() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
