@@ -8,9 +8,10 @@ type BotSettings struct {
 
 // JoinedGroup Hold data for group which bot was joined
 type JoinedGroup struct {
-	Title    string `json:"title"`
-	Id       int64  `json:"id"`
-	Announce bool   `json:"announce"`
+	Title         string `json:"title"`
+	Id            int64  `json:"id"`
+	Announce      bool   `json:"announce"`
+	LastMessageId int    `json:"last_message_id"`
 }
 
 const (

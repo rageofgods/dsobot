@@ -47,7 +47,26 @@ func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard
 	// Check if we want to sent message
 	if len(pin) == 1 {
 		if pin[0] {
-			pin := tgbotapi.PinChatMessageConfig{MessageID: sentMessage.MessageID, ChatID: chatId}
+			// Unpin previous announce message
+			for _, v := range t.settings.JoinedGroups {
+				if v.Id == chatId && v.LastMessageId != 0 {
+					unpin := tgbotapi.UnpinChatMessageConfig{MessageID: v.LastMessageId,
+						ChatID: chatId}
+					_, err = t.bot.Request(unpin)
+					if err != nil {
+						message = fmt.Sprintf("Не удалось открепить сообщение для chatID: %d\nОшибка: (%v)",
+							chatId, err)
+						if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
+							log.Printf("%v", err)
+						}
+						return err
+					}
+				}
+			}
+			// Pin announce message
+			pin := tgbotapi.PinChatMessageConfig{MessageID: sentMessage.MessageID,
+				ChatID:              chatId,
+				DisableNotification: true}
 			_, err = t.bot.Request(pin)
 			if err != nil {
 				message = fmt.Sprintf("Не удалось закрепить сообщение для chatID: %d\nОшибка: (%v)", chatId, err)
@@ -55,6 +74,16 @@ func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard
 					log.Printf("%v", err)
 				}
 				return err
+			}
+			// Save pinned message id
+			for i, v := range t.settings.JoinedGroups {
+				if v.Id == chatId {
+					t.settings.JoinedGroups[i].LastMessageId = sentMessage.MessageID
+				}
+			}
+			// Save bot settings with new data
+			if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+				return fmt.Errorf("unable to save bot settings: %v", err)
 			}
 		}
 	}
