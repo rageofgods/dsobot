@@ -634,3 +634,41 @@ func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.
 		log.Printf("unable to send message: %v", err)
 	}
 }
+
+// handle 'addoffduty' command
+func (t *TgBot) adminHandleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
+	log.Println(cmdArgs) // Ignore arg here
+
+	// Create returned data (without data)
+	callbackData := &callbackMessage{
+		UserId:     update.Message.From.ID,
+		ChatId:     update.Message.Chat.ID,
+		MessageId:  update.Message.MessageID,
+		FromHandle: callbackHandleAdminAddOffDuty,
+	}
+
+	activeMen := t.dc.DutyMenData(true) // Get only active men list
+	if len(*activeMen) == 0 {
+		messageText := "Активных дежурных не найдено"
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
+		return
+	}
+
+	numericKeyboard, err := genAdminAddOffDutyIndexKeyboard(t, activeMen, *callbackData)
+	if err != nil {
+		log.Printf("unable to generate new inline keyboard: %v", err)
+	}
+
+	messageText := "Выберите дежурного из списка для которого необходимо добавить нерабочий период"
+	if err := t.sendMessage(messageText,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
+		numericKeyboard); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}

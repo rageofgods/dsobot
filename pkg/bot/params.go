@@ -30,12 +30,19 @@ type tmpOffDutyData struct {
 	data   []time.Time
 }
 
+// Structure to hold admin off-duty data based on original tmpOffDutyData
+type tmpAdminOffDutyData struct {
+	userId int64
+	data   *tmpOffDutyData
+}
+
 // Structure (parent) for different types of tmp data
 type tmpData struct {
-	tmpRegisterData    []tmpRegisterData
-	tmpDutyManData     []tmpDutyManData
-	tmpJoinedGroupData []tmpJoinedGroupData
-	tmpOffDutyData     []tmpOffDutyData
+	tmpRegisterData     []tmpRegisterData
+	tmpDutyManData      []tmpDutyManData
+	tmpJoinedGroupData  []tmpJoinedGroupData
+	tmpOffDutyData      []tmpOffDutyData
+	tmpAdminOffDutyData []tmpAdminOffDutyData
 }
 
 /////////////////////////////////
@@ -178,6 +185,9 @@ func (t *TgBot) AdminBotCommands() *botCommands {
 		{command: &cmd{name: botCmdShowMonthValidation, args: nil},
 			description: "Создать 'csv' файл с общей таблицей валидаций на текущий месяц",
 			handleFunc:  t.adminHandleShowMonthValidation},
+		{command: &cmd{name: botCmdAddOffDuty, args: nil},
+			description: "Добавить нерабочий период для пользователя",
+			handleFunc:  t.adminHandleAddOffDuty},
 	}}
 }
 
@@ -208,6 +218,7 @@ const (
 	callbackHandleAddOffDuty              = "j"
 	callbackHandleWhoIsOnDutyAtDate       = "k"
 	callbackHandleWhoIsOnValidationAtDate = "l"
+	callbackHandleAdminAddOffDuty         = "m"
 )
 
 // Bot available commands
@@ -289,4 +300,5 @@ const (
 	msgTextUserHandleAddOffDutyEnd           = "Конец нерабочего периода:"
 	msgTextUserHandleWhoIsOnDutyAtDate       = "📅 Выберите дату для которой необходимо отобразить дежурного"
 	msgTextUserHandleWhoIsOnValidationAtDate = "📅 Выберите дату для которой необходимо отобразить валидирующего"
+	msgTextUserHandleAdminAddOffDuty1        = "📅 Укажите дату начала нерабочего периода для пользователя: %s"
 )

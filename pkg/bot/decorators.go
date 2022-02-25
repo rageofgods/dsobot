@@ -19,6 +19,7 @@ var (
 	isCallbackHandleAddOffDutyFired              bool
 	isCallbackHandleWhoIsOnDutyAtDateFired       bool
 	isCallbackHandleWhoIsOnValidationAtDateFired bool
+	isCallbackHandleAdminAddOffDutyFired         bool
 )
 
 // Define function type for decorator

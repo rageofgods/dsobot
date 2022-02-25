@@ -379,3 +379,118 @@ func genInlineCalendarKeyboard(date time.Time,
 
 	return &inlineMarkupKeyboard, nil
 }
+
+// Generate keyboard with men on-duty indexes
+func genAdminAddOffDutyIndexKeyboard(t *TgBot, dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i, v := range *dm {
+		indexButton := &callbackButtonIndex{
+			targetUserTgId: v.TgID,
+		}
+		row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d. %s (@%s)",
+			i+1, v.CustomName, v.UserName), newCallbackButton(t, &cm, indexButton)))
+		rows = append(rows, row)
+	}
+
+	// Add row with cancel button
+	cancelButton := &callbackButtonCancel{}
+	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Отмена",
+		newCallbackButton(t, &cm, cancelButton)))
+	rows = append(rows, row)
+
+	var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	return &numericKeyboard, nil
+}
+
+// Generate keyboard with calendar data
+func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
+	cm callbackMessage,
+	selectedDay ...int) (*tgbotapi.InlineKeyboardMarkup, error) {
+	// Create numeric inline keyboard
+	var rows [][]tgbotapi.InlineKeyboardButton
+	// Generate header with next/prev buttons
+	var buttonsHeader []tgbotapi.InlineKeyboardButton
+	// Add previous button
+	prevNextButton := &callbackButtonPrev{date: date}
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData("⬅️",
+		newCallbackButton(t, &cm, prevNextButton)))
+	// Add void month/year button
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s %d",
+		locMonth(date.Month()), date.Year()),
+		newCallbackButton(t, &cm, &callbackButtonVoid{})))
+	// Add next button
+	nextButton := &callbackButtonNext{date: date}
+	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData("➡️",
+		newCallbackButton(t, &cm, nextButton)))
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(buttonsHeader...))
+	// Generate header with types of the day
+	var dayTypesHeader []tgbotapi.InlineKeyboardButton
+	dayTypes := [7]struct {
+		weekday time.Weekday
+		dayName string
+	}{
+		{weekday: time.Monday, dayName: "П"},
+		{weekday: time.Tuesday, dayName: "В"},
+		{weekday: time.Wednesday, dayName: "С"},
+		{weekday: time.Thursday, dayName: "Ч"},
+		{weekday: time.Friday, dayName: "П"},
+		{weekday: time.Saturday, dayName: "С"},
+		{weekday: time.Sunday, dayName: "В"},
+	}
+	for _, dt := range dayTypes {
+		dayTypesHeader = append(dayTypesHeader, tgbotapi.NewInlineKeyboardButtonData(dt.dayName,
+			newCallbackButton(t, &cm, &callbackButtonVoid{})))
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(dayTypesHeader...))
+	// Generate rows with calendar data
+	firstDay, lastDay, err := data.FirstLastMonthDay(1, date.Year(), int(date.Month()))
+	if err != nil {
+		return nil, err
+	}
+	// Iterate over days and weekday to fill up calendar buttons data
+	for d := *firstDay; d.Before(*lastDay); {
+		var calendarDays []tgbotapi.InlineKeyboardButton
+		for _, dt := range dayTypes {
+			// Generate calendar buttons data
+			if d.Weekday() == dt.weekday {
+				if d.Before(*lastDay) && d.After(time.Now().Add(time.Hour*-24)) {
+					buttonDate := &callbackButtonDate{
+						date: d,
+					}
+					// If we have selected day - highlight it
+					if len(selectedDay) == 1 && selectedDay[0] == d.Day() {
+						calendarDays = append(calendarDays,
+							tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("⸨%s⸩", strconv.Itoa(d.Day())),
+								newCallbackButton(t, &cm, buttonDate)))
+					} else {
+						calendarDays = append(calendarDays,
+							tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(d.Day()),
+								newCallbackButton(t, &cm, buttonDate)))
+					}
+					d = d.AddDate(0, 0, 1)
+				} else {
+					calendarDays = append(calendarDays,
+						tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &callbackButtonVoid{})))
+					d = d.AddDate(0, 0, 1)
+				}
+			} else {
+				// Add stub button if current weekday is earlier when first day of month
+				calendarDays = append(calendarDays,
+					tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &callbackButtonVoid{})))
+			}
+		}
+		// Add new buttons rows (whole new week)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(calendarDays...))
+	}
+
+	// Add row with ok/cancel buttons
+	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово",
+		newCallbackButton(t, &cm, &callbackButtonOk{})),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", newCallbackButton(t, &cm, &callbackButtonCancel{})))
+	rows = append(rows, row)
+
+	inlineMarkupKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	return &inlineMarkupKeyboard, nil
+}

@@ -176,3 +176,71 @@ func (t *TgBot) clearTmpOffDutyDataForUser(userId int64) {
 		}
 	}
 }
+
+// Reuse 'tmpOffDutyDataForUser' to access original user data
+func (t *TgBot) tmpAdminOffDutyDataForUser(adminUserId int64) ([]time.Time, error) {
+	for _, v := range t.tmpData.tmpAdminOffDutyData {
+		if v.userId == adminUserId {
+			if v.data != nil {
+				userData, err := t.tmpAdminOffDutyDataForUserId(adminUserId)
+				if err != nil {
+					return nil, err
+				}
+				return userData, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for adminUserId: %d\n", adminUserId)
+}
+
+func (t *TgBot) addTmpAdminOffDutyDataForUserId(adminUserId int64, origUserId int64) {
+	// Add original user id as a tmp data source
+	tmpNewGroup := tmpOffDutyData{userId: origUserId}
+	tmpNewAdminGroup := tmpAdminOffDutyData{userId: adminUserId, data: &tmpNewGroup}
+	t.tmpData.tmpAdminOffDutyData = append(t.tmpData.tmpAdminOffDutyData, tmpNewAdminGroup)
+}
+
+func (t *TgBot) addTmpAdminOffDutyDataForUser(adminUserId int64, date time.Time) {
+	// If we already have some previously saved data for current userId
+	for i, v := range t.tmpData.tmpAdminOffDutyData {
+		if v.userId == adminUserId {
+			// Check if we have correct length of current offDuty data (max = 2)
+			if len(t.tmpData.tmpAdminOffDutyData[i].data.data) < 2 {
+				t.tmpData.tmpAdminOffDutyData[i].data.data = append(t.tmpData.tmpAdminOffDutyData[i].data.data, date)
+			}
+		}
+	}
+}
+
+func (t *TgBot) clearTmpAdminOffDutyDataForUser(adminUserId int64) {
+	// CLear user temp data
+	for i, v := range t.tmpData.tmpAdminOffDutyData {
+		if v.userId == adminUserId {
+			t.tmpData.tmpAdminOffDutyData[i].data = &tmpOffDutyData{}
+		}
+	}
+}
+
+func (t *TgBot) tmpAdminOffDutyDataForUserId(userId int64) ([]time.Time, error) {
+	for _, v := range t.tmpData.tmpAdminOffDutyData {
+		if v.userId == userId {
+			if v.data != nil {
+				return v.data.data, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
+}
+
+func (t *TgBot) tmpAdminGetOffDutyDataForUserId(adminUserId int64) (*data.DutyMan, error) {
+	for i, v := range t.tmpData.tmpAdminOffDutyData {
+		if v.userId == adminUserId {
+			for _, man := range *t.dc.DutyMenData() {
+				if t.tmpData.tmpAdminOffDutyData[i].data.userId == man.TgID {
+					return &man, nil
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("no user found for id: %d", adminUserId)
+}

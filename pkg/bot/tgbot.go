@@ -10,24 +10,26 @@ import (
 )
 
 type TgBot struct {
-	bot          *tgbotapi.BotAPI
-	dc           *data.CalData
-	token        string
-	msg          *tgbotapi.MessageConfig
-	adminGroupId int64
-	debug        bool
-	tmpData      tmpData
-	settings     data.BotSettings
+	bot            *tgbotapi.BotAPI
+	dc             *data.CalData
+	token          string
+	msg            *tgbotapi.MessageConfig
+	adminGroupId   int64
+	debug          bool
+	tmpData        tmpData
+	settings       data.BotSettings
+	callbackButton map[string]callbackButton
 }
 
 func NewTgBot(dc *data.CalData, settings data.BotSettings, token string, adminGroupId int64, debug bool) *TgBot {
 	return &TgBot{
-		dc:           dc,
-		token:        token,
-		msg:          new(tgbotapi.MessageConfig),
-		adminGroupId: adminGroupId,
-		debug:        debug,
-		settings:     settings,
+		dc:             dc,
+		token:          token,
+		msg:            new(tgbotapi.MessageConfig),
+		adminGroupId:   adminGroupId,
+		debug:          debug,
+		settings:       settings,
+		callbackButton: make(map[string]callbackButton),
 	}
 }
 
@@ -150,7 +152,8 @@ func (t *TgBot) StartBot(version string, build string) {
 			// a message with the data received.
 			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
 			if _, err := t.bot.Request(callback); err != nil {
-				panic(err)
+				log.Printf("unable to request callback: %v", err)
+				continue
 			}
 
 			// Get callback data and convert json to struct
@@ -158,7 +161,15 @@ func (t *TgBot) StartBot(version string, build string) {
 			var message callbackMessage
 			err := json.Unmarshal([]byte(callbackData), &message)
 			if err != nil {
-				log.Printf("Can't unmarshal data json: %v", err)
+				// If we can't unmarshal callback data, let's try to find it in callbackButton
+				log.Printf("%v\n", err)
+				log.Printf("Current callback data is: %s\n", callbackData)
+				log.Printf("Trying to find saved callback data for id: %s\n", callbackData)
+				if v, ok := t.callbackButton[callbackData]; ok {
+					log.Printf("Callback data is found for id: %s\n", callbackData)
+					message = v.callbackMessage
+					message.Answer = callbackData
+				}
 			}
 
 			// If we got callback from not an original user - ignore it. (Except user registration flow)
@@ -342,6 +353,24 @@ func (t *TgBot) StartBot(version string, build string) {
 				if !isCallbackHandleWhoIsOnValidationAtDateFired {
 					dec := burstDecorator(1, &isCallbackHandleWhoIsOnValidationAtDateFired,
 						t.callbackWhoIsOnValidationAtDate)
+					if err := dec(message.Answer,
+						message.ChatId,
+						message.UserId,
+						message.MessageId,
+						&update); err != nil {
+						messageText := fmt.Sprintf("Возникла ошибка обработки запроса: %v", err)
+						if err := t.sendMessage(messageText,
+							update.CallbackQuery.Message.Chat.ID,
+							&update.CallbackQuery.Message.MessageID,
+							nil); err != nil {
+							log.Printf("unable to send message: %v", err)
+						}
+					}
+				}
+			case callbackHandleAdminAddOffDuty:
+				if !isCallbackHandleAdminAddOffDutyFired {
+					dec := burstDecorator(1, &isCallbackHandleAdminAddOffDutyFired,
+						t.callbackAdminAddOffDuty)
 					if err := dec(message.Answer,
 						message.ChatId,
 						message.UserId,
