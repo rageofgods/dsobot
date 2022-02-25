@@ -16,6 +16,9 @@ type callbackButtonIndex struct {
 	targetUserTgId int64
 }
 
+// Button struct for void button
+type callbackButtonVoid struct{}
+
 // Button struct for cancel button
 type callbackButtonCancel struct{}
 

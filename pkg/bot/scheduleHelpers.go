@@ -33,6 +33,10 @@ func (t *TgBot) scheduleAllHelpers() error {
 	if err := t.scheduleCreateBackupForSettings("00:00:11"); err != nil {
 		log.Printf("%v", err)
 	}
+	// Schedule per-dey callbackButton data purge
+	if err := t.schedulePurgeForCallbackButtonData("03:00:00"); err != nil {
+		log.Printf("%v", err)
+	}
 	return nil
 }
 
@@ -151,6 +155,25 @@ func (t *TgBot) scheduleCreateBackupForSettings(timeString string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("can't schedule on-validation creating message. job: %v: error: %v", j, err)
+	}
+	s.StartAsync()
+	return nil
+}
+
+// Purge Callback data
+func (t *TgBot) schedulePurgeForCallbackButtonData(timeString string) error {
+	loc, err := time.LoadLocation(data.TimeZone)
+	if err != nil {
+		return err
+	}
+
+	s := gocron.NewScheduler(loc)
+	j, err := s.Every(1).Day().At(timeString).Do(func() {
+		log.Printf("Purging callback data...")
+		t.callbackButton = make(map[string]callbackButton)
+	})
+	if err != nil {
+		return fmt.Errorf("can't schedule purge for callback data. job: %v: error: %v", j, err)
 	}
 	s.StartAsync()
 	return nil

@@ -1755,10 +1755,11 @@ func (t *TgBot) callbackAdminAddOffDuty(answer string, chatId int64, userId int6
 			// Send final message and remove inline keyboard
 			t.delInlineKeyboardWithMessage(messageText, chatId, messageId, update)
 
-			// Recreate calendar duty event from current date if added duty in landed at this month
+			// Generate time range string
 			timeRangeText := fmt.Sprintf("%s - %s",
 				dates[0].Format(botDataShort3),
 				dates[1].Format(botDataShort3))
+			// Recreate calendar duty event from current date if added duty in landed at this month
 			t.updateOnDutyEvents(&dates[0], reqUser.UserName, timeRangeText)
 
 			// Clear tmp data
@@ -1961,10 +1962,10 @@ func (t *TgBot) callbackAdminAddOffDuty(answer string, chatId int64, userId int6
 				log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 			}
 		}
-	case *struct{}:
+	case *callbackButtonVoid:
+		return nil
 	default:
 		return fmt.Errorf("unknown callback data type was provided: %v", tp)
 	}
-
 	return nil
 }

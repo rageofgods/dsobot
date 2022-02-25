@@ -418,7 +418,7 @@ func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
 	// Add void month/year button
 	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s %d",
 		locMonth(date.Month()), date.Year()),
-		newCallbackButton(t, &cm, &struct{}{})))
+		newCallbackButton(t, &cm, &callbackButtonVoid{})))
 	// Add next button
 	nextButton := &callbackButtonNext{date: date}
 	buttonsHeader = append(buttonsHeader, tgbotapi.NewInlineKeyboardButtonData("➡️",
@@ -440,7 +440,7 @@ func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
 	}
 	for _, dt := range dayTypes {
 		dayTypesHeader = append(dayTypesHeader, tgbotapi.NewInlineKeyboardButtonData(dt.dayName,
-			newCallbackButton(t, &cm, &struct{}{})))
+			newCallbackButton(t, &cm, &callbackButtonVoid{})))
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(dayTypesHeader...))
 	// Generate rows with calendar data
@@ -471,13 +471,13 @@ func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
 					d = d.AddDate(0, 0, 1)
 				} else {
 					calendarDays = append(calendarDays,
-						tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &struct{}{})))
+						tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &callbackButtonVoid{})))
 					d = d.AddDate(0, 0, 1)
 				}
 			} else {
 				// Add stub button if current weekday is earlier when first day of month
 				calendarDays = append(calendarDays,
-					tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &struct{}{})))
+					tgbotapi.NewInlineKeyboardButtonData("✖️", newCallbackButton(t, &cm, &callbackButtonVoid{})))
 			}
 		}
 		// Add new buttons rows (whole new week)
@@ -485,11 +485,9 @@ func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
 	}
 
 	// Add row with ok/cancel buttons
-	okButton := &callbackButtonOk{}
-	cancelButton := &callbackButtonCancel{}
 	row := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Готово",
-		newCallbackButton(t, &cm, okButton)),
-		tgbotapi.NewInlineKeyboardButtonData("Отмена", newCallbackButton(t, &cm, cancelButton)))
+		newCallbackButton(t, &cm, &callbackButtonOk{})),
+		tgbotapi.NewInlineKeyboardButtonData("Отмена", newCallbackButton(t, &cm, &callbackButtonCancel{})))
 	rows = append(rows, row)
 
 	inlineMarkupKeyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
