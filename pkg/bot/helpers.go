@@ -455,3 +455,15 @@ func isMonthInOffDutyData(offDutyData []data.OffDutyData, month time.Month, year
 	}
 	return false, nil
 }
+
+func (t *TgBot) callbackAggregateUnmarshal(id string) (interface{}, callbackMessage, error) {
+	var cbd interface{}
+	var cbm callbackMessage
+	if v, ok := t.callbackButton[id]; ok {
+		cbd = v.getCallbackData()
+		cbm = v.getCallbackMessage()
+	} else {
+		return nil, callbackMessage{}, fmt.Errorf("can't find callback data for id: %s", id)
+	}
+	return cbd, cbm, nil
+}
