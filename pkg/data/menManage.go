@@ -162,6 +162,29 @@ func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time
 	}
 }
 
+// UpdateOffDutyAnnounce update bool value of specific off-duty announce type
+func (t *CalData) UpdateOffDutyAnnounce(tgID string, stime string, etime string, announceType uint) error {
+	for i, man := range *t.dutyMen {
+		if man.UserName == tgID {
+			for ii, v := range (*t.dutyMen)[i].OffDuty {
+				if v.OffDutyStart == stime && v.OffDutyEnd == etime {
+					switch announceType {
+					case 0:
+						(*t.dutyMen)[i].OffDuty[ii].OffDutyPreAnnounced = true
+					case 1:
+						(*t.dutyMen)[i].OffDuty[ii].OffDutyAnnounced = true
+					case 2:
+						(*t.dutyMen)[i].OffDuty[ii].OffDutyPostAnnounced = true
+					default:
+						return fmt.Errorf("unknown announce type: %d", announceType)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // DeleteOffDutyFromMan Removes off-duty period from specified man
 func (t *CalData) DeleteOffDutyFromMan(tgID string, offDutyDataIndex int) {
 	for i, man := range *t.dutyMen {

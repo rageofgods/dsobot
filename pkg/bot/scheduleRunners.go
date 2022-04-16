@@ -26,6 +26,30 @@ func (t *TgBot) announceDuty() {
 	// Define duty and validation man variables
 	var dm data.DutyMan
 	var vm data.DutyMan
+
+	// Generate off-duty Announce message
+	var offDutyAnnMessage string
+	a, err := t.getOffDutyAnnounces(4)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	fmt.Printf("%v", a)
+	fmt.Printf("%v", len(a))
+	if len(a) != 0 {
+		_, err := t.dc.SaveMenList()
+		if err != nil {
+			messageText := fmt.Sprintf("Не удалось сохранить событие: %v", err)
+			if err := t.sendMessage(messageText,
+				t.adminGroupId,
+				nil,
+				nil); err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+		}
+		offDutyAnnMessage = "------------------------\n"
+		offDutyAnnMessage += formatOffDutyAnnounces(a)
+	}
+
 	// iterate over all groups and announce if any
 	for i, v := range t.settings.JoinedGroups {
 		if v.Announce {
@@ -61,10 +85,12 @@ func (t *TgBot) announceDuty() {
 			} else {
 				vMan = "*-*"
 			}
-			message := fmt.Sprintf("Доброе утро!\n\n*Дежурный* на сегодня: %s\n"+
-				"*Валидирующий* на сегодня: %s\n\nОтличного дня!👍",
+			message := fmt.Sprintf("📣Доброе утро!\n\n*Дежурный* сегодня: %s\n"+
+				"*Валидирующий* сегодня: %s\n\n*May the Force be with you!*💪\n\n",
 				dMan,
 				vMan)
+			// Append off-duty Announce message
+			message += offDutyAnnMessage
 			if err := t.sendMessage(message,
 				t.settings.JoinedGroups[i].Id,
 				nil,

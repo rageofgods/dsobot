@@ -467,3 +467,108 @@ func (t *TgBot) callbackAggregateUnmarshal(id string) (interface{}, callbackMess
 	}
 	return cbd, cbm, nil
 }
+
+func (t *TgBot) getOffDutyAnnounces(preAnnounceDays int) ([]*offDutyAnnounce, error) {
+	md := t.dc.DutyMenData(true)
+	tn := time.Now()
+	var returnedData []*offDutyAnnounce
+
+	for _, v := range *md {
+		// Iterate over off-duty ranges for current man
+		for _, vv := range v.OffDuty {
+			startOffDuty, err := time.Parse(botDataShort3, vv.OffDutyStart)
+			if err != nil {
+				return nil, fmt.Errorf("%v", err)
+			}
+			ed, err := time.Parse(botDataShort3, vv.OffDutyEnd)
+			if err != nil {
+				return nil, fmt.Errorf("%v", err)
+			}
+			endOffDuty := ed.AddDate(0, 0, 1).Add(time.Nanosecond * -1)
+
+			if vv.OffDutyAnnounced {
+				if !vv.OffDutyPostAnnounced {
+					// Check if off-duty end is before current time
+					if tn.After(endOffDuty) {
+						err := t.dc.UpdateOffDutyAnnounce(v.UserName, vv.OffDutyStart, vv.OffDutyEnd, uint(postAnnounce))
+						if err != nil {
+							return nil, fmt.Errorf("%v", err)
+						}
+						oda := &offDutyAnnounce{man: v,
+							offDutyStart: vv.OffDutyStart,
+							offDutyEnd:   vv.OffDutyEnd,
+							announceType: postAnnounce}
+						returnedData = append(returnedData, oda)
+					}
+				}
+			} else {
+				if !vv.OffDutyPreAnnounced {
+					// Check if before off0duty range (Pre-announce)
+					preStartOffDuty := startOffDuty.AddDate(0, 0, -preAnnounceDays)
+					if (tn.After(preStartOffDuty) || tn.Equal(preStartOffDuty)) &&
+						(tn.Before(startOffDuty) || tn.Equal(startOffDuty)) {
+						err := t.dc.UpdateOffDutyAnnounce(v.UserName, vv.OffDutyStart, vv.OffDutyEnd, uint(preAnnounce))
+						if err != nil {
+							return nil, fmt.Errorf("%v", err)
+						}
+						oda := &offDutyAnnounce{man: v,
+							offDutyStart: vv.OffDutyStart,
+							offDutyEnd:   vv.OffDutyEnd,
+							announceType: preAnnounce}
+						returnedData = append(returnedData, oda)
+						continue
+					}
+				}
+				// Check if in off-duty range
+				if (tn.After(startOffDuty) || tn.Equal(startOffDuty)) &&
+					(tn.Before(endOffDuty) || tn.Equal(endOffDuty)) {
+					err := t.dc.UpdateOffDutyAnnounce(v.UserName, vv.OffDutyStart, vv.OffDutyEnd, uint(announce))
+					if err != nil {
+						return nil, fmt.Errorf("%v", err)
+					}
+					oda := &offDutyAnnounce{man: v,
+						offDutyStart: vv.OffDutyStart,
+						offDutyEnd:   vv.OffDutyEnd,
+						announceType: announce}
+					returnedData = append(returnedData, oda)
+				}
+			}
+		}
+	}
+	return returnedData, nil
+}
+
+func formatOffDutyAnnounces(oda []*offDutyAnnounce) string {
+	var finalStr string
+	const (
+		preAnn  string = "⚠️Скоро начнется нерабочий период у:\n"
+		ann     string = "⚠️Начался нерабочий период у:\n"
+		postAnn string = "✅Закончился нерабочий период у:\n"
+	)
+	preAnnStr := preAnn
+	annStr := ann
+	postAnnStr := postAnn
+
+	for _, v := range oda {
+		switch v.announceType {
+		case preAnnounce:
+			preAnnStr += fmt.Sprintf("%s (*%s - %s*)\n", v.man.CustomName, v.offDutyStart, v.offDutyEnd)
+		case announce:
+			annStr += fmt.Sprintf("%s (*%s - %s*)\n", v.man.CustomName, v.offDutyStart, v.offDutyEnd)
+		case postAnnounce:
+			postAnnStr += fmt.Sprintf("%s (*@%s*) (*%s - %s*)\n", v.man.CustomName, v.man.UserName,
+				v.offDutyStart, v.offDutyEnd)
+		}
+	}
+
+	if preAnnStr != preAnn {
+		finalStr += preAnnStr + "\n"
+	}
+	if annStr != ann {
+		finalStr += annStr + "\n"
+	}
+	if postAnnStr != postAnn {
+		finalStr += postAnnStr + "\n"
+	}
+	return finalStr
+}

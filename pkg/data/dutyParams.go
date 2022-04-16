@@ -14,8 +14,11 @@ type DutyMan struct {
 
 // OffDutyData holds off-duty data save in '02/01/2006' format
 type OffDutyData struct {
-	OffDutyStart string `json:"off-d-s"`
-	OffDutyEnd   string `json:"off-d-e"`
+	OffDutyStart         string `json:"off-d-s"`
+	OffDutyEnd           string `json:"off-d-e"`
+	OffDutyPreAnnounced  bool   `json:"off-d-pre-a"`
+	OffDutyAnnounced     bool   `json:"off-d-a"`
+	OffDutyPostAnnounced bool   `json:"off-d-post-a"`
 }
 
 // DutyType type for men duties
