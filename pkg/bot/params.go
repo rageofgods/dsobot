@@ -77,6 +77,18 @@ type botCommands struct {
 
 /////////////////////////////////
 
+// Struct to hold off-duty announce data
+type offDutyAnnounce struct {
+	man          data.DutyMan
+	offDutyStart string
+	offDutyEnd   string
+	announceType announceType
+}
+
+type announceType uint
+
+/////////////////////////////////
+
 // UserBotCommands returns slice of ordinary user botCommand struct
 func (t *TgBot) UserBotCommands() *botCommands {
 	return &botCommands{commands: []botCommand{
@@ -301,4 +313,11 @@ const (
 	msgTextUserHandleWhoIsOnDutyAtDate       = "📅 Выберите дату для которой необходимо отобразить дежурного"
 	msgTextUserHandleWhoIsOnValidationAtDate = "📅 Выберите дату для которой необходимо отобразить валидирующего"
 	msgTextUserHandleAdminAddOffDuty1        = "📅 Укажите дату начала нерабочего периода для пользователя: %s"
+)
+
+// Const's to hold off-duty announce types
+const (
+	preAnnounce announceType = iota
+	announce
+	postAnnounce
 )
