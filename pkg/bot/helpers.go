@@ -552,7 +552,8 @@ func formatOffDutyAnnounces(oda []*offDutyAnnounce) string {
 	for _, v := range oda {
 		switch v.announceType {
 		case preAnnounce:
-			preAnnStr += fmt.Sprintf("%s (*%s - %s*)\n", v.man.CustomName, v.offDutyStart, v.offDutyEnd)
+			preAnnStr += fmt.Sprintf("%s (*@%s*) (*%s - %s*)\n", v.man.CustomName, v.man.UserName,
+				v.offDutyStart, v.offDutyEnd)
 		case announce:
 			annStr += fmt.Sprintf("%s (*%s - %s*)\n", v.man.CustomName, v.offDutyStart, v.offDutyEnd)
 		case postAnnounce:

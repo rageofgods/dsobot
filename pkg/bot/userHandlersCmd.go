@@ -430,3 +430,13 @@ func (t *TgBot) handleNotFound(update *tgbotapi.Update) {
 		log.Printf("unable to send message: %v", err)
 	}
 }
+
+// handle '/duties_csv' command
+func (t *TgBot) handleShowMonthDuty(cmdArgs string, update *tgbotapi.Update) {
+	t.adminHandleShowMonthDuty(cmdArgs, update)
+}
+
+// handle '/validation_csv' command
+func (t *TgBot) handleShowMonthValidation(cmdArgs string, update *tgbotapi.Update) {
+	t.adminHandleShowMonthValidation(cmdArgs, update)
+}

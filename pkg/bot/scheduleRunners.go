@@ -76,17 +76,18 @@ func (t *TgBot) announceDuty() {
 			var dMan string
 			var vMan string
 			if dm.TgID != 0 {
-				dMan = fmt.Sprintf("%s *@%s*", dm.CustomName, dm.UserName)
+				dMan = fmt.Sprintf("%s *(@%s)*", dm.CustomName, dm.UserName)
 			} else {
 				dMan = "*-*"
 			}
 			if vm.TgID != 0 {
-				vMan = fmt.Sprintf("%s *@%s*", vm.CustomName, vm.UserName)
+				vMan = fmt.Sprintf("%s *(@%s)*", vm.CustomName, vm.UserName)
 			} else {
 				vMan = "*-*"
 			}
 			message := fmt.Sprintf("📣Доброе утро!\n\n*Дежурный* сегодня: %s\n"+
-				"*Валидирующий* сегодня: %s\n\n*May the Force be with you!*💪\n\n",
+				"*Валидирующий* сегодня: %s\n\n*May the Force be with you!*💪\n\n"+
+				"*Tip*: Получить общий график дежурств на месяц - */duties_csv*\n\n",
 				dMan,
 				vMan)
 			// Append off-duty Announce message
