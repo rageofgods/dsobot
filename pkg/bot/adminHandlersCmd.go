@@ -513,7 +513,7 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 		Name:  fmt.Sprintf("Duties-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
 		Bytes: buf.Bytes(),
 	}
-	if _, err := t.bot.Send(tgbotapi.NewDocument(t.adminGroupId, photoFileBytes)); err != nil {
+	if _, err := t.bot.Send(tgbotapi.NewDocument(update.Message.Chat.ID, photoFileBytes)); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
@@ -630,7 +630,7 @@ func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.
 		Name:  fmt.Sprintf("Validations-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
 		Bytes: buf.Bytes(),
 	}
-	if _, err := t.bot.Send(tgbotapi.NewDocument(t.adminGroupId, photoFileBytes)); err != nil {
+	if _, err := t.bot.Send(tgbotapi.NewDocument(update.Message.Chat.ID, photoFileBytes)); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }

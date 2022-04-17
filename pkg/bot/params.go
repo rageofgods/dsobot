@@ -143,6 +143,12 @@ func (t *TgBot) UserBotCommands() *botCommands {
 		{command: &cmd{name: botCmdDeleteOffDuty, args: nil},
 			description: "Удалить нерабочий период",
 			handleFunc:  t.handleDeleteOffDuty},
+		{command: &cmd{name: botCmdShowMonthDuty, args: nil},
+			description: "Создать 'csv' файл с общей таблицей дежурств на текущий месяц",
+			handleFunc:  t.handleShowMonthDuty},
+		{command: &cmd{name: botCmdShowMonthValidation, args: nil},
+			description: "Создать 'csv' файл с общей таблицей валидаций на текущий месяц",
+			handleFunc:  t.handleShowMonthValidation},
 	}}
 }
 
