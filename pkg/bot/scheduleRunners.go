@@ -72,6 +72,7 @@ func (t *TgBot) announceDuty() {
 					vm = v
 				}
 			}
+
 			// Setup men names
 			var dMan string
 			var vMan string
@@ -85,13 +86,24 @@ func (t *TgBot) announceDuty() {
 			} else {
 				vMan = "*-*"
 			}
+
+			// Setup cheer message
+			var cheer string
+			if dMan == vMan {
+				cheer = "May the Force be with you!"
+			} else {
+				cheer = "Good luck and have fun!"
+			}
+
+			// Templating announce message
 			message := fmt.Sprintf("📣Доброе утро!\n\n*Дежурный* сегодня: %s\n"+
-				"*Валидирующий* сегодня: %s\n\n*May the Force be with you!*💪\n\n"+
+				"*Валидирующий* сегодня: %s\n\n*%s*💪\n\n"+
 				"*Tip*: Получить общий график дежурств на месяц - */duties_csv*\n\n",
-				dMan,
-				vMan)
+				dMan, vMan, cheer)
+
 			// Append off-duty Announce message
 			message += offDutyAnnMessage
+
 			if err := t.sendMessage(message,
 				t.settings.JoinedGroups[i].Id,
 				nil,
