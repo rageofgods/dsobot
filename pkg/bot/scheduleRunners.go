@@ -98,8 +98,8 @@ func (t *TgBot) announceDuty() {
 			// Templating announce message
 			message := fmt.Sprintf("📣Доброе утро!\n\n*Дежурный* сегодня: %s\n"+
 				"*Валидирующий* сегодня: %s\n\n*%s*💪\n\n"+
-				"*Tip*: Получить общий график дежурств на месяц - */duties_csv*\n\n",
-				dMan, vMan, cheer)
+				"*Tip*: %s\n\n",
+				dMan, vMan, cheer, genRndTip())
 
 			// Append off-duty Announce message
 			message += offDutyAnnMessage

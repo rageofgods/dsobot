@@ -6,6 +6,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"runtime"
@@ -572,4 +573,15 @@ func formatOffDutyAnnounces(oda []*offDutyAnnounce) string {
 		finalStr += postAnnStr + "\n"
 	}
 	return finalStr
+}
+
+func genRndTip() string {
+	tips := []string{
+		"Получить общий график дежурств на месяц - */duties_csv*",
+		"Получить общий график валидаций на месяц - */validation_csv*",
+		"Добавить нерабочий период - */addoffduty*",
+		"Показать список нерабочих периодов - */showoffduty*",
+		"Удалить нерабочий период - */deleteoffduty*",
+	}
+	return tips[rand.Intn(len(tips))]
 }
