@@ -582,6 +582,7 @@ func genRndTip() string {
 		"Добавить нерабочий период - */addoffduty*",
 		"Показать список нерабочих периодов - */showoffduty*",
 		"Удалить нерабочий период - */deleteoffduty*",
+		"Добавить дату своего рожденья - */birthday*",
 	}
 	return tips[rand.Intn(len(tips))]
 }

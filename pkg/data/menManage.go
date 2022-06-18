@@ -150,6 +150,15 @@ func (t *CalData) AddManOnDuty(fullName string, userName string, customName stri
 	*t.dutyMen = append(*t.dutyMen, *m)
 }
 
+// AddBirthdayToMan adds birthday info to man
+func (t *CalData) AddBirthdayToMan(tgID string, bDate time.Time) {
+	for i, man := range *t.dutyMen {
+		if man.UserName == tgID {
+			(*t.dutyMen)[i].Birthday = bDate.Format(DateShortSaveData)
+		}
+	}
+}
+
 // AddOffDutyToMan Add off-duty event data to man
 func (t *CalData) AddOffDutyToMan(tgID string, startDate time.Time, endDate time.Time) {
 	stime := startDate.Format(DateShortSaveData)

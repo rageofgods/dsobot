@@ -48,10 +48,17 @@ func (t *TgBot) scheduleAnnounce(timeString string) error {
 	}
 
 	s := gocron.NewScheduler(loc)
+	// Announce Duty
 	j, err := s.Every(1).Day().At(timeString).Do(t.announceDuty)
 	if err != nil {
 		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
+	// Announce Birthday
+	j, err = s.Every(1).Day().At(timeString).Do(t.announceBirthday)
+	if err != nil {
+		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
+	}
+
 	s.StartAsync()
 	return nil
 }

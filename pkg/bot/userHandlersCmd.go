@@ -440,3 +440,14 @@ func (t *TgBot) handleShowMonthDuty(cmdArgs string, update *tgbotapi.Update) {
 func (t *TgBot) handleShowMonthValidation(cmdArgs string, update *tgbotapi.Update) {
 	t.adminHandleShowMonthValidation(cmdArgs, update)
 }
+
+// handle '/birthday' command
+func (t *TgBot) handleBirthday(_ string, update *tgbotapi.Update) {
+	messageText := msgTextUserHandleBirthday
+	if err := t.sendMessage(messageText,
+		update.Message.Chat.ID,
+		&update.Message.MessageID,
+		nil); err != nil {
+		log.Printf("unable to send message: %v", err)
+	}
+}

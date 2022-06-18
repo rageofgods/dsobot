@@ -7,6 +7,49 @@ import (
 	"time"
 )
 
+func (t *TgBot) announceBirthday() {
+	// Get current duty data
+	dutyMen := t.dc.DutyMenData()
+
+	var menBirthDay []data.DutyMan
+	//var menBirthDay []string
+	for _, v := range *dutyMen {
+		if v.Birthday != "" {
+			pbd, err := time.Parse(botDataShort3, v.Birthday)
+			if err != nil {
+				message := fmt.Sprintf("unable to parse birthday date: %s for user: %s", v.Birthday, v.CustomName)
+				log.Print(message)
+				if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			}
+			if pbd.Month() == time.Now().Month() && pbd.Day() == time.Now().Day() {
+				menBirthDay = append(menBirthDay, v)
+			}
+		}
+	}
+
+	if len(menBirthDay) != 0 {
+		// iterate over all groups and announce if any
+		for i, v := range t.settings.JoinedGroups {
+			if v.Announce {
+				// Templating announce message
+				message := "🎂 Ура! Сегодня день рожденья у коллег:\n\n"
+				for _, v := range menBirthDay {
+					message += fmt.Sprintf("%s *(@%s)*\n", v.CustomName, v.UserName)
+				}
+				message += "\nПоздравляем!!! 🎉 🎈 🎁"
+				if err := t.sendMessage(message,
+					t.settings.JoinedGroups[i].Id,
+					nil,
+					nil); err != nil {
+					log.Printf("%v", err)
+				}
+			}
+		}
+	}
+}
+
 // Send announce message to user group chat
 func (t *TgBot) announceDuty() {
 	// Setup time now

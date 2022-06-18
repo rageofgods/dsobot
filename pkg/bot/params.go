@@ -149,6 +149,9 @@ func (t *TgBot) UserBotCommands() *botCommands {
 		{command: &cmd{name: botCmdShowMonthValidation, args: nil},
 			description: "Создать 'csv' файл с общей таблицей валидаций на текущий месяц",
 			handleFunc:  t.handleShowMonthValidation},
+		{command: &cmd{name: botCmdBirthday, args: nil},
+			description: "Указать свой день рожденья",
+			handleFunc:  t.handleBirthday},
 	}}
 }
 
@@ -261,6 +264,7 @@ const (
 	botCmdSendAnnounce        tCmd = "send_announce"
 	botCmdShowMonthDuty       tCmd = "duties_csv"
 	botCmdShowMonthValidation tCmd = "validation_csv"
+	botCmdBirthday            tCmd = "birthday"
 )
 
 // Bot available args
@@ -304,8 +308,10 @@ const (
 		"❌ - выключает тип дежуртсва\n\n" +
 		"❗ - неактивный дежурный\n\n"
 	msgTextUserHandleRegister = "Для того, чтобы начать процесс регистрации, пожалуйста, отправьте " +
-		"ваши реальные Имя и Фамилию в ❗ОТВЕТЕ❗ на это сообщение.\n\n" +
+		"ваши реальные Имя и Фамилию в ответе (❗Reply) на это сообщение.\n\n" +
 		"Например: 'Вася Пупкин' или 'Пупкин Василий'.\n\n"
+	msgTextUserHandleBirthday = "Для того, чтобы указать день вашего рожденья, пожалуйста, пришлите " +
+		"дату в формате 'DD.MM.YYYY' в ответе (❗Reply) на это сообщение."
 	msgTextAdminHandleAnnounce = "Укажите для каких групповых чатов необходимо включить анонс дежурств\n\n" +
 		"✅ - включает анонс в группу\n" +
 		"❌ - выключает анонс в группу\n\n" +
