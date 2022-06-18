@@ -113,6 +113,15 @@ func (t *TgBot) StartBot(version string, build string) {
 				}
 			}
 		}
+		// Process add birthday
+		if update.Message != nil {
+			if update.Message.ReplyToMessage != nil {
+				if update.Message.ReplyToMessage.From.ID == t.bot.Self.ID &&
+					str.Contains(update.Message.ReplyToMessage.Text, msgTextUserHandleBirthday) {
+					t.userHandleBirthdayHelper(update.Message.ReplyToMessage.MessageID, &update)
+				}
+			}
+		}
 		// Process ordinary command messages
 		if update.Message != nil && update.Message.IsCommand() {
 			// Go through struct of allowed commands

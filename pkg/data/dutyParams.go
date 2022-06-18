@@ -10,6 +10,7 @@ type DutyMan struct {
 	TgID       int64         `json:"tg-id"`
 	OffDuty    []OffDutyData `json:"off-d,omitempty"`
 	DutyType   []Duty        `json:"duty-type"`
+	Birthday   string        `json:"birthday,omitempty"`
 }
 
 // OffDutyData holds off-duty data save in '02/01/2006' format
