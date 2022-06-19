@@ -8,124 +8,128 @@ import (
 	"time"
 )
 
+type botScheduler struct {
+	*gocron.Scheduler
+	bot *TgBot
+}
+
+func newBotScheduler(bot *TgBot) *botScheduler {
+	loc, err := time.LoadLocation(data.TimeZone)
+	if err != nil {
+		log.Fatal("newBotScheduler: unable to load location string")
+	}
+	return &botScheduler{Scheduler: gocron.NewScheduler(loc), bot: bot}
+}
+
 func (t *TgBot) scheduleAllHelpers() error {
+	// Create new bot scheduler
+	bs := newBotScheduler(t)
+
 	// Schedule per-day (expect non-working days) announcements for group channels
-	if err := t.scheduleAnnounce("09:00:00"); err != nil {
+	if err := bs.scheduleAnnounceDuty("09:00:00"); err != nil {
+		log.Printf("%v", err)
+	}
+	// Schedule per-day (expect non-working days) announcements for group channels
+	if err := bs.scheduleAnnounceBirthday("09:00:00"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for non-working days
-	if err := t.scheduleCreateNWD("00:00:01"); err != nil {
+	if err := bs.scheduleCreateNWD("00:00:01"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-duty days
-	if err := t.scheduleCreateOnDuty("00:00:03"); err != nil {
+	if err := bs.scheduleCreateOnDuty("00:00:03"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-validation days
-	if err := t.scheduleCreateOnValidation("00:00:03"); err != nil {
+	if err := bs.scheduleCreateOnValidation("00:00:03"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-validation days
-	if err := t.scheduleCreateBackupForData("00:00:10"); err != nil {
+	if err := bs.scheduleCreateBackupForData("00:00:10"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for on-validation days
-	if err := t.scheduleCreateBackupForSettings("00:00:11"); err != nil {
+	if err := bs.scheduleCreateBackupForSettings("00:00:11"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-dey callbackButton data purge
-	if err := t.schedulePurgeForCallbackButtonData("03:00:00"); err != nil {
+	if err := bs.schedulePurgeForCallbackButtonData("03:00:00"); err != nil {
 		log.Printf("%v", err)
+	}
+
+	// Start all scheduled jobs
+	bs.StartAsync()
+	return nil
+}
+
+// Send announce message based on announce group status
+func (bs botScheduler) scheduleAnnounceDuty(timeString string) error {
+	// Announce Duty
+	j, err := bs.Every(1).Day().At(timeString).Do(bs.bot.announceDuty)
+	if err != nil {
+		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
 	return nil
 }
 
 // Send announce message based on announce group status
-func (t *TgBot) scheduleAnnounce(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	// Announce Duty
-	j, err := s.Every(1).Day().At(timeString).Do(t.announceDuty)
+func (bs botScheduler) scheduleAnnounceBirthday(timeString string) error {
+	// Setup announce Birthday at working day
+	j, err := bs.Every(1).Day().At(timeString).Do(bs.bot.announceBirthdayAtWorkingDay)
 	if err != nil {
 		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
-	// Announce Birthday
-	j, err = s.Every(1).Day().At(timeString).Do(t.announceBirthday)
+	// Setup announce Birthday at non-working day (Shift to + 3 hours)
+	timeLayout := "15:04:05"
+	parsedTime, err := time.Parse(timeLayout, timeString)
 	if err != nil {
 		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
 
-	s.StartAsync()
+	j, err = bs.Every(1).Day().At(parsedTime.Add(time.Hour * 3)).Do(bs.bot.announceBirthdayAtNonWorkingDay)
+	if err != nil {
+		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
+	}
 	return nil
 }
 
 // Create non-working events
-func (t *TgBot) scheduleCreateNWD(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Month(1).At(timeString).Do(t.updateNwd)
+func (bs botScheduler) scheduleCreateNWD(timeString string) error {
+	j, err := bs.Every(1).Month(1).At(timeString).Do(bs.bot.updateNwd)
 	if err != nil {
 		return fmt.Errorf("can't schedule nwd creating message. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
 
 // Create non-working events
-func (t *TgBot) scheduleCreateOnDuty(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Month(1).At(timeString).Do(t.updateOnDuty)
+func (bs botScheduler) scheduleCreateOnDuty(timeString string) error {
+	j, err := bs.Every(1).Month(1).At(timeString).Do(bs.bot.updateOnDuty)
 	if err != nil {
 		return fmt.Errorf("can't schedule on-duty creating message. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
 
 // Create non-working events
-func (t *TgBot) scheduleCreateOnValidation(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Month(1).At(timeString).Do(t.updateOnValidation)
+func (bs botScheduler) scheduleCreateOnValidation(timeString string) error {
+	j, err := bs.Every(1).Month(1).At(timeString).Do(bs.bot.updateOnValidation)
 	if err != nil {
 		return fmt.Errorf("can't schedule on-validation creating message. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
 
 // Create and rotate backups
-func (t *TgBot) scheduleCreateBackupForData(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Day().At(timeString).Do(func() {
-		if err := t.dc.BackupData(data.SaveNameForDutyMenData, 7); err != nil {
+func (bs botScheduler) scheduleCreateBackupForData(timeString string) error {
+	j, err := bs.Every(1).Day().At(timeString).Do(func() {
+		if err := bs.bot.dc.BackupData(data.SaveNameForDutyMenData, 7); err != nil {
 			messageText := fmt.Sprintf("Не удалось создать файл бэкапа для %s: %v",
 				data.SaveNameForDutyMenData,
 				err)
-			if err := t.sendMessage(messageText,
-				t.adminGroupId,
+			if err := bs.bot.sendMessage(messageText,
+				bs.bot.adminGroupId,
 				nil,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
@@ -135,25 +139,18 @@ func (t *TgBot) scheduleCreateBackupForData(timeString string) error {
 	if err != nil {
 		return fmt.Errorf("can't schedule on-validation creating message. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
 
 // Create and rotate backups
-func (t *TgBot) scheduleCreateBackupForSettings(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Day().At(timeString).Do(func() {
-		if err := t.dc.BackupData(data.SaveNameForBotSettings, 7); err != nil {
+func (bs botScheduler) scheduleCreateBackupForSettings(timeString string) error {
+	j, err := bs.Every(1).Day().At(timeString).Do(func() {
+		if err := bs.bot.dc.BackupData(data.SaveNameForBotSettings, 7); err != nil {
 			messageText := fmt.Sprintf("Не удалось создать файл бэкапа для %s: %v",
 				data.SaveNameForBotSettings,
 				err)
-			if err := t.sendMessage(messageText,
-				t.adminGroupId,
+			if err := bs.bot.sendMessage(messageText,
+				bs.bot.adminGroupId,
 				nil,
 				nil); err != nil {
 				log.Printf("unable to send message: %v", err)
@@ -163,25 +160,17 @@ func (t *TgBot) scheduleCreateBackupForSettings(timeString string) error {
 	if err != nil {
 		return fmt.Errorf("can't schedule on-validation creating message. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
 
 // Purge Callback data
-func (t *TgBot) schedulePurgeForCallbackButtonData(timeString string) error {
-	loc, err := time.LoadLocation(data.TimeZone)
-	if err != nil {
-		return err
-	}
-
-	s := gocron.NewScheduler(loc)
-	j, err := s.Every(1).Day().At(timeString).Do(func() {
+func (bs botScheduler) schedulePurgeForCallbackButtonData(timeString string) error {
+	j, err := bs.Every(1).Day().At(timeString).Do(func() {
 		log.Printf("Purging callback data...")
-		t.callbackButton = make(map[string]callbackButton)
+		bs.bot.callbackButton = make(map[string]callbackButton)
 	})
 	if err != nil {
 		return fmt.Errorf("can't schedule purge for callback data. job: %v: error: %v", j, err)
 	}
-	s.StartAsync()
 	return nil
 }
