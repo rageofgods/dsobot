@@ -7,6 +7,37 @@ import (
 	"time"
 )
 
+// announceBirthdayAtWorkingDay it's wrapper for birthday announce only at working day
+func (t *TgBot) announceBirthdayAtWorkingDay() {
+	// Setup time now
+	tn := time.Now()
+	// Check if current day is non-working day
+	nwd, err := t.dc.IsNWD(tn)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	// Don't announce if non-working day
+	if nwd {
+		return
+	}
+	t.announceBirthday()
+}
+
+// announceBirthdayAtNonWorkingDay it's wrapper for birthday announce only at non-working day
+func (t *TgBot) announceBirthdayAtNonWorkingDay() {
+	// Setup time now
+	tn := time.Now()
+	// Check if current day is non-working day
+	nwd, err := t.dc.IsNWD(tn)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	// Announce if non-working day
+	if nwd {
+		t.announceBirthday()
+	}
+}
+
 func (t *TgBot) announceBirthday() {
 	// Get current duty data
 	dutyMen := t.dc.DutyMenData()
