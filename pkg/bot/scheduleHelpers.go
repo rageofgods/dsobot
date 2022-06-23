@@ -30,7 +30,7 @@ func (t *TgBot) scheduleAllHelpers() error {
 		log.Printf("%v", err)
 	}
 	// Schedule per-day (expect non-working days) announcements for group channels
-	if err := bs.scheduleAnnounceBirthday("09:00:00"); err != nil {
+	if err := bs.scheduleAnnounceBirthday("10:00:00"); err != nil {
 		log.Printf("%v", err)
 	}
 	// Schedule per-month event creation for non-working days
@@ -87,7 +87,7 @@ func (bs botScheduler) scheduleAnnounceBirthday(timeString string) error {
 		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
 
-	j, err = bs.Every(1).Day().At(parsedTime.Add(time.Hour * 3)).Do(bs.bot.announceBirthdayAtNonWorkingDay)
+	j, err = bs.Every(1).Day().At(parsedTime.Add(time.Hour * 2)).Do(bs.bot.announceBirthdayAtNonWorkingDay)
 	if err != nil {
 		return fmt.Errorf("can't schedule announce message. job: %v: error: %v", j, err)
 	}
