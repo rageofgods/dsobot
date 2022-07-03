@@ -7,12 +7,10 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"strconv"
 )
 
 // handle '/help' command
-func (t *TgBot) adminHandleHelp(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) adminHandleHelp(_ string, update *tgbotapi.Update) {
 	// Create help message
 	commands := t.AdminBotCommands().commands
 	cmdList := genHelpCmdText(commands)
@@ -27,8 +25,7 @@ func (t *TgBot) adminHandleHelp(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/list' command
-func (t *TgBot) adminHandleList(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) adminHandleList(_ string, update *tgbotapi.Update) {
 	var listActive string
 	var listPassive string
 	// Get menOnDuty list
@@ -114,9 +111,7 @@ func (t *TgBot) adminHandleRollout(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/showoffduty' command
-func (t *TgBot) adminHandleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleShowOffDuty(_ string, update *tgbotapi.Update) {
 	men := t.dc.DutyMenData()
 	var msgText string
 	var isOffDutyFound bool
@@ -166,9 +161,7 @@ func (t *TgBot) adminHandleShowOffDuty(cmdArgs string, update *tgbotapi.Update) 
 }
 
 // handle '/reindex' command
-func (t *TgBot) adminHandleReindex(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleReindex(_ string, update *tgbotapi.Update) {
 	// Check if we are still editing tmpData at another function call
 	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
@@ -209,9 +202,7 @@ func (t *TgBot) adminHandleReindex(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/enable' command
-func (t *TgBot) adminHandleEnable(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleEnable(_ string, update *tgbotapi.Update) {
 	// Check if we are still editing tmpData at another function call
 	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
@@ -252,9 +243,7 @@ func (t *TgBot) adminHandleEnable(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/disable' command
-func (t *TgBot) adminHandleDisable(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleDisable(_ string, update *tgbotapi.Update) {
 	// Check if we are still editing tmpData at another function call
 	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
@@ -295,9 +284,7 @@ func (t *TgBot) adminHandleDisable(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/editduty' command
-func (t *TgBot) adminHandleEditDutyType(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleEditDutyType(_ string, update *tgbotapi.Update) {
 	// Check if we are still editing tmpData at another function call
 	if t.checkTmpDutyMenDataIsEditing(update.Message.From.ID, update) {
 		return
@@ -348,9 +335,7 @@ func (t *TgBot) adminHandleEditDutyType(cmdArgs string, update *tgbotapi.Update)
 }
 
 // handle '/edit_announce' command
-func (t *TgBot) adminHandleEditAnnounce(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleEditAnnounce(_ string, update *tgbotapi.Update) {
 	// Create returned data (without data)
 	callbackData := &callbackMessage{
 		UserId:     update.Message.From.ID,
@@ -395,16 +380,13 @@ func (t *TgBot) adminHandleEditAnnounce(cmdArgs string, update *tgbotapi.Update)
 }
 
 // handle '/send_announce' command
-func (t *TgBot) adminHandleSendAnnounce(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) adminHandleSendAnnounce(_ string, update *tgbotapi.Update) {
 	log.Println(update.UpdateID)
 	t.announceDuty()
 }
 
 // handle '/duties_csv' command
-func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleShowMonthDuty(_ string, update *tgbotapi.Update) {
 	_, lastMonthDay, err := data.FirstLastMonthDay(1)
 	if err != nil {
 		messageText := err.Error()
@@ -414,85 +396,20 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
-	}
-
-	// Generate header based on days count for current month
-	header := []string{"Имя"}
-	for i := 1; i <= lastMonthDay.Day(); i++ {
-		header = append(header, strconv.Itoa(i))
-	}
-
-	var menData [][]string
-	menData = append(menData, header)
-	nwdDays, err := data.NwdEventsForCurMonth()
-	if err != nil {
-		log.Printf("unable to get non-working day data: %v", err)
 		return
 	}
-	for _, man := range *t.dc.DutyMenData(true) {
-		// Get man month duty dates
-		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnDutyTag)
-		if err != nil {
-			// if Current man don't have off-duties we can skip him, because he doesn't have duties at this month also
-			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
-				lastMonthDay.Month(),
-				lastMonthDay.Year())
-			if err != nil {
-				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
-				continue
-			}
-			if !isManHaveOffDutyForThisMonth {
-				continue
-			}
-		}
 
-		manData := []string{man.CustomName}
-		for i := 1; i <= lastMonthDay.Day(); i++ {
-			var dayString string
-			// Iterate over all man duty dates for current month
-			if dutyDates != nil {
-				for _, dd := range *dutyDates {
-					// If man duty date is equal with current month day - add it to data slice
-					if dd.Day() == i {
-						// Mark duty day
-						dayString = "\U0001F7E9"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				for _, n := range nwdDays {
-					if n == i {
-						// Mark nwd day
-						dayString = "\U0001F7EB"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				for _, v := range man.OffDuty {
-					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
-					if err != nil {
-						continue
-					}
-					if isDayOffDuty {
-						// Mark off-duty day
-						dayString = "\U0001F7E7"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				// Mark free of duty day
-				dayString = "⬜"
-			}
-
-			manData = append(manData, dayString)
+	// Generate menData matrix
+	menData, err := genGridDutyDataMatrix(t, lastMonthDay)
+	if err != nil {
+		messageText := err.Error()
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
 		}
-		menData = append(menData, manData)
+		return
 	}
 
 	// Create buffer, generate csv
@@ -506,22 +423,22 @@ func (t *TgBot) adminHandleShowMonthDuty(cmdArgs string, update *tgbotapi.Update
 			nil); err != nil {
 			log.Printf("unable to send message: %v", err)
 		}
+		return
 	}
-
 	// Upload file to Telegram and sand message to user
 	photoFileBytes := tgbotapi.FileBytes{
 		Name:  fmt.Sprintf("Duties-%s-%d.csv", lastMonthDay.Month(), lastMonthDay.Year()),
 		Bytes: buf.Bytes(),
 	}
-	if _, err := t.bot.Send(tgbotapi.NewDocument(update.Message.Chat.ID, photoFileBytes)); err != nil {
+	msg := tgbotapi.NewDocument(update.Message.Chat.ID, photoFileBytes)
+
+	if _, err := t.bot.Send(msg); err != nil {
 		log.Printf("unable to send message: %v", err)
 	}
 }
 
 // handle '/validation_csv' command
-func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
-
+func (t *TgBot) adminHandleShowMonthValidation(_ string, update *tgbotapi.Update) {
 	_, lastMonthDay, err := data.FirstLastMonthDay(1)
 	if err != nil {
 		messageText := err.Error()
@@ -533,83 +450,17 @@ func (t *TgBot) adminHandleShowMonthValidation(cmdArgs string, update *tgbotapi.
 		}
 	}
 
-	// Generate header based on days count for current month
-	header := []string{"Имя"}
-	for i := 1; i <= lastMonthDay.Day(); i++ {
-		header = append(header, strconv.Itoa(i))
-	}
-
-	var menData [][]string
-	menData = append(menData, header)
-	nwdDays, err := data.NwdEventsForCurMonth()
+	// Generate menData matrix
+	menData, err := genGridValidationDataMatrix(t, lastMonthDay)
 	if err != nil {
-		log.Printf("unable to get non-working day data: %v", err)
+		messageText := err.Error()
+		if err := t.sendMessage(messageText,
+			update.Message.Chat.ID,
+			&update.Message.MessageID,
+			nil); err != nil {
+			log.Printf("unable to send message: %v", err)
+		}
 		return
-	}
-	for _, man := range *t.dc.DutyMenData(true) {
-		// Get man month duty dates
-		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnValidationTag)
-		if err != nil {
-			// if Current man don't have off-dates we can skip him, because he doesn't have duties at this month also
-			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
-				lastMonthDay.Month(),
-				lastMonthDay.Year())
-			if err != nil {
-				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
-				continue
-			}
-			if !isManHaveOffDutyForThisMonth {
-				continue
-			}
-		}
-
-		manData := []string{man.CustomName}
-		for i := 1; i <= lastMonthDay.Day(); i++ {
-			var dayString string
-			// Iterate over all man duty dates for current month
-			if dutyDates != nil {
-				for _, dd := range *dutyDates {
-					// If man duty date is equal with current month day - add it to data slice
-					if dd.Day() == i {
-						// Mark duty day
-						dayString = "\U0001F7E9"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				for _, n := range nwdDays {
-					if n == i {
-						// Mark nwd day
-						dayString = "\U0001F7EB"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				for _, v := range man.OffDuty {
-					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
-					if err != nil {
-						continue
-					}
-					if isDayOffDuty {
-						// Mark off-duty day
-						dayString = "\U0001F7E7"
-						break
-					}
-				}
-			}
-			// If previous step didn't modify dayString, then we need to check it for another type
-			if dayString == "" {
-				// Mark free of duty day
-				dayString = "⬜"
-			}
-
-			manData = append(manData, dayString)
-		}
-		menData = append(menData, manData)
 	}
 
 	// Create buffer, generate csv
