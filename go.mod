@@ -5,15 +5,19 @@ go 1.17
 require (
 	github.com/go-co-op/gocron v1.14.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/joho/godotenv v1.4.0
 	github.com/mitchellh/copystructure v1.2.0
+	github.com/rageofgods/gridder v0.0.0-20220703134231-12432618c41d
 	github.com/rageofgods/isdayoff v1.0.7
+	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
 	google.golang.org/api v0.84.0
 )
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
+	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect

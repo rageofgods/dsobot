@@ -1,10 +1,16 @@
 package bot
 
 import (
+	"bytes"
 	"dso_bot/pkg/data"
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/golang/freetype/truetype"
+	"github.com/rageofgods/gridder"
+	"golang.org/x/image/colornames"
+	"golang.org/x/image/font/gofont/goregular"
+	"image/color"
 	"log"
 	"math/rand"
 	"os"
@@ -48,45 +54,47 @@ func (t *TgBot) sendMessage(message string, chatId int64, replyId *int, keyboard
 	// Check if we want to sent message
 	if len(pin) == 1 {
 		if pin[0] {
-			// Unpin previous announce message
-			for _, v := range t.settings.JoinedGroups {
-				if v.Id == chatId && v.LastMessageId != 0 {
-					unpin := tgbotapi.UnpinChatMessageConfig{MessageID: v.LastMessageId,
-						ChatID: chatId}
-					_, err = t.bot.Request(unpin)
-					if err != nil {
-						message = fmt.Sprintf("Не удалось открепить сообщение для chatID: %d\nОшибка: (%v)",
-							chatId, err)
-						if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
-							log.Printf("%v", err)
-						}
-						return err
-					}
-				}
-			}
-			// Pin announce message
-			pin := tgbotapi.PinChatMessageConfig{MessageID: sentMessage.MessageID,
-				ChatID:              chatId,
-				DisableNotification: true}
-			_, err = t.bot.Request(pin)
-			if err != nil {
-				message = fmt.Sprintf("Не удалось закрепить сообщение для chatID: %d\nОшибка: (%v)", chatId, err)
+			if err := pinMessage(t, chatId, sentMessage); err != nil {
+				message = fmt.Sprintf("%v", err)
 				if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
 					log.Printf("%v", err)
 				}
 				return err
 			}
-			// Save pinned message id
-			for i, v := range t.settings.JoinedGroups {
-				if v.Id == chatId {
-					t.settings.JoinedGroups[i].LastMessageId = sentMessage.MessageID
-				}
-			}
-			// Save bot settings with new data
-			if err := t.dc.SaveBotSettings(&t.settings); err != nil {
-				return fmt.Errorf("unable to save bot settings: %v", err)
+		}
+	}
+	return nil
+}
+
+func pinMessage(t *TgBot, chatId int64, sentMessage tgbotapi.Message) error {
+	// Unpin previous announce message
+	for _, v := range t.settings.JoinedGroups {
+		if v.Id == chatId && v.LastMessageId != 0 {
+			unpin := tgbotapi.UnpinChatMessageConfig{MessageID: v.LastMessageId,
+				ChatID: chatId}
+			_, err := t.bot.Request(unpin)
+			if err != nil {
+				return fmt.Errorf("не удалось открепить сообщение для chatID: %d\nОшибка: (%v)", chatId, err)
 			}
 		}
+	}
+	// Pin announce message
+	pin := tgbotapi.PinChatMessageConfig{MessageID: sentMessage.MessageID,
+		ChatID:              chatId,
+		DisableNotification: true}
+	_, err := t.bot.Request(pin)
+	if err != nil {
+		return fmt.Errorf("Не удалось закрепить сообщение для chatID: %d\nОшибка: (%v)", chatId, err)
+	}
+	// Save pinned message id
+	for i, v := range t.settings.JoinedGroups {
+		if v.Id == chatId {
+			t.settings.JoinedGroups[i].LastMessageId = sentMessage.MessageID
+		}
+	}
+	// Save bot settings with new data
+	if err := t.dc.SaveBotSettings(&t.settings); err != nil {
+		return fmt.Errorf("unable to save bot settings: %v", err)
 	}
 	return nil
 }
@@ -585,4 +593,272 @@ func genRndTip() string {
 		"Добавить дату своего рожденья - */birthday*",
 	}
 	return tips[rand.Intn(len(tips))]
+}
+
+func initGrid(width, height, rows, columns int) (*gridder.Gridder, error) {
+	imageConfig := gridder.ImageConfig{
+		Width:  width,
+		Height: height,
+	}
+	gridConfig := gridder.GridConfig{
+		Rows:            rows,
+		Columns:         columns,
+		MarginWidth:     50,
+		LineStrokeWidth: 2,
+		BackgroundColor: color.White,
+		ColumnsWidthOffset: []*gridder.ColumnWidthOffset{
+			{
+				Column: 0,
+				Offset: 200,
+			},
+		},
+	}
+
+	grid, err := gridder.New(imageConfig, gridConfig)
+	if err != nil {
+		return nil, fmt.Errorf("initGrid: %w", err)
+	}
+
+	return grid, nil
+}
+
+func genGridDutyDataMatrix(t *TgBot, lastMonthDay *time.Time) ([][]string, error) {
+	// Generate header based on days count for current month
+	header := []string{"Имя"}
+	for i := 1; i <= lastMonthDay.Day(); i++ {
+		header = append(header, strconv.Itoa(i))
+	}
+
+	var menData [][]string
+	menData = append(menData, header)
+	nwdDays, err := data.NwdEventsForCurMonth()
+	if err != nil {
+		log.Printf("unable to get non-working day data: %v", err)
+		return nil, fmt.Errorf("genGridDutyDataMatrix: %w", err)
+	}
+	for _, man := range *t.dc.DutyMenData(true) {
+		// Get man month duty dates
+		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnDutyTag)
+		if err != nil {
+			// if Current man don't have off-duties we can skip him, because he doesn't have duties at this month also
+			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
+				lastMonthDay.Month(),
+				lastMonthDay.Year())
+			if err != nil {
+				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
+				continue
+			}
+			if !isManHaveOffDutyForThisMonth {
+				continue
+			}
+		}
+
+		manData := []string{man.CustomName}
+		for i := 1; i <= lastMonthDay.Day(); i++ {
+			var dayString string
+			// Iterate over all man duty dates for current month
+			if dutyDates != nil {
+				for _, dd := range *dutyDates {
+					// If man duty date is equal with current month day - add it to data slice
+					if dd.Day() == i {
+						// Mark duty day
+						dayString = "\U0001F7E9"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, n := range nwdDays {
+					if n == i {
+						// Mark nwd day
+						dayString = "\U0001F7EB"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, v := range man.OffDuty {
+					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
+					if err != nil {
+						continue
+					}
+					if isDayOffDuty {
+						// Mark off-duty day
+						dayString = "\U0001F7E7"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				// Mark free of duty day
+				dayString = "⬜"
+			}
+
+			manData = append(manData, dayString)
+		}
+		menData = append(menData, manData)
+	}
+
+	return menData, nil
+}
+
+func genGridValidationDataMatrix(t *TgBot, lastMonthDay *time.Time) ([][]string, error) {
+	// Generate header based on days count for current month
+	header := []string{"Имя"}
+	for i := 1; i <= lastMonthDay.Day(); i++ {
+		header = append(header, strconv.Itoa(i))
+	}
+
+	var menData [][]string
+	menData = append(menData, header)
+	nwdDays, err := data.NwdEventsForCurMonth()
+	if err != nil {
+		log.Printf("unable to get non-working day data: %v", err)
+		return nil, fmt.Errorf("genGridValidationDataMatrix: %w", err)
+	}
+	for _, man := range *t.dc.DutyMenData(true) {
+		// Get man month duty dates
+		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnValidationTag)
+		if err != nil {
+			// if Current man don't have off-dates we can skip him, because he doesn't have duties at this month also
+			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
+				lastMonthDay.Month(),
+				lastMonthDay.Year())
+			if err != nil {
+				log.Printf("unable to check man off-duties for %s: %v", lastMonthDay.Month(), err)
+				continue
+			}
+			if !isManHaveOffDutyForThisMonth {
+				continue
+			}
+		}
+
+		manData := []string{man.CustomName}
+		for i := 1; i <= lastMonthDay.Day(); i++ {
+			var dayString string
+			// Iterate over all man duty dates for current month
+			if dutyDates != nil {
+				for _, dd := range *dutyDates {
+					// If man duty date is equal with current month day - add it to data slice
+					if dd.Day() == i {
+						// Mark duty day
+						dayString = "\U0001F7E9"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, n := range nwdDays {
+					if n == i {
+						// Mark nwd day
+						dayString = "\U0001F7EB"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				for _, v := range man.OffDuty {
+					isDayOffDuty, err := isDayInOffDutyRange(&v, i, lastMonthDay.Month(), lastMonthDay.Year())
+					if err != nil {
+						continue
+					}
+					if isDayOffDuty {
+						// Mark off-duty day
+						dayString = "\U0001F7E7"
+						break
+					}
+				}
+			}
+			// If previous step didn't modify dayString, then we need to check it for another type
+			if dayString == "" {
+				// Mark free of duty day
+				dayString = "⬜"
+			}
+
+			manData = append(manData, dayString)
+		}
+		menData = append(menData, manData)
+	}
+	return menData, nil
+}
+
+func renderGrid(grid *gridder.Gridder, menData [][]string) error {
+	font, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cellFont := truetype.NewFace(font, &truetype.Options{Size: 14})
+
+	for i, column := range menData {
+		for ii, cell := range column {
+			switch cell {
+			case "\U0001F7E9":
+				//Duty Day
+				if err := grid.PaintCell(i, ii, color.RGBA{R: 90, G: 108, B: 22, A: 255}); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+			case "\U0001F7EB":
+				// NWD Day
+				if err := grid.PaintCell(i, ii, color.RGBA{R: 109, G: 81, B: 67, A: 255}); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+			case "\U0001F7E7":
+				// Off-Duty Day
+				if err := grid.PaintCell(i, ii, color.RGBA{R: 235, G: 114, B: 49, A: 255}); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+			case "⬜":
+				// Free of duty Day
+				if err := grid.PaintCell(i, ii, colornames.White); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+			default:
+				if err := grid.DrawString(i, ii, cell, cellFont); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (t *TgBot) genMonthDutyImage() (*tgbotapi.FileBytes, error) {
+	_, lastMonthDay, err := data.FirstLastMonthDay(1)
+	if err != nil {
+		return nil, fmt.Errorf("dutyImageMessage: %w", err)
+	}
+
+	// Generate menData matrix
+	menData, err := genGridDutyDataMatrix(t, lastMonthDay)
+	if err != nil {
+		return nil, fmt.Errorf("dutyImageMessage: %w", err)
+	}
+
+	// Initialise grid object
+	grid, err := initGrid(1800, 500, len(menData), len(menData[0]))
+	if err != nil {
+		return nil, fmt.Errorf("dutyImageMessage: %w", err)
+	}
+
+	// Render grid with menData
+	if err := renderGrid(grid, menData); err != nil {
+		return nil, fmt.Errorf("dutyImageMessage: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	if err := grid.EncodePNG(buf); err != nil {
+		return nil, fmt.Errorf("dutyImageMessage: %w", err)
+	}
+
+	photoFileBytes := &tgbotapi.FileBytes{
+		Bytes: buf.Bytes(),
+	}
+
+	return photoFileBytes, nil
 }

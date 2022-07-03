@@ -3,6 +3,7 @@ package bot
 import (
 	"dso_bot/pkg/data"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"time"
 )
@@ -178,12 +179,21 @@ func (t *TgBot) announceDuty() {
 			// Append off-duty Announce message
 			message += offDutyAnnMessage
 
-			if err := t.sendMessage(message,
-				t.settings.JoinedGroups[i].Id,
-				nil,
-				nil,
-				true); err != nil {
+			image, err := t.genMonthDutyImage()
+			if err != nil {
 				log.Printf("%v", err)
+			}
+
+			msg := tgbotapi.NewPhoto(t.settings.JoinedGroups[i].Id, image)
+			msg.Caption = message
+
+			sentMessage, err := t.bot.Send(msg)
+			if err != nil {
+				log.Printf("unable to send message: %v", err)
+			}
+
+			if err := pinMessage(t, t.settings.JoinedGroups[i].Id, sentMessage); err != nil {
+				log.Printf("announceDuty: %v", err)
 			}
 		}
 	}
