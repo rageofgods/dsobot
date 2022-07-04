@@ -186,6 +186,7 @@ func (t *TgBot) announceDuty() {
 
 			msg := tgbotapi.NewPhoto(t.settings.JoinedGroups[i].Id, image)
 			msg.Caption = message
+			msg.ParseMode = "markdown"
 
 			sentMessage, err := t.bot.Send(msg)
 			if err != nil {

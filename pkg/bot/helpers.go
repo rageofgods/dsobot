@@ -9,6 +9,7 @@ import (
 	"github.com/golang/freetype/truetype"
 	"github.com/rageofgods/gridder"
 	"golang.org/x/image/colornames"
+	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/font/gofont/goregular"
 	"image/color"
 	"log"
@@ -792,13 +793,33 @@ func renderGrid(grid *gridder.Gridder, menData [][]string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fontBold, err := truetype.Parse(gobold.TTF)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	cellFont := truetype.NewFace(font, &truetype.Options{Size: 14})
+	DayFont := truetype.NewFace(fontBold, &truetype.Options{Size: 18})
 
 	for i, column := range menData {
 		for ii, cell := range column {
 			switch cell {
+			case strconv.Itoa(time.Now().Day()):
+				// Current day
+				if err := grid.DrawCircle(i, ii, gridder.CircleConfig{
+					Color:  colornames.Red,
+					Radius: 15,
+				}); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
+				// Render day
+				if err := grid.DrawString(i, ii, cell, DayFont, gridder.StringConfig{
+					Color: color.White,
+				}); err != nil {
+					return fmt.Errorf("renderGrid: %w", err)
+				}
 			case "\U0001F7E9":
-				//Duty Day
+				// Duty Day
 				if err := grid.PaintCell(i, ii, color.RGBA{R: 90, G: 108, B: 22, A: 255}); err != nil {
 					return fmt.Errorf("renderGrid: %w", err)
 				}

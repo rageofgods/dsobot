@@ -93,7 +93,9 @@ func (t *CalData) WhoWasOnDuty(lastMonthDay *time.Time, dutyTag CalTag) (name st
 
 	var foundPrevMan string // Save founded on-duty man to check next iteration
 	manCounter := 0         // Counter for save count of duties for founded man
-	for d := *lastMonthDay; d.After(firstMonthDay.Local()); d = d.AddDate(0, 0, -1) {
+	for d := *lastMonthDay; d.After(firstMonthDay.Local().AddDate(0, 0, -1)); d = d.AddDate(
+		0, 0, -1,
+	) {
 		nwd, _, err := t.checkDayTag(&d, NonWorkingDay) // Check if current past day is non-working day
 		if err != nil {
 			return "", 0, CtxError("data.WhoWasOnDuty()", err)
