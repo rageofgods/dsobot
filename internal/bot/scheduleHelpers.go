@@ -57,6 +57,10 @@ func (t *TgBot) scheduleAllHelpers() error {
 	if err := bs.schedulePurgeForCallbackButtonData("03:00:00"); err != nil {
 		log.Printf("%v", err)
 	}
+	// Schedule per-month off-duty clean-up
+	if err := bs.scheduleCleaUpOffDuty("03:15:00"); err != nil {
+		log.Printf("%v", err)
+	}
 
 	// Start all scheduled jobs
 	bs.StartAsync()
@@ -168,6 +172,19 @@ func (bs botScheduler) schedulePurgeForCallbackButtonData(timeString string) err
 	j, err := bs.Every(1).Day().At(timeString).Do(func() {
 		log.Printf("Purging callback data...")
 		bs.bot.callbackButton = make(map[string]callbackButton)
+	})
+	if err != nil {
+		return fmt.Errorf("can't schedule purge for callback data. job: %v: error: %v", j, err)
+	}
+	return nil
+}
+
+func (bs botScheduler) scheduleCleaUpOffDuty(timeString string) error {
+	j, err := bs.Every(1).Month(1).At(timeString).Do(func() {
+		log.Printf("Purging off-duty data...")
+		if err := bs.bot.dc.CleanUpOffDutyEvents(); err != nil {
+			log.Printf("unable to cleanup off-duty data: %v", err)
+		}
 	})
 	if err != nil {
 		return fmt.Errorf("can't schedule purge for callback data. job: %v: error: %v", j, err)
