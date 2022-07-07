@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -162,7 +162,7 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 }
 
 func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64, messageId int, update *tgbotapi.Update) error {
-	loc, err := time.LoadLocation(data.TimeZone)
+	loc, err := time.LoadLocation(data2.TimeZone)
 	if err != nil {
 		return err
 	}
@@ -187,11 +187,11 @@ func (t *TgBot) callbackDeleteOffDuty(answer string, chatId int64, userId int64,
 	}
 
 	// Converting date string to time.Time
-	stime, err := time.ParseInLocation(data.DateShortSaveData, (*offduty)[a].OffDutyStart, loc)
+	stime, err := time.ParseInLocation(data2.DateShortSaveData, (*offduty)[a].OffDutyStart, loc)
 	if err != nil {
 		return fmt.Errorf("ошибка конвертации даты начала нерабочего периода: %v", err)
 	}
-	etime, err := time.ParseInLocation(data.DateShortSaveData, (*offduty)[a].OffDutyEnd, loc)
+	etime, err := time.ParseInLocation(data2.DateShortSaveData, (*offduty)[a].OffDutyEnd, loc)
 	if err != nil {
 		return fmt.Errorf("ошибка конвертации даты конца нерабочего периода: %v", err)
 	}
@@ -673,7 +673,7 @@ func (t *TgBot) callbackEditDuty(answer string, chatId int64, userId int64, mess
 			return err
 		}
 		// Assign deep copied data to tmpDutyData
-		for _, man := range d.([]data.DutyMan) {
+		for _, man := range d.([]data2.DutyMan) {
 			t.addTmpDutyManDataForUser(userId, man)
 		}
 	}
@@ -863,7 +863,7 @@ func (t *TgBot) callbackAnnounce(answer string, chatId int64, userId int64, mess
 			return err
 		}
 		// Assign deep copied data to tmpAnnounceData
-		for _, group := range d.([]data.JoinedGroup) {
+		for _, group := range d.([]data2.JoinedGroup) {
 			t.addTmpAnnounceDataForUser(userId, group)
 		}
 	}
@@ -1063,7 +1063,7 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
 	case inlineKeyboardNext:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1120,7 +1120,7 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 		}
 	case inlineKeyboardPrev:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1177,7 +1177,7 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 			log.Printf("unable to change message with on-duty index inline keyboard: %v", err)
 		}
 	case inlineKeyboardDate:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1194,7 +1194,7 @@ func (t *TgBot) callbackAddOffDuty(answer string, chatId int64, userId int64, me
 				msgTextUserHandleAddOffDutyStart,
 				parsedAnswerCurrentDate.Format(botDataShort3))
 
-			loc, err := time.LoadLocation(data.TimeZone)
+			loc, err := time.LoadLocation(data2.TimeZone)
 			if err != nil {
 				return err
 			}
@@ -1287,7 +1287,7 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string, chatId int64, userId in
 		}
 		if len(date) == 1 {
 			// Get on-duty data
-			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnDutyTag)
+			man, err := t.dc.WhoIsOnDuty(&date[0], data2.OnDutyTag)
 			if err != nil {
 				log.Printf("error in event creating: %v", err)
 				messageText := "Дежурства не найдены."
@@ -1316,7 +1316,7 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string, chatId int64, userId in
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
 	case inlineKeyboardNext:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1373,7 +1373,7 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string, chatId int64, userId in
 			log.Printf("unable to change message with whoison-duty index inline keyboard: %v", err)
 		}
 	case inlineKeyboardPrev:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1433,7 +1433,7 @@ func (t *TgBot) callbackWhoIsOnDutyAtDate(answer string, chatId int64, userId in
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
 
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1493,7 +1493,7 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string, chatId int64, use
 		}
 		if len(date) == 1 {
 			// Get on-duty data
-			man, err := t.dc.WhoIsOnDuty(&date[0], data.OnValidationTag)
+			man, err := t.dc.WhoIsOnDuty(&date[0], data2.OnValidationTag)
 			if err != nil {
 				log.Printf("error in event creating: %v", err)
 				messageText := "Валидации не найдены."
@@ -1522,7 +1522,7 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string, chatId int64, use
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
 	case inlineKeyboardNext:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1579,7 +1579,7 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string, chatId int64, use
 			log.Printf("unable to change message with whoison-validation index inline keyboard: %v", err)
 		}
 	case inlineKeyboardPrev:
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}
@@ -1639,7 +1639,7 @@ func (t *TgBot) callbackWhoIsOnValidationAtDate(answer string, chatId int64, use
 		// Clear tmp data
 		t.clearTmpOffDutyDataForUser(userId)
 
-		loc, err := time.LoadLocation(data.TimeZone)
+		loc, err := time.LoadLocation(data2.TimeZone)
 		if err != nil {
 			return err
 		}

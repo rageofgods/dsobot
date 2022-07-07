@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	"dso_bot/internal/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"

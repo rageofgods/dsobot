@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"fmt"
 	"github.com/go-co-op/gocron"
 	"log"
@@ -14,7 +14,7 @@ type botScheduler struct {
 }
 
 func newBotScheduler(bot *TgBot) *botScheduler {
-	loc, err := time.LoadLocation(data.TimeZone)
+	loc, err := time.LoadLocation(data2.TimeZone)
 	if err != nil {
 		log.Fatal("newBotScheduler: unable to load location string")
 	}
@@ -124,9 +124,9 @@ func (bs botScheduler) scheduleCreateOnValidation(timeString string) error {
 // Create and rotate backups
 func (bs botScheduler) scheduleCreateBackupForData(timeString string) error {
 	j, err := bs.Every(1).Day().At(timeString).Do(func() {
-		if err := bs.bot.dc.BackupData(data.SaveNameForDutyMenData, 7); err != nil {
+		if err := bs.bot.dc.BackupData(data2.SaveNameForDutyMenData, 7); err != nil {
 			messageText := fmt.Sprintf("Не удалось создать файл бэкапа для %s: %v",
-				data.SaveNameForDutyMenData,
+				data2.SaveNameForDutyMenData,
 				err)
 			if err := bs.bot.sendMessage(messageText,
 				bs.bot.adminGroupId,
@@ -145,9 +145,9 @@ func (bs botScheduler) scheduleCreateBackupForData(timeString string) error {
 // Create and rotate backups
 func (bs botScheduler) scheduleCreateBackupForSettings(timeString string) error {
 	j, err := bs.Every(1).Day().At(timeString).Do(func() {
-		if err := bs.bot.dc.BackupData(data.SaveNameForBotSettings, 7); err != nil {
+		if err := bs.bot.dc.BackupData(data2.SaveNameForBotSettings, 7); err != nil {
 			messageText := fmt.Sprintf("Не удалось создать файл бэкапа для %s: %v",
-				data.SaveNameForBotSettings,
+				data2.SaveNameForBotSettings,
 				err)
 			if err := bs.bot.sendMessage(messageText,
 				bs.bot.adminGroupId,

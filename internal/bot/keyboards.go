@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -65,7 +65,7 @@ func genArgsKeyboard(bc *botCommands, command tCmd) [][]tgbotapi.KeyboardButton 
 }
 
 // Generate keyboard with men on-duty indexes
-func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+func genIndexKeyboard(dm *[]data2.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for i, v := range *dm {
@@ -103,14 +103,14 @@ func genIndexKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineK
 }
 
 // Generate keyboard with edit-duty data
-func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.InlineKeyboardButton, error) {
+func genEditDutyKeyboard(dm *[]data2.DutyMan, cm callbackMessage) (*[][]tgbotapi.InlineKeyboardButton, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
 	// Generate columns names
 	var keyboardButtons []tgbotapi.InlineKeyboardButton
 	keyboardButtons = append(keyboardButtons,
 		tgbotapi.NewInlineKeyboardButtonData("ИМЯ", inlineKeyboardVoid))
-	for _, dt := range data.DutyNames {
+	for _, dt := range data2.DutyNames {
 		keyboardButtons = append(keyboardButtons,
 			tgbotapi.NewInlineKeyboardButtonData(strings.ToUpper(dt), inlineKeyboardVoid))
 	}
@@ -133,7 +133,7 @@ func genEditDutyKeyboard(dm *[]data.DutyMan, cm callbackMessage) (*[][]tgbotapi.
 		keyboardButtons = append(keyboardButtons,
 			tgbotapi.NewInlineKeyboardButtonData(manButtonCaption, string(jsonData)))
 		// Iterate over currently supported duty types
-		for _, dt := range data.DutyTypes {
+		for _, dt := range data2.DutyTypes {
 			for dutyIndex, d := range man.DutyType {
 				if dt == d.Type {
 					// Generate jsonData with current man's duty type state (false/true)
@@ -199,7 +199,7 @@ func (t *TgBot) delInlineKeyboardWithMessage(messageText string, chatId int64, m
 }
 
 // Generate keyboard with announce data
-func genAnnounceKeyboard(jg []data.JoinedGroup, cm callbackMessage) ([][]tgbotapi.InlineKeyboardButton, error) {
+func genAnnounceKeyboard(jg []data2.JoinedGroup, cm callbackMessage) ([][]tgbotapi.InlineKeyboardButton, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
 	// Generate columns names
@@ -314,7 +314,7 @@ func genInlineCalendarKeyboard(date time.Time,
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(dayTypesHeader...))
 	// Generate rows with calendar data
-	firstDay, lastDay, err := data.FirstLastMonthDay(1, date.Year(), int(date.Month()))
+	firstDay, lastDay, err := data2.FirstLastMonthDay(1, date.Year(), int(date.Month()))
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func genInlineCalendarKeyboard(date time.Time,
 }
 
 // Generate keyboard with men on-duty indexes
-func genAdminAddOffDutyIndexKeyboard(t *TgBot, dm *[]data.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
+func genAdminAddOffDutyIndexKeyboard(t *TgBot, dm *[]data2.DutyMan, cm callbackMessage) (*tgbotapi.InlineKeyboardMarkup, error) {
 	// Create numeric inline keyboard
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for i, v := range *dm {
@@ -444,7 +444,7 @@ func genInlineCalendarKeyboardButtons(t *TgBot, date time.Time,
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(dayTypesHeader...))
 	// Generate rows with calendar data
-	firstDay, lastDay, err := data.FirstLastMonthDay(1, date.Year(), int(date.Month()))
+	firstDay, lastDay, err := data2.FirstLastMonthDay(1, date.Year(), int(date.Month()))
 	if err != nil {
 		return nil, err
 	}

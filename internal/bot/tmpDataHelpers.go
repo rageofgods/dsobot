@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -35,7 +35,7 @@ func (t *TgBot) addTmpRegisterDataForUser(userId int64, name string, update *tgb
 	}
 }
 
-func (t *TgBot) tmpAnnounceDataForUser(userId int64) ([]data.JoinedGroup, error) {
+func (t *TgBot) tmpAnnounceDataForUser(userId int64) ([]data2.JoinedGroup, error) {
 	for _, v := range t.tmpData.tmpJoinedGroupData {
 		if v.userId == userId {
 			if v.data != nil {
@@ -46,7 +46,7 @@ func (t *TgBot) tmpAnnounceDataForUser(userId int64) ([]data.JoinedGroup, error)
 	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
 }
 
-func (t *TgBot) addTmpAnnounceDataForUser(userId int64, group data.JoinedGroup) {
+func (t *TgBot) addTmpAnnounceDataForUser(userId int64, group data2.JoinedGroup) {
 	var isGroupIdFound bool
 	// If we already have some previously saved data for current userId
 	for i, v := range t.tmpData.tmpJoinedGroupData {
@@ -59,7 +59,7 @@ func (t *TgBot) addTmpAnnounceDataForUser(userId int64, group data.JoinedGroup) 
 		return
 	} else {
 		// If it's a fresh new data
-		var tmp []data.JoinedGroup
+		var tmp []data2.JoinedGroup
 		tmp = append(tmp, group)
 		tmpNewGroup := tmpJoinedGroupData{userId: userId, data: tmp}
 		t.tmpData.tmpJoinedGroupData = append(t.tmpData.tmpJoinedGroupData, tmpNewGroup)
@@ -75,7 +75,7 @@ func (t *TgBot) clearTmpAnnounceDataForUser(userId int64) {
 	}
 }
 
-func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data.DutyMan, error) {
+func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data2.DutyMan, error) {
 	for _, v := range t.tmpData.tmpDutyManData {
 		if v.userId == userId {
 			if v.data != nil {
@@ -86,7 +86,7 @@ func (t *TgBot) tmpDutyManDataForUser(userId int64) ([]data.DutyMan, error) {
 	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
 }
 
-func (t *TgBot) addTmpDutyManDataForUser(userId int64, man data.DutyMan) {
+func (t *TgBot) addTmpDutyManDataForUser(userId int64, man data2.DutyMan) {
 	var isUserIdFound bool
 	// If we already have some previously saved data for current userId
 	for i, v := range t.tmpData.tmpDutyManData {
@@ -99,7 +99,7 @@ func (t *TgBot) addTmpDutyManDataForUser(userId int64, man data.DutyMan) {
 		return
 	} else {
 		// If it's a fresh new data
-		var tmp []data.DutyMan
+		var tmp []data2.DutyMan
 		tmp = append(tmp, man)
 		tmpNewMan := tmpDutyManData{userId: userId, data: tmp}
 		t.tmpData.tmpDutyManData = append(t.tmpData.tmpDutyManData, tmpNewMan)
@@ -232,7 +232,7 @@ func (t *TgBot) tmpAdminOffDutyDataForUserId(userId int64) ([]time.Time, error) 
 	return nil, fmt.Errorf("unable to find saved data for userId: %d\n", userId)
 }
 
-func (t *TgBot) tmpAdminGetOffDutyDataForUserId(adminUserId int64) (*data.DutyMan, error) {
+func (t *TgBot) tmpAdminGetOffDutyDataForUserId(adminUserId int64) (*data2.DutyMan, error) {
 	for i, v := range t.tmpData.tmpAdminOffDutyData {
 		if v.userId == adminUserId {
 			for _, man := range *t.dc.DutyMenData() {

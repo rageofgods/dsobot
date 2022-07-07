@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"time"
 )
@@ -16,13 +16,13 @@ type tmpRegisterData struct {
 // Structure to hold temporary dutyMan data before saving it
 type tmpDutyManData struct {
 	userId int64
-	data   []data.DutyMan
+	data   []data2.DutyMan
 }
 
 // Structure to hold temporary JoinedGroup (BotSettings) data before saving it
 type tmpJoinedGroupData struct {
 	userId int64
-	data   []data.JoinedGroup
+	data   []data2.JoinedGroup
 }
 
 type tmpOffDutyData struct {
@@ -79,7 +79,7 @@ type botCommands struct {
 
 // Struct to hold off-duty announce data
 type offDutyAnnounce struct {
-	man          data.DutyMan
+	man          data2.DutyMan
 	offDutyStart string
 	offDutyEnd   string
 	announceType announceType

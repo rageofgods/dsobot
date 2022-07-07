@@ -2,7 +2,7 @@ package bot
 
 import (
 	"bytes"
-	"dso_bot/pkg/data"
+	"dso_bot/internal/data"
 	"encoding/csv"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
