@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	"dso_bot/internal/data"
 	"reflect"
 	"testing"
 	"time"

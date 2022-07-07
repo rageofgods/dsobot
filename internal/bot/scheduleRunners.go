@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -43,7 +43,7 @@ func (t *TgBot) announceBirthday() {
 	// Get current duty data
 	dutyMen := t.dc.DutyMenData()
 
-	var menBirthDay []data.DutyMan
+	var menBirthDay []data2.DutyMan
 	//var menBirthDay []string
 	for _, v := range *dutyMen {
 		if v.Birthday != "" {
@@ -99,8 +99,8 @@ func (t *TgBot) announceDuty() {
 	// Get current duty data
 	dutyMen := t.dc.DutyMenData()
 	// Define duty and validation man variables
-	var dm data.DutyMan
-	var vm data.DutyMan
+	var dm data2.DutyMan
+	var vm data2.DutyMan
 
 	// Generate off-duty Announce message
 	var offDutyAnnMessage string
@@ -129,7 +129,7 @@ func (t *TgBot) announceDuty() {
 	for i, v := range t.settings.JoinedGroups {
 		if v.Announce {
 			// Get on-duty data
-			dutyMan, err := t.dc.WhoIsOnDuty(&tn, data.OnDutyTag)
+			dutyMan, err := t.dc.WhoIsOnDuty(&tn, data2.OnDutyTag)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -138,7 +138,7 @@ func (t *TgBot) announceDuty() {
 					dm = v
 				}
 			}
-			validationMan, err := t.dc.WhoIsOnDuty(&tn, data.OnValidationTag)
+			validationMan, err := t.dc.WhoIsOnDuty(&tn, data2.OnValidationTag)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -225,7 +225,7 @@ func (t *TgBot) updateNwd() {
 
 // update on-duty events
 func (t *TgBot) updateOnDuty() {
-	err := t.dc.UpdateOnDutyEvents(data.OnDutyContDays, data.OnDutyTag)
+	err := t.dc.UpdateOnDutyEvents(data2.OnDutyContDays, data2.OnDutyTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось создать события дежурств: %s", err)
@@ -248,7 +248,7 @@ func (t *TgBot) updateOnDuty() {
 
 // update on-validation events
 func (t *TgBot) updateOnValidation() {
-	err := t.dc.UpdateOnDutyEvents(data.OnValidationContDays, data.OnValidationTag)
+	err := t.dc.UpdateOnDutyEvents(data2.OnValidationContDays, data2.OnValidationTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось создать события валидаций: %s", err)

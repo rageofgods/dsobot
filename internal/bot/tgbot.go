@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -11,17 +11,17 @@ import (
 
 type TgBot struct {
 	bot            *tgbotapi.BotAPI
-	dc             *data.CalData
+	dc             *data2.CalData
 	token          string
 	msg            *tgbotapi.MessageConfig
 	adminGroupId   int64
 	debug          bool
 	tmpData        tmpData
-	settings       data.BotSettings
+	settings       data2.BotSettings
 	callbackButton map[string]callbackButton
 }
 
-func NewTgBot(dc *data.CalData, settings data.BotSettings, token string, adminGroupId int64, debug bool) *TgBot {
+func NewTgBot(dc *data2.CalData, settings data2.BotSettings, token string, adminGroupId int64, debug bool) *TgBot {
 	return &TgBot{
 		dc:             dc,
 		token:          token,

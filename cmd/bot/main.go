@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dso_bot/pkg/bot"
-	"dso_bot/pkg/data"
+	"dso_bot/internal/bot"
+	"dso_bot/internal/data"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"

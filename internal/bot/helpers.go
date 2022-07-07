@@ -2,7 +2,7 @@ package bot
 
 import (
 	"bytes"
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -185,7 +185,7 @@ func locMonth(month time.Month) string {
 }
 
 // Return string with duty types data for specified man
-func typesOfDuties(m *data.DutyMan) string {
+func typesOfDuties(m *data2.DutyMan) string {
 	var list string
 	var isAnyDuty bool
 	for _, dt := range m.DutyType {
@@ -238,7 +238,7 @@ func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, userName string, timeRa
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data.OnDutyContDays, data.OnDutyTag); err != nil {
+			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data2.OnDutyContDays, data2.OnDutyTag); err != nil {
 				log.Printf("unable to update duty events: %v", err)
 				messageText := fmt.Sprintf("Не удалось пересоздать события дежурства при "+
 					"добавлении нового нерабочего периода для: %s (временной период: %s)",
@@ -253,7 +253,7 @@ func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, userName string, timeRa
 		}()
 		go func() {
 			defer wg.Done()
-			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data.OnValidationContDays, data.OnValidationTag); err != nil {
+			if err := t.dc.UpdateOnDutyEventsFrom(startFrom, data2.OnValidationContDays, data2.OnValidationTag); err != nil {
 				log.Printf("unable to update duty events: %v", err)
 				messageText := fmt.Sprintf("Не удалось пересоздать события валидации при "+
 					"добавлении нового нерабочего периода для: %s (временной период: %s)",
@@ -272,7 +272,7 @@ func (t *TgBot) updateOnDutyEvents(startFrom *time.Time, userName string, timeRa
 
 // Check if we have date in the command argument
 func parseDateString(str string) (time.Time, error) {
-	loc, err := time.LoadLocation(data.TimeZone)
+	loc, err := time.LoadLocation(data2.TimeZone)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -398,7 +398,7 @@ func (t *TgBot) gracefulWatcher() {
 
 // This function generate correct next month next to avoid wired behaviour with Go date normalization
 func nextMonth(t time.Time) (time.Time, error) {
-	_, lastMonthDay, err := data.FirstLastMonthDay(1, t.Year(), int(t.Month()))
+	_, lastMonthDay, err := data2.FirstLastMonthDay(1, t.Year(), int(t.Month()))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -411,7 +411,7 @@ func nextMonth(t time.Time) (time.Time, error) {
 
 // This function generate correct previous month next to avoid wired behaviour with Go date normalization
 func prevMonth(t time.Time) (time.Time, error) {
-	firstMonthDay, _, err := data.FirstLastMonthDay(1, t.Year(), int(t.Month()))
+	firstMonthDay, _, err := data2.FirstLastMonthDay(1, t.Year(), int(t.Month()))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -422,8 +422,8 @@ func prevMonth(t time.Time) (time.Time, error) {
 }
 
 // Check if provided day for month is in off-duty range
-func isDayInOffDutyRange(offDuty *data.OffDutyData, day int, month time.Month, year int) (bool, error) {
-	loc, err := time.LoadLocation(data.TimeZone)
+func isDayInOffDutyRange(offDuty *data2.OffDutyData, day int, month time.Month, year int) (bool, error) {
+	loc, err := time.LoadLocation(data2.TimeZone)
 	if err != nil {
 		return false, err
 	}
@@ -447,8 +447,8 @@ func isDayInOffDutyRange(offDuty *data.OffDutyData, day int, month time.Month, y
 }
 
 // Check if provided month is in off-duty range array
-func isMonthInOffDutyData(offDutyData []data.OffDutyData, month time.Month, year int) (bool, error) {
-	firstMonthDay, lastMonthDay, err := data.FirstLastMonthDay(1, year, int(month))
+func isMonthInOffDutyData(offDutyData []data2.OffDutyData, month time.Month, year int) (bool, error) {
+	firstMonthDay, lastMonthDay, err := data2.FirstLastMonthDay(1, year, int(month))
 	if err != nil {
 		return false, err
 	}
@@ -632,14 +632,14 @@ func genGridDutyDataMatrix(t *TgBot, lastMonthDay *time.Time) ([][]string, error
 
 	var menData [][]string
 	menData = append(menData, header)
-	nwdDays, err := data.NwdEventsForCurMonth()
+	nwdDays, err := data2.NwdEventsForCurMonth()
 	if err != nil {
 		log.Printf("unable to get non-working day data: %v", err)
 		return nil, fmt.Errorf("genGridDutyDataMatrix: %w", err)
 	}
 	for _, man := range *t.dc.DutyMenData(true) {
 		// Get man month duty dates
-		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnDutyTag)
+		dutyDates, err := t.dc.ManDutiesList(man.UserName, data2.OnDutyTag)
 		if err != nil {
 			// if Current man don't have off-duties we can skip him, because he doesn't have duties at this month also
 			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
@@ -715,14 +715,14 @@ func genGridValidationDataMatrix(t *TgBot, lastMonthDay *time.Time) ([][]string,
 
 	var menData [][]string
 	menData = append(menData, header)
-	nwdDays, err := data.NwdEventsForCurMonth()
+	nwdDays, err := data2.NwdEventsForCurMonth()
 	if err != nil {
 		log.Printf("unable to get non-working day data: %v", err)
 		return nil, fmt.Errorf("genGridValidationDataMatrix: %w", err)
 	}
 	for _, man := range *t.dc.DutyMenData(true) {
 		// Get man month duty dates
-		dutyDates, err := t.dc.ManDutiesList(man.UserName, data.OnValidationTag)
+		dutyDates, err := t.dc.ManDutiesList(man.UserName, data2.OnValidationTag)
 		if err != nil {
 			// if Current man don't have off-dates we can skip him, because he doesn't have duties at this month also
 			isManHaveOffDutyForThisMonth, err := isMonthInOffDutyData(man.OffDuty,
@@ -849,7 +849,7 @@ func renderGrid(grid *gridder.Gridder, menData [][]string) error {
 }
 
 func (t *TgBot) genMonthDutyImage() (*tgbotapi.FileBytes, error) {
-	_, lastMonthDay, err := data.FirstLastMonthDay(1)
+	_, lastMonthDay, err := data2.FirstLastMonthDay(1)
 	if err != nil {
 		return nil, fmt.Errorf("dutyImageMessage: %w", err)
 	}

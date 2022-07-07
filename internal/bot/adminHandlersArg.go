@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"dso_bot/pkg/data"
+	data2 "dso_bot/internal/data"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -18,7 +18,7 @@ func (t *TgBot) adminHandleRolloutAll(arg string, update *tgbotapi.Update) {
 // Handle 'duty' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 	log.Println(arg) // Ignore arg here
-	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.OrdinaryDutyName)
+	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data2.OrdinaryDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		&update.Message.MessageID,
@@ -26,7 +26,7 @@ func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 		log.Printf("unable to send message: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(data.OnDutyContDays, data.OnDutyTag)
+	err := t.dc.UpdateOnDutyEvents(data2.OnDutyContDays, data2.OnDutyTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
@@ -50,7 +50,7 @@ func (t *TgBot) adminHandleRolloutDuty(arg string, update *tgbotapi.Update) {
 // Handle 'validation' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update) {
 	log.Println(arg) // Ignore arg here
-	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.ValidationDutyName)
+	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data2.ValidationDutyName)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		&update.Message.MessageID,
@@ -58,7 +58,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update
 		log.Printf("unable to send message: %v", err)
 	}
 
-	err := t.dc.UpdateOnDutyEvents(data.OnValidationContDays, data.OnValidationTag)
+	err := t.dc.UpdateOnDutyEvents(data2.OnValidationContDays, data2.OnValidationTag)
 	if err != nil {
 		log.Printf("error in event creating: %v", err)
 		messageText := fmt.Sprintf("Не удалось выполнить запрос: %s", err)
@@ -82,7 +82,7 @@ func (t *TgBot) adminHandleRolloutValidation(arg string, update *tgbotapi.Update
 // Handle 'nwd' user arg for 'rollout' command
 func (t *TgBot) adminHandleRolloutNonWorkingDay(arg string, update *tgbotapi.Update) {
 	log.Println(arg) // Ignore arg here
-	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data.NonWorkingDaySum)
+	messageText := fmt.Sprintf("Создаю записи для типа событий: %q, ждите...", data2.NonWorkingDaySum)
 	if err := t.sendMessage(messageText,
 		t.adminGroupId,
 		&update.Message.MessageID,

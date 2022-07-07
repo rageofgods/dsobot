@@ -188,6 +188,29 @@ func (t *CalData) CreateOffDutyEvents(manOffDuty string, fromDate time.Time, toD
 	return nil
 }
 
+// CleanUpOffDutyEvents will clean up expired off-duty events from saved running and saved data
+func (t *CalData) CleanUpOffDutyEvents() error {
+	tn := time.Now()
+	loc, _ := time.LoadLocation(TimeZone)
+	for i, v := range *t.dutyMen {
+		buffer := make([]OffDutyData, 0, len(v.OffDuty))
+		for ii, vv := range v.OffDuty {
+			offDutyEndDate, err := time.ParseInLocation(DateShortSaveData, vv.OffDutyEnd, loc)
+			if err != nil {
+				return fmt.Errorf("CleanUpOffDutyEvents: %w", err)
+			}
+			if offDutyEndDate.After(tn) {
+				buffer = append(buffer, (*t.dutyMen)[i].OffDuty[ii])
+			}
+		}
+		(*t.dutyMen)[i].OffDuty = buffer
+	}
+	if _, err := t.SaveMenList(); err != nil {
+		return fmt.Errorf("CleanUpOffDutyEvents: %w", err)
+	}
+	return nil
+}
+
 // DeleteOffDutyEvents Create off-duty (Holiday/illness events)
 func (t *CalData) DeleteOffDutyEvents(manOffDuty string, fromDate time.Time, toDate time.Time) error {
 	loc, err := time.LoadLocation(TimeZone)
