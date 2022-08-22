@@ -96,8 +96,7 @@ func (t *TgBot) handleRegister(cmdArgs string, update *tgbotapi.Update) {
 	}
 }
 
-func (t *TgBot) handleUnregister(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleUnregister(_ string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return

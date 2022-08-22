@@ -141,6 +141,9 @@ func (t *TgBot) callbackUnregister(answer string, chatId int64, userId int64, me
 					nil); err != nil {
 					log.Printf("unable to send message: %v", err)
 				}
+				// Recreate on-duty events from the current date
+				tn := time.Now()
+				t.updateOnDutyEvents(&tn, update.CallbackQuery.From.UserName, "")
 			}
 		}
 	} else {
