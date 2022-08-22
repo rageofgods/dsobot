@@ -8,8 +8,7 @@ import (
 )
 
 // handle '/start' command
-func (t *TgBot) handleStart(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleStart(_ string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -31,8 +30,7 @@ func (t *TgBot) handleStart(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/help' command
-func (t *TgBot) handleHelp(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleHelp(_ string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -53,8 +51,7 @@ func (t *TgBot) handleHelp(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // Register new user as DSO team member
-func (t *TgBot) handleRegister(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleRegister(_ string, update *tgbotapi.Update) {
 	// Check if user is already registered
 	if t.dc.IsInDutyList(update.Message.From.UserName) {
 		messageText := "Вы уже зарегестрированы.\n" +
@@ -268,8 +265,7 @@ func (t *TgBot) handleAddOffDuty(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/showofduty' command
-func (t *TgBot) handleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleShowOffDuty(_ string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -312,8 +308,7 @@ func (t *TgBot) handleShowOffDuty(cmdArgs string, update *tgbotapi.Update) {
 }
 
 // handle '/deleteoffduty' command
-func (t *TgBot) handleDeleteOffDuty(cmdArgs string, update *tgbotapi.Update) {
-	log.Println(cmdArgs) // Ignore arg here
+func (t *TgBot) handleDeleteOffDuty(_ string, update *tgbotapi.Update) {
 	// Check if user is already register. Return if it was.
 	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
 		return
@@ -432,11 +427,19 @@ func (t *TgBot) handleNotFound(update *tgbotapi.Update) {
 
 // handle '/duties_csv' command
 func (t *TgBot) handleShowMonthDuty(cmdArgs string, update *tgbotapi.Update) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
 	t.adminHandleShowMonthDuty(cmdArgs, update)
 }
 
 // handle '/validation_csv' command
 func (t *TgBot) handleShowMonthValidation(cmdArgs string, update *tgbotapi.Update) {
+	// Check if user is already register. Return if it was.
+	if !t.checkIsUserRegistered(update.Message.From.UserName, update) {
+		return
+	}
 	t.adminHandleShowMonthValidation(cmdArgs, update)
 }
 
