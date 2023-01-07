@@ -272,18 +272,30 @@ func (t *CalData) DutyMenData(enabled ...bool) *[]DutyMan {
 // Return correct index for duty flow
 func (t *CalData) genIndexForDutyList(prevTime *time.Time,
 	dutyTag CalTag, contDays int, tempMen *[]string) int {
-	var menCount int
 	man, manPrevDutyCount, err := t.WhoWasOnDuty(prevTime, dutyTag)
 	if err != nil {
-		log.Printf("%v", err)
+		log.Printf("Can't found previous man of duty for %s month: %v", prevTime.Month().String(), err)
+		// Get first and last date of provided month
+		firstMonthDay, lastMonthDay, err := FirstLastMonthDay(1, prevTime.Year(), int(prevTime.Month()))
+		if err != nil {
+			log.Printf("%v", err)
+		}
+
+		// If we can't found man of duty at previous search iteration for current month
+		// Let's get back to previous month and try again (handle January Holidays situation)
+		if prevTime.Day() != lastMonthDay.Day() {
+			// Go back to previous day
+			pd := firstMonthDay.AddDate(0, 0, -1)
+			log.Printf("Trying to found last duty man in the previous month.")
+			man, manPrevDutyCount, err = t.WhoWasOnDuty(&pd, dutyTag)
+			if err != nil {
+				log.Printf("Can't found previous man of duty for %s month: %v", prevTime.Month().String(), err)
+			}
+		}
 	}
-	index, err := indexOfCurrentOnDutyMan(contDays, *tempMen, man, manPrevDutyCount)
-	if err != nil {
-		menCount = 0
-	} else {
-		menCount = index
-	}
-	return menCount
+
+	index, _ := indexOfCurrentOnDutyMan(contDays, *tempMen, man, manPrevDutyCount)
+	return index
 }
 
 // Check if name is in offDuty list
