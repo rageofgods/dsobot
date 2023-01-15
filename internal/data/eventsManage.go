@@ -111,8 +111,14 @@ func (t *CalData) checkDayTag(day *time.Time, tag CalTag) (bool, []string, error
 }
 
 // Returns Calendar event with provided values
-func genEvent(sum string, desc string, color string, startDate string, endDate string) *calendar.Event {
-	event := &calendar.Event{
+func genEvent(
+	sum string,
+	desc string,
+	color string,
+	startDate string,
+	endDate string,
+) *calendar.Event {
+	return &calendar.Event{
 		Summary:     sum,
 		Description: desc,
 		ColorId:     color,
@@ -125,5 +131,4 @@ func genEvent(sum string, desc string, color string, startDate string, endDate s
 			TimeZone: TimeZone,
 		},
 	}
-	return event
 }
