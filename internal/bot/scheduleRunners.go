@@ -184,7 +184,16 @@ func (t *TgBot) announceDuty() {
 			// Append off-duty Announce message
 			message += offDutyAnnMessage
 
-			image, err := t.genMonthDutyImage()
+			// Try to getting duty image for three times
+			var image *tgbotapi.FileBytes
+			for i := 3; i != 0; i-- {
+				image, err = t.genMonthDutyImage()
+				if err != nil {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+			}
+
 			if err != nil {
 				log.Printf("%v", err)
 				messageText := fmt.Sprintf(
@@ -201,7 +210,8 @@ func (t *TgBot) announceDuty() {
 
 			// If we don't have month duty image, then we just send plain text instead
 			if image == nil {
-				if err := t.sendMessage(message, t.adminGroupId, nil, nil, true); err != nil {
+
+				if err := t.sendMessage(message, t.settings.JoinedGroups[i].Id, nil, nil, true); err != nil {
 					log.Printf("unable to send message: %v", err)
 				}
 			} else {

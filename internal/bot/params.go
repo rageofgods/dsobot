@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-/////////////////////////////////
+// ///////////////////////////////
 // Structure to hold answer data for newly registered users
 type tmpRegisterData struct {
 	userId int64
@@ -45,7 +45,7 @@ type tmpData struct {
 	tmpAdminOffDutyData []tmpAdminOffDutyData
 }
 
-/////////////////////////////////
+// ///////////////////////////////
 // Custom struct for bot commands
 type cmd struct {
 	name tCmd
