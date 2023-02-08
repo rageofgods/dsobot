@@ -3,9 +3,10 @@ package bot
 import (
 	data2 "dso_bot/internal/data"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // announceBirthdayAtWorkingDay it's wrapper for birthday announce only at working day
@@ -49,7 +50,11 @@ func (t *TgBot) announceBirthday() {
 		if v.Birthday != "" {
 			pbd, err := time.Parse(botDataShort3, v.Birthday)
 			if err != nil {
-				message := fmt.Sprintf("unable to parse birthday date: %s for user: %s", v.Birthday, v.CustomName)
+				message := fmt.Sprintf(
+					"unable to parse birthday date: %s for user: %s",
+					v.Birthday,
+					v.CustomName,
+				)
 				log.Print(message)
 				if err := t.sendMessage(message, t.adminGroupId, nil, nil); err != nil {
 					log.Printf("unable to send message: %v", err)
@@ -179,22 +184,49 @@ func (t *TgBot) announceDuty() {
 			// Append off-duty Announce message
 			message += offDutyAnnMessage
 
-			image, err := t.genMonthDutyImage()
+			// Try to getting duty image for three times
+			var image *tgbotapi.FileBytes
+			for i := 3; i != 0; i-- {
+				image, err = t.genMonthDutyImage()
+				if err != nil {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+			}
+
 			if err != nil {
 				log.Printf("%v", err)
+				messageText := fmt.Sprintf(
+					"Не удалось сгенерировать визуализацию дежурств за месяц: %v",
+					err,
+				)
+				if err := t.sendMessage(messageText,
+					t.adminGroupId,
+					nil,
+					nil); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
 			}
 
-			msg := tgbotapi.NewPhoto(t.settings.JoinedGroups[i].Id, image)
-			msg.Caption = message
-			msg.ParseMode = "markdown"
+			// If we don't have month duty image, then we just send plain text instead
+			if image == nil {
 
-			sentMessage, err := t.bot.Send(msg)
-			if err != nil {
-				log.Printf("unable to send message: %v", err)
-			}
+				if err := t.sendMessage(message, t.settings.JoinedGroups[i].Id, nil, nil, true); err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+			} else {
+				msg := tgbotapi.NewPhoto(t.settings.JoinedGroups[i].Id, image)
+				msg.Caption = message
+				msg.ParseMode = "markdown"
 
-			if err := pinMessage(t, t.settings.JoinedGroups[i].Id, sentMessage); err != nil {
-				log.Printf("announceDuty: %v", err)
+				sentMessage, err := t.bot.Send(msg)
+				if err != nil {
+					log.Printf("unable to send message: %v", err)
+				}
+
+				if err := pinMessage(t, t.settings.JoinedGroups[i].Id, sentMessage); err != nil {
+					log.Printf("announceDuty: %v", err)
+				}
 			}
 		}
 	}

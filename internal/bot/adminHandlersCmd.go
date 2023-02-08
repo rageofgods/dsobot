@@ -133,9 +133,18 @@ func (t *TgBot) adminHandleShowOffDuty(_ string, update *tgbotapi.Update) {
 		}
 		isOffDutyFound = true
 
-		msgText += fmt.Sprintf("Нерабочие периоды для *%s* (*@%s*):\n", man.CustomName, man.UserName)
+		msgText += fmt.Sprintf(
+			"Нерабочие периоды для *%s* (*@%s*):\n",
+			man.CustomName,
+			man.UserName,
+		)
 		for i, od := range *offduty {
-			msgText += fmt.Sprintf("*%d.* Начало: %q - Конец: %q\n", i+1, od.OffDutyStart, od.OffDutyEnd)
+			msgText += fmt.Sprintf(
+				"*%d.* Начало: %q - Конец: %q\n",
+				i+1,
+				od.OffDutyStart,
+				od.OffDutyEnd,
+			)
 		}
 		msgText += "\n"
 	}
