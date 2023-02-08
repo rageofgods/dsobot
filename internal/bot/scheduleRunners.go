@@ -188,10 +188,11 @@ func (t *TgBot) announceDuty() {
 			var image *tgbotapi.FileBytes
 			for i := 3; i != 0; i-- {
 				image, err = t.genMonthDutyImage()
-				if err != nil {
-					time.Sleep(5 * time.Second)
-					continue
+				if err == nil {
+					break
 				}
+				log.Printf("Unable to get duty image: %v. Retrying...", err)
+				time.Sleep(5 * time.Second)
 			}
 
 			if err != nil {
